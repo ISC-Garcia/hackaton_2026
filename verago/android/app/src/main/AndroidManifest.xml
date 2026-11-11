@@ -1,6 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- VeraGo: internet para Supabase y el mapa -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- VeraGo: cámara para escanear el QR del comercio -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- VeraGo: ubicación solo mientras la app está abierta (inicio de la ruta) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <application
-        android:label="verago"
+        android:label="VeraGo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,0 +1,125 @@
+import 'package:latlong2/latlong.dart';
+
+/// Un día del horario de un lugar (una fila de la tabla `horarios`).
+class Horario {
+  const Horario({required this.diaSemana, required this.abre, required this.cierra});
+
+  /// 0 = domingo ... 6 = sábado (igual que en la base de datos).
+  final int diaSemana;
+
+  /// Minutos desde la medianoche (ej. 08:30 → 510). Así comparar horas es
+  /// una simple resta de números.
+  final int abre;
+  final int cierra;
+
+  factory Horario.fromJson(Map<String, dynamic> json) => Horario(
+        diaSemana: json['dia_semana'] as int,
+        abre: _aMinutos(json['abre'] as String),
+        cierra: _aMinutos(json['cierra'] as String),
+      );
+
+  /// Convierte "08:30:00" (como llega de PostgreSQL) en 510.
+  static int _aMinutos(String hora) {
+    final partes = hora.split(':');
+    return int.parse(partes[0]) * 60 + int.parse(partes[1]);
+  }
+
+  /// Convierte 510 en "08:30" para mostrarlo.
+  static String formato(int minutos) =>
+      '${(minutos ~/ 60).toString().padLeft(2, '0')}:${(minutos % 60).toString().padLeft(2, '0')}';
+}
+
+/// Resultado de preguntar "¿está abierto?".
+enum EstadoApertura { abierto, cerrado, sinDatos }
+
+/// MODELO: cómo se ve un lugar dentro de la app.
+///
+/// Qué hace: convierte la fila que llega de Supabase (un mapa JSON) en un
+/// objeto de Dart con nombres claros y tipos correctos.
+/// Por qué: el resto del código trabaja con `lugar.nombre` en lugar de
+/// `json['nombre']`, y si algo viene mal, falla aquí y no en una pantalla.
+class Lugar {
+  const Lugar({
+    required this.id,
+    required this.nombre,
+    required this.descripcion,
+    required this.categoriaClave,
+    required this.categoriaNombre,
+    required this.latitud,
+    required this.longitud,
+    required this.direccion,
+    required this.telefono,
+    required this.interes,
+    required this.duracionVisitaMin,
+    required this.esComercio,
+    required this.esDemo,
+    required this.participaPasaporte,
+    required this.horarios,
+  });
+
+  final String id;
+  final String nombre;
+  final String? descripcion;
+  final String categoriaClave;
+  final String categoriaNombre;
+  final double latitud;
+  final double longitud;
+  final String? direccion;
+  final String? telefono;
+  final int interes;
+  final int duracionVisitaMin;
+  final bool esComercio;
+  final bool esDemo;
+  final bool participaPasaporte;
+  final List<Horario> horarios;
+
+  /// Punto en el mapa (paquete latlong2).
+  LatLng get punto => LatLng(latitud, longitud);
+
+  factory Lugar.fromJson(Map<String, dynamic> json) {
+    final categoria = json['categorias'] as Map<String, dynamic>;
+    final horarios = (json['horarios'] as List? ?? [])
+        .map((h) => Horario.fromJson(h as Map<String, dynamic>))
+        .toList();
+    return Lugar(
+      id: json['id'] as String,
+      nombre: json['nombre'] as String,
+      descripcion: json['descripcion'] as String?,
+      categoriaClave: categoria['clave'] as String,
+      categoriaNombre: categoria['nombre'] as String,
+      latitud: (json['latitud'] as num).toDouble(),
+      longitud: (json['longitud'] as num).toDouble(),
+      direccion: json['direccion'] as String?,
+      telefono: json['telefono'] as String?,
+      interes: json['interes'] as int,
+      duracionVisitaMin: json['duracion_visita_min'] as int,
+      esComercio: json['es_comercio'] as bool,
+      esDemo: json['es_demo'] as bool,
+      participaPasaporte: json['participa_pasaporte'] as bool,
+      horarios: horarios,
+    );
+  }
+
+  /// Horario del día indicado, o null si ese día no hay datos.
+  Horario? horarioDel(int diaSemana) {
+    for (final h in horarios) {
+      if (h.diaSemana == diaSemana) return h;
+    }
+    return null;
+  }
+
+  /// ¿Está abierto en este momento?
+  /// - Sin horarios cargados → sinDatos (no inventamos horarios reales).
+  /// - Usa la hora del celular (se asume que está en Veracruz).
+  EstadoApertura estadoEn(DateTime momento) {
+    if (horarios.isEmpty) return EstadoApertura.sinDatos;
+    // En Dart, weekday va de 1 (lunes) a 7 (domingo). "% 7" deja el
+    // domingo en 0, igual que en la base de datos.
+    final hoy = horarioDel(momento.weekday % 7);
+    if (hoy == null) return EstadoApertura.cerrado;
+    final minutos = momento.hour * 60 + momento.minute;
+    return (minutos >= hoy.abre && minutos < hoy.cierra)
+        ? EstadoApertura.abierto
+        : EstadoApertura.cerrado;
+  }
+}

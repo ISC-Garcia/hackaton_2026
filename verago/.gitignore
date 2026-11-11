@@ -39,6 +39,9 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Claves de Supabase (VeraGo). Se usa env.example.json como plantilla.
+env.json
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile

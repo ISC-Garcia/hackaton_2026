@@ -7,7 +7,11 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Verago</string>
+	<string>VeraGo</string>
+	<key>NSCameraUsageDescription</key>
+	<string>VeraGo usa la cámara para escanear el código QR de los comercios y darte tu sello.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>VeraGo usa tu ubicación solo para empezar tu ruta desde donde estás. No la guardamos.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
