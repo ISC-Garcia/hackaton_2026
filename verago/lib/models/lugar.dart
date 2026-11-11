@@ -55,6 +55,7 @@ class Lugar {
     required this.esDemo,
     required this.participaPasaporte,
     required this.horarios,
+    this.enRecorridoAPie = true,
   });
 
   final String id;
@@ -72,6 +73,9 @@ class Lugar {
   final bool esDemo;
   final bool participaPasaporte;
   final List<Horario> horarios;
+
+  /// false si no se llega caminando desde el centro (las rutas lo omiten).
+  final bool enRecorridoAPie;
 
   /// Punto en el mapa (paquete latlong2).
   LatLng get punto => LatLng(latitud, longitud);
@@ -97,6 +101,7 @@ class Lugar {
       esDemo: json['es_demo'] as bool,
       participaPasaporte: json['participa_pasaporte'] as bool,
       horarios: horarios,
+      enRecorridoAPie: json['en_recorrido_a_pie'] as bool? ?? true,
     );
   }
 

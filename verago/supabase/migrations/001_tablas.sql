@@ -64,6 +64,8 @@ create table public.lugares (
   foto_url            text,
   interes             smallint not null default 3 check (interes between 1 and 5),
   duracion_visita_min smallint not null default 30 check (duracion_visita_min between 5 and 240),
+  -- false = no se llega caminando (ej. San Juan de Ulúa); las rutas a pie lo omiten
+  en_recorrido_a_pie  boolean not null default true,
   es_comercio         boolean not null default false,
   es_demo             boolean not null default false,
   dueno_id            uuid references public.perfiles (id) on delete set null,

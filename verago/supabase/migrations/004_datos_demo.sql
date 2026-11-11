@@ -58,6 +58,9 @@ values
    'Fortaleza en el puerto. Experiencia complementaria: está fuera del recorrido a pie del centro y requiere transporte.',
    1, 19.2097, -96.1330, 5, 90, true);
 
+-- San Juan de Ulúa no se recorre a pie desde el centro.
+update public.lugares set en_recorrido_a_pie = false where nombre = 'San Juan de Ulúa';
+
 -- ---------------------------------------------------------------------
 -- Comercios FICTICIOS (dan sellos en el pasaporte)
 -- ---------------------------------------------------------------------

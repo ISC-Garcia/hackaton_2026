@@ -24,7 +24,11 @@ class MapaLugares extends StatelessWidget {
     this.alTocarLugar,
     this.seleccionadoId,
     this.interactivo = true,
+    this.linea = const [],
   });
+
+  /// Puntos de una línea a dibujar (la ruta). Vacío = sin línea.
+  final List<LatLng> linea;
 
   final List<Lugar> lugares;
   final LatLng centro;
@@ -50,6 +54,17 @@ class MapaLugares extends StatelessWidget {
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.example.verago',
         ),
+        if (linea.length > 1)
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: linea,
+                strokeWidth: 4,
+                color: VgColores.terracota,
+                pattern: StrokePattern.dashed(segments: const [10, 6]),
+              ),
+            ],
+          ),
         MarkerLayer(
           markers: [
             for (final lugar in lugares)

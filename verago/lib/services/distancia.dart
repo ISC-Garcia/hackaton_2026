@@ -29,8 +29,9 @@ class Distancia {
   }
 
   /// Minutos aproximados caminando por las calles (redondeado hacia arriba).
-  static int minutosCaminando(LatLng a, LatLng b) =>
-      (metros(a, b) * factorCalles / metrosPorMinuto).ceil();
+  /// `velocidad` en metros por minuto; por defecto, ritmo normal.
+  static int minutosCaminando(LatLng a, LatLng b, {double velocidad = metrosPorMinuto}) =>
+      (metros(a, b) * factorCalles / velocidad).ceil();
 
   /// Texto corto para mostrar, por ejemplo "A 5 min a pie".
   static String texto(LatLng a, LatLng b) {
