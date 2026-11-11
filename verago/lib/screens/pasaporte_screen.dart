@@ -94,6 +94,9 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
   @override
   Widget build(BuildContext context) {
     final conSesion = _auth.usuario != null;
+    // Si hay sesión pero aún no empezó la carga, la empezamos aquí.
+    // Evita que la pantalla se quede vacía o cargando para siempre.
+    if (conSesion && _futuro == null) _futuro = _cargar();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pasaporte'),

@@ -39,13 +39,21 @@ class PasaporteService {
   SupabaseClient get _db => Supabase.instance.client;
   String? get _uid => _db.auth.currentUser?.id;
 
+  /// Mi perfil (nombre y rol).
+  /// `maybeSingle()` devuelve null si no hay fila (por ejemplo, una cuenta
+  /// creada antes de que existiera el trigger crear_perfil). En ese caso
+  /// usamos el inicio del correo como nombre y el rol "usuario", para que
+  /// el pasaporte funcione igual.
   Future<Perfil> miPerfil() async {
+    Map<String, dynamic>? fila;
     try {
-      final fila = await _db.from('perfiles').select('nombre, rol').eq('id', _uid!).single();
-      return Perfil.fromJson(fila);
+      fila = await _db.from('perfiles').select('nombre, rol').eq('id', _uid!).maybeSingle();
     } catch (_) {
       throw const ErrorVeraGo('No pudimos cargar tu perfil. Intenta de nuevo.');
     }
+    if (fila != null) return Perfil.fromJson(fila);
+    final correo = _db.auth.currentUser?.email ?? 'Visitante';
+    return Perfil(nombre: correo.split('@').first, rol: 'usuario');
   }
 
   /// Mis sellos, del más reciente al más antiguo.
