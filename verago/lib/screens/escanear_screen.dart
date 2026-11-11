@@ -17,6 +17,41 @@ import 'lugar_screen.dart';
 ///
 /// Si el sello se obtiene, VeraGo sugiere otro lugar cercano para
 /// seguir explorando.
+/// Animación de "estampar" el sello: empieza grande, inclinado y
+/// transparente, y cae a su tamaño normal con un pequeño rebote.
+///
+/// `TweenAnimationBuilder` anima un número de 0 a 1 durante 600 ms;
+/// con ese número calculamos tamaño, giro y opacidad en cada cuadro.
+class _SelloAnimado extends StatelessWidget {
+  const _SelloAnimado();
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutBack, // el "rebote" final
+      builder: (context, t, child) => Opacity(
+        opacity: t.clamp(0.0, 1.0),
+        child: Transform.rotate(
+          angle: (1 - t) * -0.5, // de inclinado a derecho
+          child: Transform.scale(scale: 2.2 - 1.2 * t, child: child), // de 2.2× a 1×
+        ),
+      ),
+      child: Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: VgColores.verdePalma.withValues(alpha: 0.12),
+          border: Border.all(color: VgColores.verdePalma, width: 3),
+        ),
+        child: const Icon(Icons.approval, size: 40, color: VgColores.verdePalma),
+      ),
+    );
+  }
+}
+
 class EscanearScreen extends StatefulWidget {
   const EscanearScreen({super.key, required this.lugares, required this.sellados});
 
@@ -88,11 +123,9 @@ class _EscanearScreenState extends State<EscanearScreen> {
     return showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: Icon(
-          r.exito ? Icons.approval : Icons.info_outline,
-          size: 48,
-          color: r.exito ? VgColores.verdePalma : VgColores.terracota,
-        ),
+        icon: r.exito
+            ? const _SelloAnimado()
+            : const Icon(Icons.info_outline, size: 48, color: VgColores.terracota),
         title: Text(r.exito ? '¡Nuevo sello!' : 'No se registró el sello'),
         content: Column(
           mainAxisSize: MainAxisSize.min,

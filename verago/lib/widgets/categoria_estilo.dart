@@ -13,6 +13,19 @@ class CategoriaEstilo {
   final IconData icono;
   final Color color;
 
+  /// Las 7 categorías (clave → nombre), iguales a las de la base de datos.
+  /// Las usa la pantalla de bienvenida, que se muestra antes de tener
+  /// conexión con Supabase.
+  static const nombres = {
+    'historia': 'Historia y monumentos',
+    'museo': 'Museos',
+    'cafeteria': 'Cafeterías',
+    'restaurante': 'Restaurantes',
+    'tienda': 'Tiendas y artesanías',
+    'plaza': 'Plazas y paseos',
+    'cultura': 'Cultura',
+  };
+
   static CategoriaEstilo de(String clave) {
     switch (clave) {
       case 'historia':

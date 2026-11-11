@@ -22,15 +22,27 @@ class _LoginScreenState extends State<LoginScreen> {
   final _nombre = TextEditingController();
   final _correo = TextEditingController();
   final _contrasena = TextEditingController();
+  final _confirmar = TextEditingController();
 
   bool _crearCuenta = false;
   bool _enviando = false;
+
+  /// true = la contraseña se ve como puntos. El botón de ojo lo cambia.
+  bool _ocultar = true;
+
+  /// Botón de ojo para ver u ocultar la contraseña.
+  Widget get _botonOjo => IconButton(
+        tooltip: _ocultar ? 'Mostrar contraseña' : 'Ocultar contraseña',
+        icon: Icon(_ocultar ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+        onPressed: () => setState(() => _ocultar = !_ocultar),
+      );
 
   @override
   void dispose() {
     _nombre.dispose();
     _correo.dispose();
     _contrasena.dispose();
+    _confirmar.dispose();
     super.dispose();
   }
 
@@ -92,10 +104,29 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _contrasena,
-              decoration: const InputDecoration(labelText: 'Contraseña', border: OutlineInputBorder()),
-              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Contraseña',
+                border: const OutlineInputBorder(),
+                suffixIcon: _botonOjo,
+              ),
+              obscureText: _ocultar,
               validator: (v) => (v == null || v.length < 6) ? 'Mínimo 6 caracteres' : null,
             ),
+            // Solo al crear cuenta: escribir la contraseña dos veces evita
+            // que alguien se registre con un error de dedo y no pueda entrar.
+            if (_crearCuenta) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _confirmar,
+                decoration: InputDecoration(
+                  labelText: 'Confirmar contraseña',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: _botonOjo,
+                ),
+                obscureText: _ocultar,
+                validator: (v) => v != _contrasena.text ? 'Las contraseñas no coinciden' : null,
+              ),
+            ],
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _enviando ? null : _enviar,

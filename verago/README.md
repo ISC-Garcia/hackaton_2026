@@ -3,21 +3,46 @@
 App de turismo inteligente para el Centro Histórico de Veracruz.
 Hecha con **Flutter + Dart** y **Supabase (PostgreSQL)**.
 
-La documentación completa del proyecto (qué es cada pieza, qué hace y por qué la usamos)
-está en el documento compartido del equipo.
+Documentación del equipo (documentos compartidos de Claude):
+
+- **Documentación integral** (qué es VeraGo, módulos, arquitectura, base de datos, seguridad):
+  https://claude.ai/artifact/Hp9CAXgVd5qvhU9xVvV5Dq
+- **Guía de estudio del código + 106 preguntas para la demo**:
+  https://claude.ai/artifact/GxJK58vGE6jzZZe4ckyUuE
+
+## Tecnologías
+
+| Pieza | Para qué |
+| --- | --- |
+| Flutter + Dart | La app (Android, iPhone y web) |
+| Supabase Auth | Cuentas con correo y contraseña |
+| Supabase Database (PostgreSQL) | Tablas, reglas RLS, permisos GRANT y funciones protegidas |
+| `supabase_flutter` | Conexión de la app con Supabase |
+| `flutter_map` + `latlong2` | Mapa de OpenStreetMap y coordenadas |
+| `geolocator` | GPS, solo si el usuario elige "Mi ubicación" en Rutas |
+| `mobile_scanner` / `qr_flutter` | Leer y dibujar códigos QR |
+| `shared_preferences` | Guardar en el celular: bienvenida vista, intereses y tiempo de la ruta |
 
 ## Estado
 
 | Fase | Contenido | Estado |
 | --- | --- | --- |
-| 1. Fundamentos | Paquetes, tema visual, navegación, SQL (tablas, RLS, funciones, datos demo) | Implementado. **El SQL falta correrlo en Supabase** |
-| 2. Turista | Explorar (mapa/lista, búsqueda, filtros), ficha del lugar con "Cerca de aquí", agenda | Implementado. Lógica con pruebas automáticas; falta probar con datos reales |
-| 3. Rutas | Formulario (tiempo, intereses, ritmo, inicio), algoritmo voraz, ruta en mapa, "Quitar" parada, sugerencia cercana | Implementado y con pruebas automáticas del algoritmo |
-| 4. Pasaporte | Login con correo y contraseña, QR del comerciante (cambia cada 60 s), escaneo con cámara o código escrito, sellos, colección e historial | Implementado. Falta probar con Supabase real |
+| 1. Fundamentos | Paquetes, tema visual, navegación, SQL (tablas, RLS, funciones, datos demo, permisos) | Implementado; SQL corrido en Supabase |
+| 2. Turista | Explorar (mapa/lista, búsqueda, filtros, leyenda, centrar), ficha del lugar con "Cerca de aquí", agenda | Implementado y probado en celular |
+| 3. Rutas | Formulario (tiempo, intereses, ritmo, inicio), algoritmo voraz, ruta en mapa, "Quitar" parada, sugerencia cercana | Implementado, con pruebas automáticas del algoritmo |
+| 4. Pasaporte | Login con correo y contraseña (con confirmar contraseña), QR del comerciante (cambia cada 60 s), escaneo con cámara o código escrito, animación del sello, colección e historial | Implementado |
 | 5. Cierre | Estadísticas (DATOS SIMULADOS, solo admin), pruebas, compilación web | Implementado. Falta ensayo de la demo |
+| Extra UI/UX | Pantalla de bienvenida (primera vez), botón de ojo en contraseñas, leyenda y centrar en el mapa | Implementado, con pruebas automáticas |
 
-Verificado en esta computadora: `flutter analyze` sin problemas, 16 pruebas automáticas pasan
+Verificado en esta computadora: `flutter analyze` sin problemas, **18 pruebas automáticas** pasan
 y la app compila para web (`flutter build web`).
+
+### Qué NO hace la app (a propósito, MVP)
+
+- No hay premios ni canjes: el pasaporte **solo junta sellos**.
+- Eventos, lugares y roles se administran desde el **panel de Supabase**, no desde la app.
+- Los comercios y eventos son **ficticios**; los lugares públicos no tienen horarios inventados.
+- Las estadísticas son **simuladas**.
 
 ## Cómo configurar Supabase (una sola vez)
 
@@ -35,13 +60,47 @@ y la app compila para web (`flutter build web`).
    - Para la demo, desactivar **Confirm email** (así la cuenta funciona al instante).
      Si se deja activado, cada usuario debe abrir el enlace del correo antes de entrar.
 
-### Crear un comerciante de prueba (para mostrar el QR en la demo)
+## Administrar desde Supabase
 
-1. Crear una cuenta desde la app (pestaña Pasaporte → Iniciar sesión → crear una).
-2. En **Table Editor → perfiles**, cambiar su `rol` a `comerciante`.
-3. En **Table Editor → lugares**, en un comercio ficticio (por ejemplo "Café Brisa del Golfo"),
-   poner el `id` de ese perfil en `dueno_id`.
-4. Para ver las estadísticas simuladas, poner `rol` = `admin` a otra cuenta.
+La app no tiene pantallas de administración: todo esto se hace en el panel de Supabase.
+
+### Cambiar el rol (permisos) de una persona
+
+Roles: `usuario` (por defecto), `comerciante` (puede mostrar el QR de su comercio) y
+`admin` (ve estadísticas y administra todo).
+
+- **Con clics:** Table Editor → `perfiles` → buscar a la persona → columna `rol`.
+- **Con SQL** (SQL Editor):
+
+```sql
+update public.perfiles set rol = 'comerciante'
+where id = (select id from auth.users where email = 'correo@ejemplo.com');
+```
+
+El cambio se ve al recargar el Pasaporte (jalar hacia abajo) o al volver a iniciar sesión.
+
+### Asignar un comercio a un comerciante (para mostrar el QR en la demo)
+
+1. Crear una cuenta desde la app (Pasaporte → Iniciar sesión → crear una).
+2. Cambiar su `rol` a `comerciante` (arriba).
+3. Asignarle el comercio:
+
+```sql
+update public.lugares
+set dueno_id = (select id from auth.users where email = 'correo@ejemplo.com')
+where nombre = 'Café Brisa del Golfo';
+```
+
+### Crear un evento (quién agenda)
+
+Solo el administrador agenda eventos, desde Supabase: Table Editor → `eventos` → **Insert row**.
+Llenar `titulo`, `lugar_id` (id del lugar), `inicia`, `termina` y `estado`:
+
+- `publicado` → se ve en la app.
+- `pendiente` → oculto (borrador).
+- `cancelado` → se ve tachado para avisar.
+
+Marcar `es_demo = true` si el evento es ficticio.
 
 ### Si los eventos ya pasaron
 
@@ -73,6 +132,8 @@ Si `flutter` no se reconoce, usar la ruta completa (ej. `C:\Users\HP\flutter\bin
 
 ## Guion de la demo
 
+0. (Primera vez) Pantalla de **bienvenida**: elegir intereses o "Saltar".
+   Para volver a verla, borrar los datos de la app o desinstalarla.
 1. Abrir VeraGo → **Explorar**: mapa del centro, filtrar "Cafeterías", abrir una ficha.
 2. **Rutas** → 3 h → Historia y monumentos + Restaurantes → **Generar ruta**.
 3. Mostrar paradas, motivos, "Quitar" una parada y la sugerencia "Te quedan X min".
@@ -99,12 +160,13 @@ lib/
 ├─ main.dart       → arranque: conecta con Supabase y abre la app
 ├─ config.dart     → lee las claves de env.json
 ├─ theme/          → colores y letras de VeraGo
-├─ screens/        → pantallas (lo que el usuario ve)
+├─ screens/        → pantallas (bienvenida, principal, explorar, lugar, rutas, ruta,
+│                    agenda, pasaporte, login, escanear, qr_comercio, estadisticas)
 ├─ services/       → hablan con Supabase o hacen cálculos (rutas, distancias)
 ├─ models/         → clases de datos (Lugar, Evento, Sello, Perfil)
 └─ widgets/        → piezas visuales reutilizables (mapa, tarjetas, etiquetas)
-test/              → pruebas automáticas
-supabase/migrations/ → SQL de la base de datos
+test/              → pruebas automáticas (18)
+supabase/migrations/ → SQL de la base de datos (001 a 006)
 ```
 
 ## Bitácora de IA
@@ -139,3 +201,6 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | 10 | 2026-11-11 | "El pasaporte está vacío" | Claude Code | `006_perfiles_faltantes.sql` y la app tolera cuentas sin perfil | Cuentas creadas antes del trigger no tenían fila en `perfiles` |
 | 11 | 2026-11-11 | Guía de estudio del código + preguntas | Claude Code + Claude Docs | Guía de 16 secciones con 100 preguntas y respuestas y guion de demo | Respuestas honestas sobre límites (distancias aproximadas, ruta no óptima, datos simulados) |
 | 12 | 2026-11-11 | Crear esta bitácora de IA | Claude Code | Sección "Bitácora de IA" en este README | Se actualiza en cada petición futura |
+| 13 | 2026-11-11 | Confirmar contraseña; ¿quién agenda eventos?; ¿cómo cambiar permisos?; mejorar UI/UX | Claude Code | Campo "Confirmar contraseña" al crear cuenta + prueba automática (17 en total). Se explicó quién crea eventos y cómo cambiar roles. Se propusieron mejoras de UI/UX | La IA no implementó mejoras de UI/UX sin aprobación (*Equipo pidió preguntar antes*) |
+| 14 | 2026-11-11 | Implementar las mejoras de UI/UX elegidas | Claude Code | Pantalla de bienvenida (3 páginas, elegir intereses, se puede saltar), animación al ganar sello, botón de ojo en contraseñas, leyenda de colores y botón "centrar" en el mapa. 18 pruebas automáticas | *Equipo* eligió: bienvenida y detalles visuales. *Equipo* decidió: eventos y roles se siguen manejando desde el panel de Supabase (sin pantallas nuevas de admin) |
+| 15 | 2026-11-11 | Actualizar README y documentación con lo que faltaba | Claude Code + Claude Docs | README: tecnologías, enlaces a documentos, estado real, "Qué NO hace la app", cómo cambiar roles, asignar comercio y crear eventos. Guía: estructura de archivos, bienvenida, 18 pruebas, preguntas 101–106. Documento integral: permisos reales (eventos y fichas solo por admin en Supabase), sección de GRANT, RF-17/18, estructura de carpetas real, columnas `clave`, `es_gratuito`, `es_demo` | Los documentos describen **lo implementado**, no lo planeado: se corrigieron partes que decían que el comerciante crea eventos o edita su ficha |
