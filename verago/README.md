@@ -27,6 +27,7 @@ y la app compila para web (`flutter build web`).
    2. `002_rls.sql` — activa las reglas de seguridad.
    3. `003_funciones.sql` — funciones para generar el QR y registrar sellos.
    4. `004_datos_demo.sql` — lugares públicos (coordenadas aproximadas) y comercios/eventos **ficticios**.
+   5. `005_permisos.sql` — permisos (GRANT) para que la app pueda leer las tablas. Sin este archivo la app no muestra nada.
 3. Revisar en **Table Editor** que existan las tablas y los datos.
 4. En **Authentication → Sign In / Providers → Email**:
    - Dejar activado **Email**.
