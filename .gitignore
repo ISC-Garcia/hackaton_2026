@@ -1,0 +1,115 @@
+# FLUTTER / DART
+
+
+# Dart
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+build/
+coverage/
+*.dart.js
+*.js.deps
+*.js.map
+*.info.json
+
+# Flutter
+.flutter-plugins
+.flutter-plugins-dependencies
+**/flutter/ephemeral/
+**/Flutter/ephemeral/
+**/Generated.xcconfig
+**/flutter_export_environment.sh
+
+# Android
+**/android/.gradle/
+**/android/captures/
+**/android/local.properties
+**/android/key.properties
+*.jks
+*.keystore
+
+# iOS / macOS
+**/ios/Pods/
+**/macos/Pods/
+**/ios/.symlinks/
+**/macos/.symlinks/
+*.xcuserstate
+*.xcuserdata/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Windows / Linux
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+*.exe
+*.dll
+*.so
+
+# IDE - Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# Logs y archivos temporales
+*.log
+*.tmp
+*.temp
+*.bak
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+service-account.json
+
+# Firebase (archivos privados)
+firebase-debug.log
+firestore-debug.log
+firebase-adminsdk*.json
+
+# Archivos comprimidos
+*.zip
+*.rar
+*.7z
+
+# Archivos de pruebas generados
+test/coverage/
+integration_test/coverage/
+
+# Flutter obfuscation
+app.*.symbols
+
+
+# IMPORTANTE: NO IGNORAR
+# pubspec.yaml
+# pubspec.lock
+# analysis_options.yaml
+# lib/
+# assets/
+# test/
+# android/
+# ios/
+# web/
+# windows/
+# linux/
+# macos/
