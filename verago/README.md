@@ -106,3 +106,36 @@ lib/
 test/              → pruebas automáticas
 supabase/migrations/ → SQL de la base de datos
 ```
+
+## Bitácora de IA
+
+Registro de cómo usamos inteligencia artificial en el proyecto: qué herramienta, para qué y qué
+decisiones se tomaron. Se actualiza con cada petición que hacemos a la IA.
+
+**Regla del equipo:** la IA propone y escribe; el equipo decide. Las decisiones marcadas
+como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
+
+### Herramientas
+
+| Herramienta | Para qué la usamos |
+| --- | --- |
+| **Claude Code** (modelo Claude Opus 5.5, en VS Code) | Escribir y revisar el código Flutter/Dart y el SQL, correr `flutter analyze` y `flutter test`, diagnosticar errores con Supabase |
+| **Claude Docs** (documentos compartidos de Claude) | Documentación integral del proyecto y guía de estudio con 100 preguntas para la demo |
+| **ChatGPT** | Mencionado en `README.txt` de la raíz. *Pendiente: el equipo debe describir para qué se usó* |
+
+### Registro
+
+| # | Fecha | Petición al equipo de IA | Herramienta | Qué se hizo | Decisiones clave |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 2026-11-11 | Documentación integral del proyecto (24 secciones) | Claude Code + Claude Docs | Documento técnico, funcional y de negocio | Nombre oficial **VeraGo** (*Equipo*). Lugares y comercios en una sola tabla. Rutas con algoritmo, no con IA generativa |
+| 2 | 2026-11-11 | Simplificar tecnologías y explicar todo | Claude Code + Claude Docs | Documento reescrito con "qué es / qué hace / por qué" | Quitar Edge Functions, PostGIS, Riverpod/Bloc, Realtime; usar funciones de PostgreSQL y lo que trae Flutter (*Equipo pidió simplicidad*) |
+| 3 | 2026-11-11 | Quitar el "café gratis" | Claude Code + Claude Docs | Se eliminaron recompensas y canjes del documento y del SQL | El pasaporte **solo junta sellos** (*Equipo*) |
+| 4 | 2026-11-11 | Implementar la app (Fase 1: fundamentos) | Claude Code | Paquetes, tema visual, navegación, SQL 001–004, permisos Android/iOS | Solo el MVP del documento; comercios y eventos **100 % ficticios**; lugares públicos reales sin horarios inventados; sin fotos, íconos por categoría (*Equipo*). Clave pública en `env.json` fuera de GitHub |
+| 5 | 2026-11-11 | Fase 2: experiencia del turista | Claude Code | Explorar (mapa/lista/filtros), ficha con "Cerca de aquí", agenda | Distancias desde el Zócalo para no pedir GPS al explorar |
+| 6 | 2026-11-11 | Fase 3: rutas | Claude Code | Algoritmo voraz, pantalla de ruta, "Quitar", sugerencia cercana, 7 pruebas | Columna `en_recorrido_a_pie` para excluir San Juan de Ulúa de rutas a pie |
+| 7 | 2026-11-11 | Fase 4: pasaporte | Claude Code | Login, QR del comercio que cambia cada 60 s, escaneo, sellos | Login con correo y contraseña (más simple que enlace mágico); plan B de escribir el código a mano |
+| 8 | 2026-11-11 | Fase 5: cierre | Claude Code | Estadísticas con "DATOS SIMULADOS", README con guion de demo | Las estadísticas miden uso de la app, nunca afluencia real |
+| 9 | 2026-11-11 | "No aparece nada en el celular" | Claude Code | Diagnóstico: la API respondía `permission denied`; se creó `005_permisos.sql` | Faltaban permisos GRANT (los proyectos nuevos de Supabase no los dan solos). `codigos_qr` se deja sin permisos a propósito |
+| 10 | 2026-11-11 | "El pasaporte está vacío" | Claude Code | `006_perfiles_faltantes.sql` y la app tolera cuentas sin perfil | Cuentas creadas antes del trigger no tenían fila en `perfiles` |
+| 11 | 2026-11-11 | Guía de estudio del código + preguntas | Claude Code + Claude Docs | Guía de 16 secciones con 100 preguntas y respuestas y guion de demo | Respuestas honestas sobre límites (distancias aproximadas, ruta no óptima, datos simulados) |
+| 12 | 2026-11-11 | Crear esta bitácora de IA | Claude Code | Sección "Bitácora de IA" en este README | Se actualiza en cada petición futura |
