@@ -11,6 +11,7 @@ import '../services/pasaporte_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
 import '../widgets/estado_vacio.dart';
+import 'ajustes_screen.dart';
 import 'escanear_screen.dart';
 import 'estadisticas_screen.dart';
 import 'login_screen.dart';
@@ -70,17 +71,31 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
 
   Future<DatosPasaporte> _cargar() async {
     final prueba = widget.cargadorDePrueba;
-    if (prueba != null) return prueba();
+    if (prueba != null) return _ultimos = await prueba();
     final resultados = await Future.wait([
       _pasaporte.miPerfil(),
       _pasaporte.misSellos(),
       _lugares.obtenerLugares(),
     ]);
-    return DatosPasaporte(
+    return _ultimos = DatosPasaporte(
       resultados[0] as Perfil,
       resultados[1] as List<Sello>,
       resultados[2] as List<Lugar>,
     );
+  }
+
+  /// Últimos datos cargados (Ajustes usa el perfil).
+  DatosPasaporte? _ultimos;
+
+  Future<void> _abrirAjustes() async {
+    final cambio = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => AjustesScreen(perfil: _conSesion ? _ultimos?.perfil : null),
+    ));
+    if (!mounted) return;
+    // Si cambió el nombre o se cerró sesión, recargamos.
+    if (cambio == true || !_conSesion) {
+      setState(() => _futuro = _conSesion ? _cargar() : null);
+    }
   }
 
   void _recargar() => setState(() => _futuro = _cargar());
@@ -113,12 +128,11 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
       appBar: AppBar(
         title: const Text('Pasaporte'),
         actions: [
-          if (conSesion)
-            IconButton(
-              tooltip: 'Cerrar sesión',
-              icon: const Icon(Icons.logout),
-              onPressed: _auth.salir,
-            ),
+          IconButton(
+            tooltip: 'Ajustes',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: _abrirAjustes,
+          ),
         ],
       ),
       body: !conSesion

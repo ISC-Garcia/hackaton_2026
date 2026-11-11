@@ -7,7 +7,7 @@ Documentación del equipo (documentos compartidos de Claude):
 
 - **Documentación integral** (qué es VeraGo, módulos, arquitectura, base de datos, seguridad):
   https://claude.ai/artifact/Hp9CAXgVd5qvhU9xVvV5Dq
-- **Guía de estudio del código + 107 preguntas para la demo**:
+- **Guía de estudio del código + 108 preguntas para la demo**:
   https://claude.ai/artifact/GxJK58vGE6jzZZe4ckyUuE
 
 ## Tecnologías
@@ -33,8 +33,9 @@ Documentación del equipo (documentos compartidos de Claude):
 | 4. Pasaporte | Login con correo y contraseña (con confirmar contraseña), QR del comerciante (cambia cada 60 s), escaneo con cámara o código escrito, animación del sello, colección e historial | Implementado |
 | 5. Cierre | Estadísticas (DATOS SIMULADOS, solo admin), pruebas, compilación web | Implementado. Falta ensayo de la demo |
 | Extra UI/UX | Pantalla de bienvenida (primera vez), botón de ojo en contraseñas, leyenda y centrar en el mapa | Implementado, con pruebas automáticas |
+| Ajustes | Engrane en el Pasaporte: mi cuenta (correo, rol, cambiar nombre), mis intereses, ver bienvenida otra vez, privacidad y cerrar sesión | Implementado, con pruebas automáticas |
 
-Verificado en esta computadora: `flutter analyze` sin problemas, **20 pruebas automáticas** pasan
+Verificado en esta computadora: `flutter analyze` sin problemas, **22 pruebas automáticas** pasan
 y la app compila para web (`flutter build web`).
 
 ### Qué NO hace la app (a propósito, MVP)
@@ -169,11 +170,11 @@ lib/
 ├─ config.dart     → lee las claves de env.json
 ├─ theme/          → colores y letras de VeraGo
 ├─ screens/        → pantallas (bienvenida, principal, explorar, lugar, rutas, ruta,
-│                    agenda, pasaporte, login, escanear, qr_comercio, estadisticas)
+│                    agenda, pasaporte, ajustes, login, escanear, qr_comercio, estadisticas)
 ├─ services/       → hablan con Supabase o hacen cálculos (rutas, distancias)
 ├─ models/         → clases de datos (Lugar, Evento, Sello, Perfil)
 └─ widgets/        → piezas visuales reutilizables (mapa, tarjetas, etiquetas)
-test/              → pruebas automáticas (20)
+test/              → pruebas automáticas (22)
 supabase/migrations/ → SQL de la base de datos (001 a 006)
 ```
 
@@ -214,3 +215,4 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | 15 | 2026-11-11 | Actualizar README y documentación con lo que faltaba | Claude Code + Claude Docs | README: tecnologías, enlaces a documentos, estado real, "Qué NO hace la app", cómo cambiar roles, asignar comercio y crear eventos. Guía: estructura de archivos, bienvenida, 18 pruebas, preguntas 101–106. Documento integral: permisos reales (eventos y fichas solo por admin en Supabase), sección de GRANT, RF-17/18, estructura de carpetas real, columnas `clave`, `es_gratuito`, `es_demo` | Los documentos describen **lo implementado**, no lo planeado: se corrigieron partes que decían que el comerciante crea eventos o edita su ficha |
 | 16 | 2026-11-11 | "El pasaporte no muestra nada" (pedía iniciar sesión aunque ya habían entrado) | Claude Code | 2 pruebas nuevas que dibujan el pasaporte con datos (descartan errores de diseño). Se leyó la configuración pública de Auth: `mailer_autoconfirm: false` → "Confirm email" activado. Login ahora explica con un cuadro de diálogo si falta confirmar el correo; el pasaporte se recarga al volver del login. 20 pruebas | Causa: cuentas sin confirmar no pueden iniciar sesión. Solución: desactivar "Confirm email" y confirmar cuentas pendientes por SQL. *Equipo* autorizó crear una cuenta de prueba, pero no hizo falta (Supabase rechazó `example.com` y la causa se encontró sin ella) |
 | 17 | 2026-11-11 | "El inicio de sesión sigue sin funcionar" | Claude Code | Se volvió a leer la configuración de Auth: `mailer_autoconfirm` sigue en `false` (la confirmación de correo sigue activada en Supabase). Se dieron los pasos exactos para desactivarla | No se cambió código: la causa es la configuración del proyecto, y la app no puede saltarse la confirmación (sería un hueco de seguridad). No se crearon cuentas de prueba para no gastar el límite de correos del proyecto |
+| 18 | 2026-11-11 | Botón de ajustes en Pasaporte; el pasaporte sigue sin mostrar información | Claude Code | Pantalla **Ajustes** (engrane): mi cuenta con cambiar nombre, mis intereses, ver bienvenida otra vez, privacidad y cerrar sesión; 2 pruebas (22 en total). Diagnóstico: con "Confirm email" ya apagado (`mailer_autoconfirm: true`) se creó la cuenta de prueba `prueba.verago@verago-demo.mx` (dominio inventado, sin envío de correo) y se repitieron las consultas de la app: perfil, sellos y comercios responden bien | *Equipo* eligió las 4 opciones de Ajustes. Conclusión: la base de datos funciona; lo más probable es que sus cuentas viejas sigan sin confirmar → correr el `UPDATE` de confirmación. El botón de cerrar sesión se movió dentro de Ajustes. *Pendiente:* borrar la cuenta de prueba al terminar |

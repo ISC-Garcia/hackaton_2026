@@ -56,6 +56,26 @@ class PasaporteService {
     return Perfil(nombre: correo.split('@').first, rol: 'usuario');
   }
 
+  /// Correo de la cuenta con sesión (lo guarda Supabase Auth).
+  String? get miCorreo {
+    try {
+      return _db.auth.currentUser?.email;
+    } catch (_) {
+      return null; // sin Supabase configurado (pruebas)
+    }
+  }
+
+  /// Cambia mi nombre visible.
+  /// La base solo permite editar la columna `nombre` (GRANT del archivo 005)
+  /// y solo de mi propio perfil (regla RLS "editar mi perfil").
+  Future<void> cambiarNombre(String nombre) async {
+    try {
+      await _db.from('perfiles').update({'nombre': nombre.trim()}).eq('id', _uid!);
+    } catch (_) {
+      throw const ErrorVeraGo('No pudimos guardar tu nombre. Intenta de nuevo.');
+    }
+  }
+
   /// Mis sellos, del más reciente al más antiguo.
   /// RLS garantiza que solo lleguen los míos.
   Future<List<Sello>> misSellos() async {
