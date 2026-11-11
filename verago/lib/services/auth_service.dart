@@ -65,7 +65,14 @@ class AuthService {
     final m = e.message.toLowerCase();
     if (m.contains('invalid login')) return 'Correo o contraseña incorrectos.';
     if (m.contains('already registered')) return 'Ese correo ya tiene cuenta. Entra con tu contraseña.';
-    if (m.contains('not confirmed')) return 'Confirma tu correo con el enlace que te enviamos.';
+    if (m.contains('not confirmed')) {
+      return 'Tu correo aún no está confirmado. Abre el enlace que te enviamos '
+          'o pide al administrador que confirme tu cuenta.';
+    }
+    if (m.contains('rate limit')) {
+      return 'Se enviaron demasiados correos. Espera unos minutos o pide al '
+          'administrador que confirme tu cuenta.';
+    }
     if (m.contains('password')) return 'La contraseña debe tener al menos 6 caracteres.';
     return 'No pudimos completar la operación. Intenta de nuevo.';
   }

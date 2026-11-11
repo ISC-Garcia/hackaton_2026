@@ -17,8 +17,8 @@ import 'login_screen.dart';
 import 'qr_comercio_screen.dart';
 
 /// Datos que necesita la pantalla del pasaporte, cargados juntos.
-class _DatosPasaporte {
-  const _DatosPasaporte(this.perfil, this.sellos, this.lugares);
+class DatosPasaporte {
+  const DatosPasaporte(this.perfil, this.sellos, this.lugares);
   final Perfil perfil;
   final List<Sello> sellos;
   final List<Lugar> lugares;
@@ -32,7 +32,11 @@ class _DatosPasaporte {
 /// - Comerciante: botón para mostrar el QR de su comercio.
 /// - Admin: acceso a estadísticas (datos simulados).
 class PasaporteScreen extends StatefulWidget {
-  const PasaporteScreen({super.key});
+  const PasaporteScreen({super.key, this.cargadorDePrueba});
+
+  /// SOLO para pruebas automáticas: entrega datos falsos y simula sesión,
+  /// para dibujar la pantalla sin Supabase. En la app real es null.
+  final Future<DatosPasaporte> Function()? cargadorDePrueba;
 
   @override
   State<PasaporteScreen> createState() => _PasaporteScreenState();
@@ -42,7 +46,7 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
   final _auth = AuthService();
   final _pasaporte = PasaporteService();
   final _lugares = LugaresService();
-  Future<_DatosPasaporte>? _futuro;
+  Future<DatosPasaporte>? _futuro;
   StreamSubscription<AuthState>? _suscripcion;
 
   @override
@@ -62,13 +66,17 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
     super.dispose();
   }
 
-  Future<_DatosPasaporte> _cargar() async {
+  bool get _conSesion => widget.cargadorDePrueba != null || _auth.usuario != null;
+
+  Future<DatosPasaporte> _cargar() async {
+    final prueba = widget.cargadorDePrueba;
+    if (prueba != null) return prueba();
     final resultados = await Future.wait([
       _pasaporte.miPerfil(),
       _pasaporte.misSellos(),
       _lugares.obtenerLugares(),
     ]);
-    return _DatosPasaporte(
+    return DatosPasaporte(
       resultados[0] as Perfil,
       resultados[1] as List<Sello>,
       resultados[2] as List<Lugar>,
@@ -79,9 +87,13 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
 
   Future<void> _iniciarSesion() async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+    // Al regresar del login, volvemos a revisar la sesión y cargamos los
+    // datos. No dependemos solo del aviso de Supabase (más seguro).
+    if (!mounted) return;
+    setState(() => _futuro = _conSesion ? _cargar() : null);
   }
 
-  Future<void> _escanear(_DatosPasaporte d) async {
+  Future<void> _escanear(DatosPasaporte d) async {
     final hubo = await Navigator.of(context).push<bool>(MaterialPageRoute(
       builder: (_) => EscanearScreen(
         lugares: d.lugares,
@@ -93,7 +105,7 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final conSesion = _auth.usuario != null;
+    final conSesion = _conSesion;
     // Si hay sesión pero aún no empezó la carga, la empezamos aquí.
     // Evita que la pantalla se quede vacía o cargando para siempre.
     if (conSesion && _futuro == null) _futuro = _cargar();
@@ -118,7 +130,7 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
               textoBoton: 'Iniciar sesión',
               alPresionar: _iniciarSesion,
             )
-          : FutureBuilder<_DatosPasaporte>(
+          : FutureBuilder<DatosPasaporte>(
               future: _futuro,
               builder: (context, snapshot) {
                 if (snapshot.connectionState != ConnectionState.done) {
@@ -139,7 +151,7 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
     );
   }
 
-  Widget _contenido(_DatosPasaporte d) {
+  Widget _contenido(DatosPasaporte d) {
     final sellados = d.sellos.map((s) => s.lugarId).toSet();
     final participantes = d.lugares.where((l) => l.participaPasaporte).toList();
     final logrados = participantes.where((l) => sellados.contains(l.id)).length;

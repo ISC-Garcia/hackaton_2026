@@ -54,8 +54,14 @@ class _LoginScreenState extends State<LoginScreen> {
         final conSesion = await _auth.registrar(_nombre.text, _correo.text, _contrasena.text);
         if (!mounted) return;
         if (!conSesion) {
-          _aviso('Te enviamos un correo para confirmar tu cuenta. Después entra aquí.');
+          // Supabase tiene activado "Confirm email": la cuenta existe pero
+          // no puede entrar hasta confirmar el correo.
           setState(() => _crearCuenta = false);
+          await _aviso(
+            'Confirma tu correo',
+            'Creamos tu cuenta, pero falta confirmarla. Abre el enlace que te '
+                'enviamos por correo y después entra aquí con tu contraseña.',
+          );
           return;
         }
       } else {
@@ -63,15 +69,26 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (mounted) Navigator.of(context).pop(true);
     } on ErrorVeraGo catch (e) {
-      _aviso(e.mensaje);
+      await _aviso('No pudimos continuar', e.mensaje);
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
   }
 
-  void _aviso(String texto) {
+  /// Muestra un mensaje en un cuadro de diálogo que el usuario debe cerrar
+  /// (más visible que un aviso que desaparece solo).
+  Future<void> _aviso(String titulo, String texto) async {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(titulo),
+        content: Text(texto),
+        actions: [
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Entendido')),
+        ],
+      ),
+    );
   }
 
   @override

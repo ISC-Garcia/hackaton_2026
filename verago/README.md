@@ -7,7 +7,7 @@ Documentación del equipo (documentos compartidos de Claude):
 
 - **Documentación integral** (qué es VeraGo, módulos, arquitectura, base de datos, seguridad):
   https://claude.ai/artifact/Hp9CAXgVd5qvhU9xVvV5Dq
-- **Guía de estudio del código + 106 preguntas para la demo**:
+- **Guía de estudio del código + 107 preguntas para la demo**:
   https://claude.ai/artifact/GxJK58vGE6jzZZe4ckyUuE
 
 ## Tecnologías
@@ -34,7 +34,7 @@ Documentación del equipo (documentos compartidos de Claude):
 | 5. Cierre | Estadísticas (DATOS SIMULADOS, solo admin), pruebas, compilación web | Implementado. Falta ensayo de la demo |
 | Extra UI/UX | Pantalla de bienvenida (primera vez), botón de ojo en contraseñas, leyenda y centrar en el mapa | Implementado, con pruebas automáticas |
 
-Verificado en esta computadora: `flutter analyze` sin problemas, **18 pruebas automáticas** pasan
+Verificado en esta computadora: `flutter analyze` sin problemas, **20 pruebas automáticas** pasan
 y la app compila para web (`flutter build web`).
 
 ### Qué NO hace la app (a propósito, MVP)
@@ -57,8 +57,16 @@ y la app compila para web (`flutter build web`).
 3. Revisar en **Table Editor** que existan las tablas y los datos.
 4. En **Authentication → Sign In / Providers → Email**:
    - Dejar activado **Email**.
-   - Para la demo, desactivar **Confirm email** (así la cuenta funciona al instante).
-     Si se deja activado, cada usuario debe abrir el enlace del correo antes de entrar.
+   - **Desactivar "Confirm email"** para la demo (así la cuenta funciona al instante).
+     Si queda activado, la cuenta no puede iniciar sesión hasta abrir el enlace del correo,
+     y el Pasaporte sigue pidiendo "Iniciar sesión". Además, el correo incluido de Supabase
+     solo envía unos pocos mensajes por hora.
+5. Si ya hay cuentas creadas sin confirmar, confirmarlas en **SQL Editor**:
+
+```sql
+-- Marca como confirmadas todas las cuentas pendientes (solo para la demo).
+update auth.users set email_confirmed_at = now() where email_confirmed_at is null;
+```
 
 ## Administrar desde Supabase
 
@@ -165,7 +173,7 @@ lib/
 ├─ services/       → hablan con Supabase o hacen cálculos (rutas, distancias)
 ├─ models/         → clases de datos (Lugar, Evento, Sello, Perfil)
 └─ widgets/        → piezas visuales reutilizables (mapa, tarjetas, etiquetas)
-test/              → pruebas automáticas (18)
+test/              → pruebas automáticas (20)
 supabase/migrations/ → SQL de la base de datos (001 a 006)
 ```
 
@@ -204,3 +212,4 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | 13 | 2026-11-11 | Confirmar contraseña; ¿quién agenda eventos?; ¿cómo cambiar permisos?; mejorar UI/UX | Claude Code | Campo "Confirmar contraseña" al crear cuenta + prueba automática (17 en total). Se explicó quién crea eventos y cómo cambiar roles. Se propusieron mejoras de UI/UX | La IA no implementó mejoras de UI/UX sin aprobación (*Equipo pidió preguntar antes*) |
 | 14 | 2026-11-11 | Implementar las mejoras de UI/UX elegidas | Claude Code | Pantalla de bienvenida (3 páginas, elegir intereses, se puede saltar), animación al ganar sello, botón de ojo en contraseñas, leyenda de colores y botón "centrar" en el mapa. 18 pruebas automáticas | *Equipo* eligió: bienvenida y detalles visuales. *Equipo* decidió: eventos y roles se siguen manejando desde el panel de Supabase (sin pantallas nuevas de admin) |
 | 15 | 2026-11-11 | Actualizar README y documentación con lo que faltaba | Claude Code + Claude Docs | README: tecnologías, enlaces a documentos, estado real, "Qué NO hace la app", cómo cambiar roles, asignar comercio y crear eventos. Guía: estructura de archivos, bienvenida, 18 pruebas, preguntas 101–106. Documento integral: permisos reales (eventos y fichas solo por admin en Supabase), sección de GRANT, RF-17/18, estructura de carpetas real, columnas `clave`, `es_gratuito`, `es_demo` | Los documentos describen **lo implementado**, no lo planeado: se corrigieron partes que decían que el comerciante crea eventos o edita su ficha |
+| 16 | 2026-11-11 | "El pasaporte no muestra nada" (pedía iniciar sesión aunque ya habían entrado) | Claude Code | 2 pruebas nuevas que dibujan el pasaporte con datos (descartan errores de diseño). Se leyó la configuración pública de Auth: `mailer_autoconfirm: false` → "Confirm email" activado. Login ahora explica con un cuadro de diálogo si falta confirmar el correo; el pasaporte se recarga al volver del login. 20 pruebas | Causa: cuentas sin confirmar no pueden iniciar sesión. Solución: desactivar "Confirm email" y confirmar cuentas pendientes por SQL. *Equipo* autorizó crear una cuenta de prueba, pero no hizo falta (Supabase rechazó `example.com` y la causa se encontró sin ella) |
