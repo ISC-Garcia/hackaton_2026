@@ -84,7 +84,14 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Explorar')),
+      appBar: AppBar(
+        title: const Text('Explorar'),
+        actions: [
+          // La pestaña queda abierta en memoria; con esto se ven los
+          // negocios recién aprobados sin cerrar la app.
+          IconButton(tooltip: 'Actualizar', icon: const Icon(Icons.refresh), onPressed: _recargar),
+        ],
+      ),
       body: FutureBuilder<List<Lugar>>(
         future: _futuro,
         builder: (context, snapshot) {

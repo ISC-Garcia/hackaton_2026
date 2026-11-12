@@ -8,8 +8,10 @@ import '../theme/app_theme.dart';
 import '../widgets/editor_horario.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/mapa_lugares.dart';
+import '../widgets/selector_ubicacion.dart';
 
-/// SOLICITUDES DE NEGOCIOS (admin): pendientes, aprobados y otros.
+/// SOLICITUDES DE NEGOCIOS (admin): pendientes, cambios de ubicación,
+/// aprobados y otros.
 class AdminNegociosScreen extends StatefulWidget {
   const AdminNegociosScreen({super.key});
 
@@ -38,6 +40,7 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
   bool _coincide(Lugar l) {
     final estado = switch (_filtro) {
       'pendiente' => l.estadoAprobacion == 'pendiente',
+      'cambio' => l.tieneCambioPendiente,
       'aprobado' => l.estadoAprobacion == 'aprobado',
       _ => l.estadoAprobacion == 'rechazado' || l.estadoAprobacion == 'suspendido',
     };
@@ -70,19 +73,30 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
           }
           final todos = snapshot.data!;
           final pendientes = todos.where((l) => l.estadoAprobacion == 'pendiente').length;
+          final cambios = todos.where((l) => l.tieneCambioPendiente).length;
           final visibles = todos.where(_coincide).toList();
           return Column(
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: SegmentedButton<String>(
-                  segments: [
-                    ButtonSegment(value: 'pendiente', label: Text('Pendientes ($pendientes)')),
-                    const ButtonSegment(value: 'aprobado', label: Text('Aprobados')),
-                    const ButtonSegment(value: 'otros', label: Text('Otros')),
+                // Chips en vez de botones segmentados: con 4 opciones caben
+                // mejor en pantallas angostas (bajan de renglón si no caben).
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    for (final f in {
+                      'pendiente': 'Pendientes ($pendientes)',
+                      'cambio': 'Cambios de ubicación ($cambios)',
+                      'aprobado': 'Aprobados',
+                      'otros': 'Rechazados y suspendidos',
+                    }.entries)
+                      ChoiceChip(
+                        label: Text(f.value),
+                        selected: _filtro == f.key,
+                        onSelected: (_) => setState(() => _filtro = f.key),
+                      ),
                   ],
-                  selected: {_filtro},
-                  onSelectionChanged: (s) => setState(() => _filtro = s.first),
                 ),
               ),
               Padding(
@@ -120,7 +134,8 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
                                 title: Text(n.nombre, style: const TextStyle(fontWeight: FontWeight.w700)),
                                 subtitle: Text(
                                   '${n.esInformal ? 'No formal · Punto VeraGo · ${n.giroNombre ?? ''}' : 'Formal · Local propio · ${n.categoriaNombre}'}'
-                                  '\nEstado: ${n.estadoAprobacion}',
+                                  '\nEstado: ${n.estadoAprobacion}'
+                                  '${n.tieneCambioPendiente ? ' · cambio de ubicación pendiente' : ''}',
                                 ),
                                 isThreeLine: true,
                                 trailing: const Icon(Icons.chevron_right),
@@ -159,6 +174,7 @@ class AdminNegocioDetalleScreen extends StatefulWidget {
 class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
   final _servicio = AdminService();
   late final Future<String?> _direccionMapa;
+  late final Future<String?> _direccionNueva;
   late final List<Horario?> _horario = EditorHorario.desde(widget.negocio);
   bool _trabajando = false;
 
@@ -169,6 +185,9 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
     super.initState();
     // Solo los formales eligieron su ubicación; los informales están en su punto.
     _direccionMapa = n.esFormal ? GeocodificacionService().direccionDe(n.punto) : Future.value(null);
+    final nuevo = n.puntoSolicitado;
+    _direccionNueva =
+        n.esFormal && nuevo != null ? GeocodificacionService().direccionDe(nuevo) : Future.value(null);
   }
 
   Future<void> _ejecutar(Future<void> Function() accion, String hecho) async {
@@ -184,6 +203,11 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
       if (mounted) setState(() => _trabajando = false);
     }
   }
+
+  Future<void> _resolverCambio({required bool aceptar}) => _ejecutar(
+        () => _servicio.resolverCambioUbicacion(n.id, aceptar: aceptar),
+        aceptar ? 'Cambio de ubicación aceptado.' : 'Cambio de ubicación rechazado.',
+      );
 
   Future<void> _cambiarEstado(String estado, String hecho) =>
       _ejecutar(() => _servicio.cambiarEstadoNegocio(n.id, estado, formal: n.esFormal), hecho);
@@ -243,6 +267,50 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
           if (n.esFormal)
             const Text('Revisa que ambas direcciones coincidan antes de aprobar.',
                 style: TextStyle(fontSize: 12, color: VgColores.terracota)),
+          if (n.puntoSolicitado case final nuevo?) ...[
+            const Divider(height: 28),
+            Text('Cambio de ubicación solicitado', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 4),
+            const Text('Mientras no lo aceptes, el negocio sigue en su ubicación actual (mapa de arriba).',
+                style: TextStyle(fontSize: 12)),
+            const SizedBox(height: 8),
+            SelectorUbicacion(valor: nuevo, alCambiar: (_) {}),
+            const SizedBox(height: 8),
+            _Dato(n.esInformal ? 'Nuevo Punto VeraGo' : 'Nueva dirección escrita', n.cambioDireccion ?? '—'),
+            if (n.esFormal)
+              FutureBuilder<String?>(
+                future: _direccionNueva,
+                builder: (_, s) => _Dato(
+                  'Según el mapa',
+                  s.connectionState != ConnectionState.done
+                      ? 'Buscando…'
+                      : (s.data ?? 'No disponible (sin conexión con OpenStreetMap)'),
+                ),
+              ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _trabajando ? null : () => _resolverCambio(aceptar: false),
+                    child: const Text('Rechazar cambio'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _trabajando ? null : () => _resolverCambio(aceptar: true),
+                    child: const Text('Aceptar cambio'),
+                  ),
+                ),
+              ],
+            ),
+            if (n.esInformal)
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Text('Al aceptar, el negocio toma el horario del punto nuevo.', style: TextStyle(fontSize: 12)),
+              ),
+          ],
           const Divider(height: 28),
           Text('Horario', style: Theme.of(context).textTheme.titleLarge),
           EditorHorario(horario: _horario, alCambiar: () => setState(() {})),

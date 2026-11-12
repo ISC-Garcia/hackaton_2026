@@ -91,6 +91,28 @@ class AdminService {
         }).eq('id', id));
   }
 
+  /// Acepta (true) o rechaza (false) el cambio de ubicación que pidió un
+  /// negocio. Lo hace una función protegida (SQL 013) que solo deja al admin.
+  Future<void> resolverCambioUbicacion(String id, {required bool aceptar}) async {
+    Map<String, dynamic> r;
+    try {
+      r = await _db.rpc('resolver_cambio_ubicacion', params: {'p_lugar': id, 'p_aceptar': aceptar})
+          as Map<String, dynamic>;
+    } catch (_) {
+      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+    }
+    switch (r['estado']) {
+      case 'OK':
+        return;
+      case 'GIRO_OCUPADO':
+        throw const ErrorVeraGo('Ese giro ya se ocupó en el punto nuevo. Rechaza el cambio.');
+      case 'NO_AUTORIZADO':
+        throw const ErrorVeraGo('Solo un administrador puede hacer este cambio.');
+      default:
+        throw const ErrorVeraGo('Este negocio ya no tiene un cambio pendiente.');
+    }
+  }
+
   /// Crea o actualiza un lugar y reemplaza su horario.
   Future<void> guardarLugar({String? id, required DatosLugar datos, required List<Horario> horario}) async {
     late String lugarId;

@@ -40,8 +40,10 @@ Documentación del equipo (documentos compartidos de Claude):
 | Logo | Logo de VeraGo como ícono de la app (Android, iPhone, web) y en la bienvenida y el registro de negocios | Implementado |
 | Panel de administración | Pasaporte → "Panel de administración" (solo admin): **solicitudes de negocios** (aprobar, rechazar, suspender, reactivar, horario; compara la dirección escrita con la del mapa) y **lugares y Puntos VeraGo** (crear, editar, ocultar, horario) | Implementado, con pruebas automáticas. **Falta correr SQL 011** |
 | Dirección automática | Al tocar el mapa, la dirección se llena sola (registro de negocio y lugares del admin) | Implementado. Necesita internet |
+| Cambio de ubicación | Panel del comerciante → "Cambiar ubicación" (formal: mapa) o "Cambiar de Punto VeraGo" (no formal). El admin lo revisa en **Solicitudes de negocios → Cambios de ubicación** (mapa nuevo y dirección) y lo acepta o rechaza | Implementado, con pruebas automáticas. **Falta correr SQL 013** |
+| Legal y confianza | Ajustes → **Legal y confianza**: ¿Cómo funciona VeraGo?, Reglas operativas, Términos de uso, Términos para negocios y Aviso de privacidad (textos en `lib/legal/documentos.dart`). Ventana **Confirmar / Cancelar** con los términos antes de registrar un negocio; enlaces a Términos y Aviso al crear cuenta; **Reportar un problema** en la ficha de cada lugar (copia un reporte para enviarlo por correo) | Implementado, con pruebas automáticas. Son textos de hackatón: **un abogado debe revisarlos** antes de un uso real |
 
-Verificado en esta computadora: `flutter analyze` sin problemas, **45 pruebas automáticas** pasan
+Verificado en esta computadora: `flutter analyze` sin problemas, **59 pruebas automáticas** pasan
 y la app compila para web (`flutter build web`).
 
 ### Qué NO hace la app (a propósito, MVP)
@@ -77,6 +79,9 @@ y la app compila para web (`flutter build web`).
        Puntos VeraGo y horarios **desde la app** (tampoco se pueden borrar lugares: se ocultan).
    12. `012_sellos_solo_formales.sql` — **solo los negocios formales dan sellos**: les quita el
        sello a los no formales (Puntos VeraGo) y agrega una regla (CHECK) para que no vuelva a pasar.
+   13. `013_cambio_ubicacion.sql` — el comerciante **pide** cambiar su ubicación (o de Punto VeraGo)
+       y el **admin la acepta o rechaza**; mientras tanto sigue en su ubicación actual. También:
+       un comerciante ya no puede sellarse a sí mismo y un QR deja de servir si el negocio se suspende.
 3. Revisar en **Table Editor** que existan las tablas y los datos.
 4. En **Authentication → Sign In / Providers → Email**:
    - Dejar activado **Email**.
@@ -240,9 +245,10 @@ lib/
 │                    evento_form, admin, admin_negocios, admin_lugares, admin_lugar_form)
 ├─ services/       → hablan con Supabase o hacen cálculos (rutas, distancias)
 ├─ models/         → clases de datos (Lugar, Evento, Sello, Perfil)
+├─ legal/          → textos de Aviso de privacidad, Términos y Reglas operativas
 └─ widgets/        → piezas visuales reutilizables (mapa, tarjetas, etiquetas)
 test/              → pruebas automáticas (45)
-supabase/migrations/ → SQL de la base de datos (001 a 012)
+supabase/migrations/ → SQL de la base de datos (001 a 013)
 ```
 
 ## Bitácora de IA
@@ -299,3 +305,4 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | 32 | 2026-11-11 | ¿Dónde está la guía de estudio? | Claude Code | Sin cambios de código. Se volvió a compartir el enlace de la guía de estudio (también está al inicio de este README) | La guía no se ha actualizado desde que el *Equipo* pidió dejar de editar la documentación; lo más reciente (admin en la app, dirección automática, panel de negocios) solo está en este README |
 | 33 | 2026-11-11 | Mejorar las rutas (error sin intereses), rutas por categorías, separar negocios formales y no formales, solo formales dan sellos | Claude Code | **Rutas:** elegir al menos un interés es obligatorio (botón apagado y aviso en rojo); se limpian intereses guardados de categorías que ya no existen; el algoritmo ahora **solo usa las categorías elegidas** (antes solo les daba +2 puntos) más 1 comercio formal y 1 Punto VeraGo; los chips ya no muestran "Puntos VeraGo" ni categorías que no pueden ser parada; la sugerencia final solo propone negocios formales; si no hay ruta, botón "Cambiar preferencias". **Sellos:** SQL 012 (quita sellos a no formales + regla CHECK `sello_solo_formales`); al aprobar, solo los formales quedan con sello; el panel de un negocio no formal ya no muestra "Mostrar mi QR". **Formal / no formal:** etiqueta en tarjeta y ficha, y filtro Todos / Formales / No formales en Solicitudes de negocios. 5 pruebas nuevas (50 en total) | *Equipo* eligió: generador filtrado (la IA lo recomendó en vez de rutas creadas por el admin: menos trabajo y la ruta sigue siendo "a la medida"), no formales sin QR ni sellos, etiqueta en tarjeta/ficha y filtro en el panel del admin. Los sellos ya dados por no formales se quedan en el historial. **Falta correr SQL 012** |
 | 34 | 2026-11-11 | Explicar el modelo de negocio y la lógica de la app para que el *Equipo* confirme; (en curso) cambio de ubicación con aprobación del admin y revisión completa | Claude Code | Explicación del modelo (roles, formales/no formales, Puntos VeraGo, sellos, rutas, agenda, admin). Pruebas reales contra Supabase con cuentas de prueba `turista.prueba@verago-demo.mx` y `comercio.prueba@verago-demo.mx` (negocio ficticio "Negocio de Prueba VeraGo", pendiente): **29 de 29 pasan** (nadie se da rol admin, nadie se aprueba solo, nadie escribe sellos directo, cada quien ve solo lo suyo) | *Equipo* eligió: durante el cambio el negocio sigue en su ubicación actual; los no formales también pueden pedir cambiarse de Punto VeraGo; se pueden usar cuentas de prueba. Se pausó la implementación hasta que el *Equipo* confirme el modelo |
+| 35 | 2026-11-11 | Reglas operativas, privacidad, términos y confianza; ventana "Confirmar / Cancelar" antes de registrar un negocio; (continuación) cambio de ubicación con aprobación y revisión completa | Claude Code | **Legal y confianza** (Ajustes): ¿Cómo funciona VeraGo?, Reglas operativas, Términos de uso, Términos para negocios y Aviso de privacidad (con derechos ARCO), en `lib/legal/documentos.dart`. Ventana de términos al registrar negocio; enlaces al crear cuenta; "Reportar un problema" (copia el reporte, no se guarda nada). **SQL 013:** solicitar/cancelar/resolver cambio de ubicación; `actualizar_mi_negocio` ya no cambia la dirección; `registrar_visita` rechaza sellarse a sí mismo (`ES_TU_NEGOCIO`) y QR de negocios que ya no dan sellos. App: pantalla "Cambiar ubicación", aviso en el panel con "Cancelar", filtro "Cambios de ubicación" y revisión en el panel del admin. **Arreglos de la revisión:** el QR reintenta si falla la red y usa el reloj del celular; texto viejo "asignarlo en Supabase"; botón "Actualizar" en Explorar y Rutas; "Crear cuenta" ahora exige 8+ caracteres con letras y números (igual que negocios); "Ver mi ficha" ya no truena sin internet. 9 pruebas nuevas (**59 en total**). Cuenta de prueba `admin.prueba@verago-demo.mx` creada; script de pruebas del admin listo | *Equipo* confirmó el modelo y eligió: los 4 documentos + "¿Cómo funciona VeraGo?", turistas solo con texto y enlaces, "Reportar un problema". La IA propuso reportes sin base de datos (copiar y enviar por correo) para no agregar tablas. Los textos legales son de hackatón: deben revisarse por un abogado. **Falta:** correr SQL 012 y 013, dar rol admin a la cuenta de prueba, y luego borrar las 3 cuentas de prueba |

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:latlong2/latlong.dart';
 
 import '../config.dart';
+import '../legal/documentos.dart';
 import '../models/lugar.dart';
 import '../services/auth_service.dart';
 import '../services/error_verago.dart';
@@ -13,6 +14,7 @@ import '../theme/app_theme.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/selector_ubicacion.dart';
 import '../widgets/vg_logo.dart';
+import 'documento_screen.dart';
 import 'estado_negocio_screen.dart';
 import 'negocio_registrado_screen.dart';
 import 'panel_comerciante_screen.dart';
@@ -129,6 +131,8 @@ class _NegocioScreenState extends State<NegocioScreen> {
     final formularioOk = _formulario.currentState!.validate();
     setState(() => _faltaUbicacion = _formal && _ubicacion == null);
     if (!formularioOk || _faltaUbicacion) return;
+    // Ventana emergente: aceptar términos antes de enviar (Confirmar / Cancelar).
+    if (!await _confirmarTerminos()) return;
 
     setState(() => _enviando = true);
     try {
@@ -160,6 +164,49 @@ class _NegocioScreenState extends State<NegocioScreen> {
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
+  }
+
+  /// Ventana "Confirmar / Cancelar" con los términos para negocios.
+  /// Devuelve true solo si toca "Confirmar".
+  Future<bool> _confirmarTerminos() async {
+    final acepto = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false, // hay que elegir Confirmar o Cancelar
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirmar registro'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Vas a registrar "${_nombre.text.trim()}" en VeraGo.'),
+              const SizedBox(height: 10),
+              const Text(
+                'Al confirmar, declaras que los datos son verdaderos y aceptas los Términos para '
+                'negocios, las Reglas operativas y el Aviso de privacidad de VeraGo.',
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Tu solicitud quedará pendiente hasta que el equipo de VeraGo la revise.',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 4),
+              for (final d in const [Documentos.terminosNegocios, Documentos.reglasOperativas, Documentos.avisoPrivacidad])
+                TextButton(
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
+                  onPressed: () => DocumentoScreen.abrir(ctx, d),
+                  child: Text('Leer ${d.titulo}'),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Confirmar')),
+        ],
+      ),
+    );
+    return acepto == true;
   }
 
   Future<void> _entrar() async {

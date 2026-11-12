@@ -7,7 +7,7 @@ import 'error_verago.dart';
 class ResultadoEscaneo {
   const ResultadoEscaneo({required this.estado, this.lugarId, this.lugarNombre, this.totalSellos});
 
-  /// 'OK', 'YA_TIENE_SELLO_HOY', 'CODIGO_INVALIDO' o 'NECESITA_SESION'.
+  /// 'OK', 'YA_TIENE_SELLO_HOY', 'CODIGO_INVALIDO', 'ES_TU_NEGOCIO' o 'NECESITA_SESION'.
   final String estado;
   final String? lugarId;
   final String? lugarNombre;
@@ -24,6 +24,8 @@ class ResultadoEscaneo {
         return 'Ya tienes el sello de $lugarNombre de hoy. Vuelve otro día o descubre otro lugar.';
       case 'NECESITA_SESION':
         return 'Inicia sesión para guardar tus sellos.';
+      case 'ES_TU_NEGOCIO':
+        return 'No puedes darte un sello de tu propio negocio. Pide a un turista que lo escanee.';
       default:
         return 'Este código ya venció o no es válido. Pide al comercio que te muestre el QR actual.';
     }

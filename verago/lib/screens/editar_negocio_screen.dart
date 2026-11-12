@@ -9,7 +9,8 @@ import '../widgets/editor_horario.dart';
 /// EDITAR MIS DATOS (comerciante).
 ///
 /// - Todos: descripción y teléfono.
-/// - Formal: también dirección y horario.
+/// - Formal: también horario. La DIRECCIÓN ya no se edita aquí: va con
+///   "Cambiar ubicación" en el panel, porque la debe aceptar el admin.
 /// - Informal: el horario lo asigna VeraGo en su punto; no se edita aquí.
 /// El nombre comercial y el estado solo los cambia el equipo de VeraGo.
 class EditarNegocioScreen extends StatefulWidget {
@@ -26,7 +27,6 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
   final _formulario = GlobalKey<FormState>();
   late final _descripcion = TextEditingController(text: widget.negocio.descripcion ?? '');
   late final _telefono = TextEditingController(text: widget.negocio.telefono ?? '');
-  late final _direccion = TextEditingController(text: widget.negocio.direccion ?? '');
 
   /// Horario editable: un valor por día (0 = domingo); null = cerrado.
   late final List<Horario?> _horario = EditorHorario.desde(widget.negocio);
@@ -37,7 +37,6 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
   void dispose() {
     _descripcion.dispose();
     _telefono.dispose();
-    _direccion.dispose();
     super.dispose();
   }
 
@@ -53,7 +52,7 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
       await _servicio.actualizar(
         descripcion: _descripcion.text,
         telefono: _telefono.text,
-        direccion: _direccion.text,
+        direccionActual: widget.negocio.direccion ?? '',
       );
       if (widget.negocio.esFormal) await _servicio.guardarHorario(_horario.whereType<Horario>().toList());
       if (mounted) Navigator.of(context).pop(true);
@@ -100,10 +99,12 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
             ),
             if (formal) ...[
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _direccion,
-                decoration: const InputDecoration(labelText: 'Dirección', border: OutlineInputBorder()),
-                validator: Validaciones.obligatorio('la dirección', minimo: 5),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.place_outlined),
+                title: Text(widget.negocio.direccion ?? '—'),
+                subtitle: const Text('Para cambiar tu ubicación o dirección usa "Cambiar ubicación" '
+                    'en tu panel (VeraGo la revisa).'),
               ),
               const SizedBox(height: 20),
               Text('Horario', style: Theme.of(context).textTheme.titleLarge),

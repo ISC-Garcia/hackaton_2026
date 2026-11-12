@@ -56,6 +56,10 @@ class _RutasScreenState extends State<RutasScreen> {
     _cargarPreferencias();
   }
 
+  void _recargar() => setState(() {
+        _futuro = _lugaresService.obtenerLugares()..ignore();
+      });
+
   Future<void> _cargarPreferencias() async {
     final intereses = await _prefs.leerIntereses();
     final minutos = await _prefs.leerMinutos();
@@ -106,7 +110,14 @@ class _RutasScreenState extends State<RutasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Rutas')),
+      appBar: AppBar(
+        title: const Text('Rutas'),
+        actions: [
+          // La pestaña queda abierta en memoria; con esto se ven los
+          // negocios recién aprobados sin cerrar la app.
+          IconButton(tooltip: 'Actualizar', icon: const Icon(Icons.refresh), onPressed: _recargar),
+        ],
+      ),
       body: FutureBuilder<List<Lugar>>(
         future: _futuro,
         builder: (context, snapshot) {
@@ -119,9 +130,7 @@ class _RutasScreenState extends State<RutasScreen> {
               titulo: 'Algo salió mal',
               mensaje: snapshot.error.toString(),
               textoBoton: 'Reintentar',
-              alPresionar: () => setState(() {
-                _futuro = _lugaresService.obtenerLugares()..ignore();
-              }),
+              alPresionar: _recargar,
             );
           }
           return _formulario(snapshot.data!);

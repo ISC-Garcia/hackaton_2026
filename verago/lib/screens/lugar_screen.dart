@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
 import '../widgets/etiqueta.dart';
 import '../widgets/mapa_lugares.dart';
+import '../widgets/reportar_problema.dart';
 import '../widgets/tarjeta_lugar.dart';
 
 /// FICHA DEL LUGAR: toda la información de un lugar o comercio.
@@ -183,6 +184,15 @@ class LugarScreen extends StatelessWidget {
                 Text(
                   'Ubicación aproximada.',
                   style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.55)),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => ReportarProblema.abrir(context, lugar),
+                    icon: const Icon(Icons.flag_outlined),
+                    label: const Text('Reportar un problema'),
+                  ),
                 ),
               ],
             ),

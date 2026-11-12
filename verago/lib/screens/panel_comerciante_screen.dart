@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../legal/documentos.dart';
 import '../models/lugar.dart';
 import '../services/auth_service.dart';
+import '../services/error_verago.dart';
 import '../services/lugares_service.dart';
 import '../services/negocios_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
 import '../widgets/estado_vacio.dart';
+import 'cambiar_ubicacion_screen.dart';
+import 'documento_screen.dart';
 import 'editar_negocio_screen.dart';
 import 'estado_negocio_screen.dart';
 import 'lugar_screen.dart';
@@ -19,6 +23,7 @@ import 'qr_comercio_screen.dart';
 ///    un Punto VeraGo no dan sellos.
 /// 2. Ver mi ficha (como la ven los turistas).
 /// 3. Editar mis datos.
+/// 4. Pedir cambio de ubicación (lo acepta el admin; SQL 013).
 class PanelComercianteScreen extends StatefulWidget {
   const PanelComercianteScreen({super.key});
 
@@ -42,7 +47,13 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
 
   Future<void> _verFicha(Lugar negocio) async {
     // La ficha necesita todos los lugares (para "Cerca de aquí").
-    final todos = await LugaresService().obtenerLugares();
+    final List<Lugar> todos;
+    try {
+      todos = await LugaresService().obtenerLugares();
+    } on ErrorVeraGo catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.mensaje)));
+      return;
+    }
     if (!mounted) return;
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => LugarScreen(lugar: negocio, todos: todos),
@@ -54,6 +65,22 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
       builder: (_) => EditarNegocioScreen(negocio: negocio),
     ));
     if (cambio == true) _recargar();
+  }
+
+  Future<void> _cambiarUbicacion(Lugar negocio) async {
+    final envio = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => CambiarUbicacionScreen(negocio: negocio),
+    ));
+    if (envio == true) _recargar();
+  }
+
+  Future<void> _cancelarCambio() async {
+    try {
+      await _servicio.cancelarCambioUbicacion();
+      _recargar();
+    } on ErrorVeraGo catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.mensaje)));
+    }
   }
 
   @override
@@ -157,9 +184,34 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
           icono: Icons.edit_outlined,
           titulo: 'Editar mis datos',
           texto: n.esFormal
-              ? 'Descripción, teléfono, dirección y horario.'
+              ? 'Descripción, teléfono y horario.'
               : 'Descripción y teléfono. Tu horario lo asigna VeraGo en tu punto.',
           alTocar: () => _editar(n),
+        ),
+        if (n.tieneCambioPendiente)
+          Card(
+            margin: const EdgeInsets.only(bottom: 10),
+            color: VgColores.terracota.withValues(alpha: 0.08),
+            child: ListTile(
+              leading: const Icon(Icons.schedule, color: VgColores.terracota),
+              title: const Text('Cambio de ubicación en revisión'),
+              subtitle: Text('Pediste: ${n.cambioDireccion ?? '—'}. Mientras VeraGo lo revisa, '
+                  'sigues en tu ubicación actual.'),
+              trailing: TextButton(onPressed: _cancelarCambio, child: const Text('Cancelar')),
+            ),
+          )
+        else
+          _Accion(
+            icono: Icons.edit_location_alt_outlined,
+            titulo: n.esFormal ? 'Cambiar ubicación' : 'Cambiar de Punto VeraGo',
+            texto: 'VeraGo debe aceptar el cambio; mientras tanto sigues donde estás.',
+            alTocar: () => _cambiarUbicacion(n),
+          ),
+        _Accion(
+          icono: Icons.gavel_outlined,
+          titulo: 'Términos y reglas para negocios',
+          texto: 'Lo que aceptaste al registrarte y cómo trabaja VeraGo.',
+          alTocar: () => DocumentoScreen.abrir(context, Documentos.terminosNegocios),
         ),
         const SizedBox(height: 16),
         TextButton.icon(

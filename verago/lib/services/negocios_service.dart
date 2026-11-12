@@ -1,3 +1,4 @@
+import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/lugar.dart';
@@ -150,20 +151,56 @@ class NegociosService {
     }
   }
 
-  /// Cambia descripción, teléfono y dirección (función protegida).
+  /// Cambia descripción y teléfono (función protegida).
+  /// La dirección ya no se cambia aquí: va con `solicitarCambioUbicacion`.
+  /// (Se envía la dirección actual solo porque la función la pide.)
   Future<void> actualizar({
     required String descripcion,
     required String telefono,
-    required String direccion,
+    required String direccionActual,
   }) async {
     final r = await _rpc('actualizar_mi_negocio', {
       'p_descripcion': descripcion,
       'p_telefono': telefono,
-      'p_direccion': direccion,
+      'p_direccion': direccionActual,
     });
     if (r['estado'] != 'OK') {
       throw const ErrorVeraGo('No pudimos guardar los cambios de tu negocio.');
     }
+  }
+
+  /// PIDE un cambio de ubicación; el admin debe aceptarlo (SQL 013).
+  /// - Formal: `punto` del mapa + `direccion`.
+  /// - No formal: `puntoId` del Punto VeraGo al que se quiere cambiar.
+  Future<void> solicitarCambioUbicacion({
+    LatLng? punto,
+    String? direccion,
+    String? puntoId,
+  }) async {
+    final r = await _rpc('solicitar_cambio_ubicacion', {
+      'p_latitud': punto?.latitude,
+      'p_longitud': punto?.longitude,
+      'p_direccion': direccion,
+      'p_punto_id': puntoId,
+    });
+    switch (r['estado']) {
+      case 'OK':
+        return;
+      case 'GIRO_OCUPADO':
+        throw const ErrorVeraGo('Tu giro ya está ocupado en ese Punto VeraGo. Elige otro punto.');
+      case 'MISMO_PUNTO':
+        throw const ErrorVeraGo('Ya estás en ese Punto VeraGo.');
+      case 'DATOS_INVALIDOS':
+        throw const ErrorVeraGo('Marca la nueva ubicación en el mapa y escribe la dirección.');
+      default:
+        throw const ErrorVeraGo('No pudimos enviar tu solicitud. Intenta de nuevo.');
+    }
+  }
+
+  /// Retira la solicitud de cambio de ubicación pendiente.
+  Future<void> cancelarCambioUbicacion() async {
+    final r = await _rpc('cancelar_cambio_ubicacion', {});
+    if (r['estado'] != 'OK') throw const ErrorVeraGo('No pudimos cancelar la solicitud.');
   }
 
   /// Reemplaza el horario del negocio FORMAL (función protegida).

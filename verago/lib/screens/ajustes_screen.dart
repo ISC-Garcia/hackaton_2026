@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../legal/documentos.dart';
 import '../models/sello.dart';
 import '../services/auth_service.dart';
 import '../services/error_verago.dart';
@@ -8,6 +9,7 @@ import '../services/preferencias_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
 import 'bienvenida_screen.dart';
+import 'documento_screen.dart';
 import 'negocio_screen.dart';
 
 /// AJUSTES del usuario (se abre con el engrane del Pasaporte).
@@ -17,6 +19,7 @@ import 'negocio_screen.dart';
 /// 2. Mis intereses: los que se marcan solos en Rutas (se guardan en el celular).
 /// 3. Ver la bienvenida otra vez.
 /// 4. Privacidad: qué datos guardamos y cerrar sesión.
+/// 5. Legal y confianza: aviso de privacidad, términos y reglas.
 ///
 /// Devuelve `true` al cerrarse si cambió algo que el Pasaporte debe recargar.
 class AjustesScreen extends StatefulWidget {
@@ -211,6 +214,17 @@ class _AjustesScreenState extends State<AjustesScreen> {
                 ],
               ),
             ),
+            // 5. Legal y confianza
+            const _Titulo('Legal y confianza'),
+            for (final d in Documentos.todos)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.description_outlined, color: VgColores.azulGolfo),
+                title: Text(d.titulo),
+                subtitle: Text(d.resumen),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => DocumentoScreen.abrir(context, d),
+              ),
             if (perfil != null) ...[
               const SizedBox(height: 20),
               OutlinedButton.icon(

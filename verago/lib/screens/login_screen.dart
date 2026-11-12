@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../legal/documentos.dart';
 import '../services/error_verago.dart';
+import '../services/validaciones.dart';
+import 'documento_screen.dart';
 
 /// INICIAR SESIÓN / CREAR CUENTA con correo y contraseña.
 ///
@@ -116,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: const InputDecoration(labelText: 'Correo', border: OutlineInputBorder()),
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
-              validator: (v) => (v == null || !v.contains('@')) ? 'Escribe un correo válido' : null,
+              validator: Validaciones.correo,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -127,7 +130,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 suffixIcon: _botonOjo,
               ),
               obscureText: _ocultar,
-              validator: (v) => (v == null || v.length < 6) ? 'Mínimo 6 caracteres' : null,
+              // Al crear cuenta: misma regla que los negocios (8+, letras y números).
+              validator: _crearCuenta
+                  ? Validaciones.contrasenaSegura
+                  : (v) => (v ?? '').isEmpty ? 'Escribe tu contraseña' : null,
             ),
             // Solo al crear cuenta: escribir la contraseña dos veces evita
             // que alguien se registre con un error de dedo y no pueda entrar.
@@ -151,6 +157,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : Text(_crearCuenta ? 'Crear cuenta' : 'Entrar'),
             ),
+            // Elegido por el equipo: solo un texto con enlaces (sin ventana).
+            if (_crearCuenta) ...[
+              const SizedBox(height: 8),
+              const Text('Al crear tu cuenta aceptas los', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+              Wrap(
+                alignment: WrapAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => DocumentoScreen.abrir(context, Documentos.terminosUso),
+                    child: const Text('Términos de uso'),
+                  ),
+                  TextButton(
+                    onPressed: () => DocumentoScreen.abrir(context, Documentos.avisoPrivacidad),
+                    child: const Text('Aviso de privacidad'),
+                  ),
+                ],
+              ),
+            ],
             TextButton(
               onPressed: _enviando ? null : () => setState(() => _crearCuenta = !_crearCuenta),
               child: Text(_crearCuenta ? 'Ya tengo cuenta' : 'No tengo cuenta: crear una'),

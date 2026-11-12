@@ -31,6 +31,8 @@ class _QrComercioScreenState extends State<QrComercioScreen> {
   DateTime? _venceEn;
   String? _error;
   bool _cargando = true;
+  bool _pidiendo = false; // evita pedir dos códigos a la vez
+  int _segundosSinCodigo = 0; // para reintentar si falló la red
   Timer? _reloj;
 
   @override
@@ -68,17 +70,24 @@ class _QrComercioScreenState extends State<QrComercioScreen> {
 
   Future<void> _nuevoCodigo() async {
     final id = _comercioId;
-    if (id == null) return;
+    if (id == null || _pidiendo) return;
+    _pidiendo = true;
     try {
       final r = await _servicio.generarCodigo(id);
       if (!mounted) return;
       setState(() {
         _codigo = r.codigo;
-        _venceEn = r.venceEn;
+        // La cuenta regresiva se mide con el reloj de ESTE celular (60 s desde
+        // que llegó el código). Si usáramos la hora del servidor, un celular
+        // con la hora mal pediría códigos sin parar.
+        _venceEn = DateTime.now().add(const Duration(seconds: 60));
         _error = null;
       });
     } on ErrorVeraGo catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
+    } finally {
+      _pidiendo = false;
+      _segundosSinCodigo = 0;
     }
   }
 
@@ -94,6 +103,9 @@ class _QrComercioScreenState extends State<QrComercioScreen> {
     // Pedimos el nuevo código 5 s antes de que venza el actual.
     if (_codigo != null && _segundosRestantes <= 5) {
       _codigo = null;
+      _nuevoCodigo();
+    } else if (_codigo == null && !_pidiendo && ++_segundosSinCodigo >= 10) {
+      // Falló (por ejemplo, sin internet): reintentamos cada 10 s.
       _nuevoCodigo();
     }
     setState(() {}); // redibuja la cuenta regresiva
@@ -114,7 +126,8 @@ class _QrComercioScreenState extends State<QrComercioScreen> {
         icono: Icons.storefront,
         titulo: 'Sin comercio asignado',
         mensaje: _error ??
-            'Tu cuenta aún no tiene un comercio. Un administrador debe asignarlo en Supabase.',
+            'Tu negocio aún no da sellos. Solo los negocios formales aprobados por VeraGo '
+                'muestran QR (los de un Punto VeraGo no dan sellos).',
       );
     }
     return ListView(

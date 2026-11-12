@@ -59,11 +59,32 @@ class Lugar {
     this.esPunto = false,
     this.puntoId,
     this.giroNombre,
+    this.giroId,
     this.estadoAprobacion = 'aprobado',
     this.publicado = true,
     this.categoriaId,
     this.duenoNombre,
+    this.cambioLatitud,
+    this.cambioLongitud,
+    this.cambioDireccion,
+    this.cambioPuntoId,
+    this.cambioSolicitadoEn,
   });
+
+  /// CAMBIO DE UBICACIÓN PENDIENTE (SQL 013): lo que pidió el comerciante y
+  /// aún no acepta el admin. Mientras tanto, el negocio sigue en `punto`.
+  final double? cambioLatitud;
+  final double? cambioLongitud;
+  final String? cambioDireccion;
+
+  /// Si es no formal: el Punto VeraGo al que pidió cambiarse.
+  final String? cambioPuntoId;
+  final DateTime? cambioSolicitadoEn;
+
+  bool get tieneCambioPendiente => cambioSolicitadoEn != null && cambioLatitud != null && cambioLongitud != null;
+
+  /// Punto del mapa que pidió (null si no hay cambio pendiente).
+  LatLng? get puntoSolicitado => tieneCambioPendiente ? LatLng(cambioLatitud!, cambioLongitud!) : null;
 
   /// Si se ve en la app (el admin también ve los no publicados).
   final bool publicado;
@@ -84,6 +105,7 @@ class Lugar {
 
   /// Giro del comerciante informal (ej. "Guayaberas").
   final String? giroNombre;
+  final int? giroId;
 
   /// 'pendiente', 'aprobado', 'rechazado' o 'suspendido'.
   final String estadoAprobacion;
@@ -142,10 +164,19 @@ class Lugar {
       esPunto: json['es_punto'] as bool? ?? false,
       puntoId: json['punto_id'] as String?,
       giroNombre: (json['giros'] as Map<String, dynamic>?)?['nombre'] as String?,
+      giroId: json['giro_id'] as int?,
       estadoAprobacion: json['estado_aprobacion'] as String? ?? 'aprobado',
       publicado: json['publicado'] as bool? ?? true,
       categoriaId: json['categoria_id'] as int?,
       duenoNombre: (json['perfiles'] as Map<String, dynamic>?)?['nombre'] as String?,
+      // Columnas del archivo 013 (si no existen, quedan en null).
+      cambioLatitud: (json['cambio_latitud'] as num?)?.toDouble(),
+      cambioLongitud: (json['cambio_longitud'] as num?)?.toDouble(),
+      cambioDireccion: json['cambio_direccion'] as String?,
+      cambioPuntoId: json['cambio_punto_id'] as String?,
+      cambioSolicitadoEn: json['cambio_solicitado_en'] == null
+          ? null
+          : DateTime.parse(json['cambio_solicitado_en'] as String).toLocal(),
     );
   }
 
