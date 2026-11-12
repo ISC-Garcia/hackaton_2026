@@ -232,7 +232,9 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
     return Stack(
       children: [
         MapaLugares(
-          lugares: filtrados,
+          // Los comerciantes informales están en la misma coordenada que su
+          // Punto VeraGo: en el mapa se ve solo el punto (y en su ficha, ellos).
+          lugares: filtrados.where((l) => !l.esInformal).toList(),
           centro: Distancia.zocalo,
           seleccionadoId: seleccionado?.id,
           alTocarLugar: (l) => setState(() => _seleccionado = l),

@@ -55,6 +55,6 @@ void main() {
     await dibujar(tester, const DatosPasaporte(Perfil(nombre: 'Ana', rol: 'comerciante'), [], []));
     expect(tester.takeException(), isNull);
     expect(find.text('0 de 0'), findsOneWidget);
-    expect(find.text('Mostrar el QR de mi comercio'), findsOneWidget);
+    expect(find.text('Panel de mi negocio'), findsOneWidget);
   });
 }

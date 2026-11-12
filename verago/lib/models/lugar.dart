@@ -56,7 +56,31 @@ class Lugar {
     required this.participaPasaporte,
     required this.horarios,
     this.enRecorridoAPie = true,
+    this.esPunto = false,
+    this.puntoId,
+    this.giroNombre,
+    this.estadoAprobacion = 'aprobado',
   });
+
+  /// true = es un Punto VeraGo (espacio donde VeraGo renta mesas a
+  /// comerciantes informales, ej. Parque Zamora).
+  final bool esPunto;
+
+  /// Si es un comerciante INFORMAL: id del punto donde vende. Si es null y
+  /// esComercio es true, es un comercio FORMAL (local propio).
+  final String? puntoId;
+
+  /// Giro del comerciante informal (ej. "Guayaberas").
+  final String? giroNombre;
+
+  /// 'pendiente', 'aprobado', 'rechazado' o 'suspendido'.
+  final String estadoAprobacion;
+
+  /// Comercio con local propio.
+  bool get esFormal => esComercio && puntoId == null;
+
+  /// Comerciante que vende dentro de un Punto VeraGo.
+  bool get esInformal => puntoId != null;
 
   final String id;
   final String nombre;
@@ -102,6 +126,11 @@ class Lugar {
       participaPasaporte: json['participa_pasaporte'] as bool,
       horarios: horarios,
       enRecorridoAPie: json['en_recorrido_a_pie'] as bool? ?? true,
+      // Columnas del archivo 008. Si aún no se corre, toman valores por defecto.
+      esPunto: json['es_punto'] as bool? ?? false,
+      puntoId: json['punto_id'] as String?,
+      giroNombre: (json['giros'] as Map<String, dynamic>?)?['nombre'] as String?,
+      estadoAprobacion: json['estado_aprobacion'] as String? ?? 'aprobado',
     );
   }
 

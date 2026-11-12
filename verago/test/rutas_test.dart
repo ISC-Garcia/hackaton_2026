@@ -15,8 +15,12 @@ Lugar lugar(
   List<Horario> horarios = const [],
   bool aPie = true,
   bool comercio = false,
+  bool esPunto = false,
+  String? puntoId,
 }) =>
     Lugar(
+      esPunto: esPunto,
+      puntoId: puntoId,
       id: id,
       nombre: 'Lugar $id',
       descripcion: null,
@@ -97,6 +101,42 @@ void main() {
     final lugares = [lugar('a', dLat: 0.001), lugar('b', dLat: 0.002)];
     final ruta = servicio.generar(peticion(excluir: {'a'}), lugares);
     expect(ruta.paradas.map((p) => p.lugar.id), isNot(contains('a')));
+  });
+
+  group('Regla del equipo: comerciantes en la ruta', () {
+    // Monumentos muy interesantes y cercanos; el comercio formal y el punto
+    // tienen menos interés y están más lejos: aun así deben entrar.
+    final lugares = [
+      lugar('m1', interes: 5, dLat: 0.0005),
+      lugar('m2', interes: 5, dLat: 0.0008),
+      lugar('m3', interes: 5, dLat: 0.0010),
+      lugar('formal', comercio: true, interes: 2, dLat: 0.003),
+      lugar('punto', esPunto: true, categoria: 'punto', interes: 2, dLat: -0.003),
+      lugar('guayaberas', comercio: true, puntoId: 'punto', dLat: -0.003),
+    ];
+
+    test('incluye al menos 1 comercio formal y 1 Punto VeraGo', () {
+      final ids = servicio.generar(peticion(minutos: 180), lugares).paradas.map((p) => p.lugar.id);
+      expect(ids, contains('formal'));
+      expect(ids, contains('punto'));
+    });
+
+    test('un comerciante informal nunca es parada suelta (la parada es su punto)', () {
+      final ids = servicio.generar(peticion(minutos: 240), lugares).paradas.map((p) => p.lugar.id);
+      expect(ids, isNot(contains('guayaberas')));
+    });
+
+    test('un punto sin comerciantes no entra a la ruta', () {
+      final sinComerciantes = lugares.where((l) => l.id != 'guayaberas').toList();
+      final ids = servicio.generar(peticion(minutos: 240), sinComerciantes).paradas.map((p) => p.lugar.id);
+      expect(ids, isNot(contains('punto')));
+    });
+
+    test('si no cabe en el tiempo, no se fuerza', () {
+      // 40 min: solo cabe una visita de 30 min cercana.
+      final ruta = servicio.generar(peticion(minutos: 40), lugares);
+      expect(ruta.minutosUsados, lessThanOrEqualTo(40));
+    });
   });
 
   test('sugiere el comercio más cercano que no está en la ruta', () {

@@ -24,6 +24,7 @@ class CategoriaEstilo {
     'tienda': 'Tiendas y artesanías',
     'plaza': 'Plazas y paseos',
     'cultura': 'Cultura',
+    'punto': 'Puntos VeraGo',
   };
 
   static CategoriaEstilo de(String clave) {
@@ -42,6 +43,9 @@ class CategoriaEstilo {
         return const CategoriaEstilo(Icons.park, VgColores.verdePalma);
       case 'cultura':
         return const CategoriaEstilo(Icons.theater_comedy, Color(0xFFA23B5C));
+      case 'punto':
+        // Punto VeraGo: mesas de emprendedores locales.
+        return const CategoriaEstilo(Icons.storefront_outlined, Color(0xFFD9822B));
       default:
         return const CategoriaEstilo(Icons.place, VgColores.azulGolfo);
     }

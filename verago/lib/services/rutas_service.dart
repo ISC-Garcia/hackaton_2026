@@ -79,9 +79,15 @@ class Ruta {
 /// favorita) ÷ (minutos caminando + minutos de visita).
 /// Así gana lo más interesante que cueste menos tiempo.
 ///
+/// REGLA DEL EQUIPO: toda ruta incluye al menos 1 comercio FORMAL y al menos
+/// 1 PUNTO VERAGO (si caben en el tiempo y están abiertos). Mientras falte
+/// alguno, esos lugares reciben una PRIORIDAD enorme (+1000), así el
+/// algoritmo los elige en cuanto son posibles.
+///
 /// Es Dart puro: no usa internet ni pantallas, por eso se prueba fácil.
 class RutasService {
   static const _bonoFavorito = 2;
+  static const _prioridad = 1000;
 
   Ruta generar(PeticionRuta p, List<Lugar> lugares) {
     final fin = p.horaInicio.add(Duration(minutes: p.minutosDisponibles));
@@ -89,10 +95,26 @@ class RutasService {
     final usados = <String>{};
     var posicion = p.inicio;
     var reloj = p.horaInicio;
+    var tieneFormal = false;
+    var tienePunto = false;
 
-    // Candidatos: se pueden recorrer a pie y el visitante no los quitó.
+    // Cuántos comerciantes hay en cada Punto VeraGo.
+    final comerciantesPorPunto = <String, int>{};
+    for (final l in lugares) {
+      final punto = l.puntoId;
+      if (punto != null) comerciantesPorPunto[punto] = (comerciantesPorPunto[punto] ?? 0) + 1;
+    }
+
+    // Candidatos:
+    // - se pueden recorrer a pie y el visitante no los quitó;
+    // - los comerciantes informales NO son paradas sueltas: la parada es su punto;
+    // - un punto solo cuenta si tiene comerciantes.
     final candidatos = lugares
-        .where((l) => l.enRecorridoAPie && !p.excluir.contains(l.id))
+        .where((l) =>
+            l.enRecorridoAPie &&
+            !p.excluir.contains(l.id) &&
+            !l.esInformal &&
+            (!l.esPunto || comerciantesPorPunto.containsKey(l.id)))
         .toList();
 
     while (true) {
@@ -114,7 +136,8 @@ class RutasService {
         if (!_abiertoDurante(l, llegada, salida)) continue;
 
         final favorito = p.intereses.contains(l.categoriaClave);
-        final puntaje = (l.interes + (favorito ? _bonoFavorito : 0)) /
+        final prioridad = (!tieneFormal && l.esFormal) || (!tienePunto && l.esPunto) ? _prioridad : 0;
+        final puntaje = (l.interes + (favorito ? _bonoFavorito : 0) + prioridad) /
             (caminata + l.duracionVisitaMin);
 
         if (puntaje > mejorPuntaje) {
@@ -131,9 +154,11 @@ class RutasService {
         lugar: mejor,
         llegada: llegada,
         minutosCaminando: mejorCaminata,
-        motivo: _motivo(mejor, p, mejorCaminata, paradas.isEmpty),
+        motivo: _motivo(mejor, p, mejorCaminata, paradas.isEmpty, comerciantesPorPunto[mejor.id] ?? 0),
       ));
       usados.add(mejor.id);
+      if (mejor.esFormal) tieneFormal = true;
+      if (mejor.esPunto) tienePunto = true;
       posicion = mejor.punto;
       reloj = llegada.add(Duration(minutes: mejor.duracionVisitaMin));
     }
@@ -170,13 +195,16 @@ class RutasService {
   }
 
   /// Texto que explica por qué se eligió el lugar.
-  String _motivo(Lugar l, PeticionRuta p, int caminata, bool esPrimera) {
+  String _motivo(Lugar l, PeticionRuta p, int caminata, bool esPrimera, int comerciantes) {
     final razones = <String>[];
+    if (l.esPunto) {
+      razones.add('Punto VeraGo: $comerciantes ${comerciantes == 1 ? 'emprendedor local' : 'emprendedores locales'}');
+    }
     if (p.intereses.contains(l.categoriaClave)) {
       razones.add('Te interesa: ${l.categoriaNombre.toLowerCase()}');
     }
     if (l.interes >= 5) razones.add('Imperdible del centro');
-    if (l.esComercio) razones.add('Comercio local');
+    if (l.esFormal) razones.add('Comercio local');
     if (l.participaPasaporte) razones.add('Da sello en tu pasaporte');
     razones.add(esPrimera
         ? 'A $caminata min de ${p.nombreInicio}'

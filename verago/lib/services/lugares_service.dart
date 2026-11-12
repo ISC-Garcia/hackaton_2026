@@ -15,18 +15,26 @@ class LugaresService {
   /// `categorias(clave, nombre)` y `horarios(*)` le piden a Supabase que una
   /// cada lugar con su categoría y su horario (como un JOIN de SQL) en una
   /// sola consulta. Las reglas RLS ya filtran lo que podemos ver.
+  ///
+  /// `giros(nombre)` trae el giro de los comerciantes informales (SQL 008).
+  /// Si ese archivo aún no se corrió, la consulta falla y repetimos sin giros,
+  /// para que la app siga funcionando.
   Future<List<Lugar>> obtenerLugares() async {
     try {
-      final filas = await _db
-          .from('lugares')
-          .select('*, categorias(clave, nombre), horarios(*)')
-          .eq('publicado', true)
-          .order('nombre');
-      return filas.map(Lugar.fromJson).toList();
+      try {
+        return await _consultar('*, categorias(clave, nombre), horarios(*), giros(nombre)');
+      } on PostgrestException {
+        return await _consultar('*, categorias(clave, nombre), horarios(*)');
+      }
     } on PostgrestException {
       throw const ErrorVeraGo('No pudimos cargar los lugares. Intenta de nuevo.');
     } catch (_) {
       throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
     }
+  }
+
+  Future<List<Lugar>> _consultar(String columnas) async {
+    final filas = await _db.from('lugares').select(columnas).eq('publicado', true).order('nombre');
+    return filas.map(Lugar.fromJson).toList();
   }
 }

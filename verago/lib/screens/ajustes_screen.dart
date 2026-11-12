@@ -8,6 +8,7 @@ import '../services/preferencias_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
 import 'bienvenida_screen.dart';
+import 'negocio_screen.dart';
 
 /// AJUSTES del usuario (se abre con el engrane del Pasaporte).
 ///
@@ -166,6 +167,15 @@ class _AjustesScreenState extends State<AjustesScreen> {
                     onSelected: (sel) => _cambiarInteres(c.key, sel),
                   ),
               ],
+            ),
+
+            // Acceso para comerciantes
+            const _Titulo('¿Tienes un negocio?'),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const NegocioScreen())),
+              icon: const Icon(Icons.storefront_outlined),
+              label: const Text('Soy un negocio'),
             ),
 
             // 3. Bienvenida

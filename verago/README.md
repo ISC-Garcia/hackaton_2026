@@ -7,7 +7,7 @@ Documentación del equipo (documentos compartidos de Claude):
 
 - **Documentación integral** (qué es VeraGo, módulos, arquitectura, base de datos, seguridad):
   https://claude.ai/artifact/Hp9CAXgVd5qvhU9xVvV5Dq
-- **Guía de estudio del código + 110 preguntas para la demo**:
+- **Guía de estudio del código + 116 preguntas para la demo**:
   https://claude.ai/artifact/GxJK58vGE6jzZZe4ckyUuE
 
 ## Tecnologías
@@ -34,14 +34,17 @@ Documentación del equipo (documentos compartidos de Claude):
 | 5. Cierre | Estadísticas (DATOS SIMULADOS, solo admin), pruebas, compilación web | Implementado. Falta ensayo de la demo |
 | Extra UI/UX | Pantalla de bienvenida (primera vez), botón de ojo en contraseñas, leyenda y centrar en el mapa | Implementado, con pruebas automáticas |
 | Ajustes | Engrane en el Pasaporte: mi cuenta (correo, rol, cambiar nombre), mis intereses, ver bienvenida otra vez, privacidad y cerrar sesión | Implementado, con pruebas automáticas |
+| Comerciantes | "Soy un negocio" (bienvenida y Ajustes): registro de negocio formal (local en mapa) o informal (giro en un **Punto VeraGo**), inicio de sesión, estado de la solicitud y panel (QR, ficha, editar datos). Rutas con al menos 1 comercio formal y 1 Punto VeraGo | Implementado, con pruebas automáticas. **Falta correr SQL 008 y 009** y probar con Supabase |
 
-Verificado en esta computadora: `flutter analyze` sin problemas, **25 pruebas automáticas** pasan
+Verificado en esta computadora: `flutter analyze` sin problemas, **33 pruebas automáticas** pasan
 y la app compila para web (`flutter build web`).
 
 ### Qué NO hace la app (a propósito, MVP)
 
 - No hay premios ni canjes: el pasaporte **solo junta sellos**.
 - Eventos, lugares y roles se administran desde el **panel de Supabase**, no desde la app.
+  Los comerciantes **se registran** desde la app, pero el admin **aprueba** en Supabase.
+- Los pagos de los comerciantes por su espacio se acuerdan **fuera de la app**.
 - Los comercios y eventos son **ficticios**; los lugares públicos no tienen horarios inventados.
 - Las estadísticas son **simuladas**.
 
@@ -56,6 +59,10 @@ y la app compila para web (`flutter build web`).
    5. `005_permisos.sql` — permisos (GRANT) para que la app pueda leer las tablas. Sin este archivo la app no muestra nada.
    6. `006_perfiles_faltantes.sql` — crea el perfil de cuentas registradas antes del trigger. Se puede correr cuando sea.
    7. `007_costo_eventos.sql` — agrega el costo aproximado de los eventos (la Agenda muestra "≈ $150 MXN").
+   8. `008_negocios.sql` — registro de comerciantes, giros, Puntos VeraGo (demo: Parque Zamora con
+      2 comerciantes **ficticios**) y estado de aprobación.
+   9. `009_roles_enum.sql` — el rol pasa a ser una **lista cerrada**: en Table Editor aparece un menú
+      con `usuario`, `comerciante` y `admin` (no se puede escribir otro).
 3. Revisar en **Table Editor** que existan las tablas y los datos.
 4. En **Authentication → Sign In / Providers → Email**:
    - Dejar activado **Email**.
@@ -101,6 +108,42 @@ set dueno_id = (select id from auth.users where email = 'correo@ejemplo.com')
 where nombre = 'Café Brisa del Golfo';
 ```
 
+### Revisar y aprobar negocios ("Soy un negocio")
+
+Las solicitudes nuevas quedan con `estado_aprobacion = 'pendiente'` y **no** se ven en la app.
+Para verlas: Table Editor → `lugares` → filtrar `estado_aprobacion` = `pendiente`.
+
+```sql
+-- APROBAR (después de que el comerciante pagó su espacio): aparece en la app y da sellos.
+update public.lugares
+set estado_aprobacion = 'aprobado', publicado = true, participa_pasaporte = true
+where nombre = 'Nombre del negocio';
+
+-- RECHAZAR (libera el giro en el punto):
+update public.lugares set estado_aprobacion = 'rechazado' where nombre = 'Nombre del negocio';
+
+-- SUSPENDER (deja de verse en la app):
+update public.lugares
+set estado_aprobacion = 'suspendido', publicado = false
+where nombre = 'Nombre del negocio';
+
+-- HORARIO de un comerciante informal (ej. sábado y domingo de 17:00 a 21:00):
+delete from public.horarios
+where lugar_id = (select id from public.lugares where nombre = 'Nombre del negocio');
+insert into public.horarios (lugar_id, dia_semana, abre, cierra)
+select id, d, '17:00'::time, '21:00'::time from public.lugares, unnest(array[0, 6]) as d
+where nombre = 'Nombre del negocio';
+```
+
+"Te notificaremos" es **manual**: el equipo avisa por correo o teléfono al comerciante.
+El comerciante también puede ver su estado entrando en "Soy un negocio → Iniciar sesión".
+
+**Crear un Punto VeraGo nuevo:** insertar un lugar con `es_punto = true`, `categoria_id = 8`,
+`publicado = true`, sus coordenadas y su horario (ver el bloque de demo al final de `008_negocios.sql`).
+
+**Correo para "¿Olvidaste tu contraseña?":** agregar `"SOPORTE_CORREO": "correo@del-equipo.com"`
+a `env.json`. Si se deja vacío, la app dice "Contacta al equipo de VeraGo".
+
 ### Crear un evento (quién agenda)
 
 Solo el administrador agenda eventos, desde Supabase: Table Editor → `eventos` → **Insert row**.
@@ -143,6 +186,7 @@ Si `flutter` no se reconoce, usar la ruta completa (ej. `C:\Users\HP\flutter\bin
 ## Guion de la demo
 
 0. (Primera vez) Pantalla de **bienvenida**: elegir intereses o "Saltar".
+   Ahí mismo está **"Soy un negocio"** para mostrar el registro de comerciantes.
    Para volver a verla, borrar los datos de la app o desinstalarla.
 1. Abrir VeraGo → **Explorar**: mapa del centro, filtrar "Cafeterías", abrir una ficha.
 2. **Rutas** → 3 h → Historia y monumentos + Restaurantes → **Generar ruta**.
@@ -171,12 +215,13 @@ lib/
 ├─ config.dart     → lee las claves de env.json
 ├─ theme/          → colores y letras de VeraGo
 ├─ screens/        → pantallas (bienvenida, principal, explorar, lugar, rutas, ruta,
-│                    agenda, pasaporte, ajustes, login, escanear, qr_comercio, estadisticas)
+│                    agenda, pasaporte, ajustes, login, escanear, qr_comercio, estadisticas,
+│                    negocio, negocio_registrado, estado_negocio, panel_comerciante, editar_negocio)
 ├─ services/       → hablan con Supabase o hacen cálculos (rutas, distancias)
 ├─ models/         → clases de datos (Lugar, Evento, Sello, Perfil)
 └─ widgets/        → piezas visuales reutilizables (mapa, tarjetas, etiquetas)
-test/              → pruebas automáticas (25)
-supabase/migrations/ → SQL de la base de datos (001 a 007)
+test/              → pruebas automáticas (33)
+supabase/migrations/ → SQL de la base de datos (001 a 009)
 ```
 
 ## Bitácora de IA
@@ -220,3 +265,5 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | 19 | 2026-11-11 | "No entró ni con la cuenta de prueba" (captura en Chrome/web) | Claude Code | Se comprobó con la librería `supabase` fuera de Flutter que el login con la cuenta de prueba devuelve sesión y lee el perfil (backend OK). Un intento de prueba automática en Chrome se quedó colgado en "loading" y se detuvo; los archivos temporales de diagnóstico se borraron. El login ahora muestra el **detalle técnico del error solo en modo desarrollo** (`kDebugMode`) y avisa si Supabase no devuelve sesión | La falla está en la app al correr en web, no en Supabase. Se necesita el mensaje exacto que aparece al tocar "Entrar" para ubicarla. En la versión final no se muestran detalles técnicos |
 | 20 | 2026-11-11 | Log de la consola de Chrome: `setState() callback argument returned a Future` | Claude Code | **Causa real del Pasaporte vacío:** se escribía `setState(() => _futuro = ...)`; la flecha `=>` devuelve el Future asignado y Flutter rechaza ese setState, así que la pantalla no se actualizaba aunque el login sí funcionaba. Se corrigieron 7 lugares (Pasaporte, y el botón "Reintentar" de Explorar, Agenda y Rutas) usando llaves `{ }`, y `..ignore()` para que un error temprano de red no se reporte como "no atendido". Prueba nueva que toca "Reintentar" | El log del equipo fue clave. Las pruebas anteriores no lo detectaban porque nunca recargaban con sesión ni tocaban "Reintentar"; ahora sí |
 | 21 | 2026-11-11 | Costo aproximado en la Agenda; ¿la Agenda es para eventos o para apuntar planes / alertas? | Claude Code | Columna `costo_aprox_mxn` (SQL 007) y etiqueta en cada evento: "Gratuito", "≈ $150 MXN" o "Con costo"; también en el detalle. 3 pruebas (25 en total). Se explicó qué es la Agenda hoy | Costo solo en **eventos**; no se inventan precios de lugares reales (museos). El costo del taller ficticio también es ficticio y se marca así. El cambio de concepto de la Agenda queda a decisión del *Equipo* |
+| 22 | 2026-11-11 | Módulo de comerciantes "Soy un negocio" (registro por defecto, inicio de sesión, confirmación, estados, validaciones) | Claude Code | SQL 008: tabla `giros`, columnas `estado_aprobacion`, `es_punto`, `punto_id`, `giro_id`; reglas UNIQUE (un giro por punto, nombre comercial único); funciones protegidas `registrar_negocio`, `giros_ocupados`, `actualizar_mi_negocio`, `guardar_mi_horario`; Punto VeraGo Parque Zamora (demo) con 2 comerciantes ficticios. App: pantalla única con registro (predeterminado) e inicio de sesión, selector de ubicación en mapa, confirmación, estado de solicitud, panel (QR, ficha, editar datos y horario). Rutas: al menos 1 comercio formal y 1 Punto VeraGo. 8 pruebas nuevas (33 en total) | *Equipo* definió el modelo: **Puntos VeraGo** rentados a informales, **un negocio por giro en cada punto**, formales marcan su local en el mapa, giros fijos y horario asignado por el admin, rutas con al menos 1 formal + 1 punto, recuperar contraseña = contacto con el equipo, panel = QR + ficha + editar, acceso en bienvenida y Ajustes. La IA propuso hacer el registro con una función protegida (nadie se da el rol a sí mismo) y dejar los pagos fuera de la app |
+| 23 | 2026-11-11 | "En Supabase solo se permitan los roles que hay" | Claude Code | SQL 009: `rol` pasa de texto con CHECK a **ENUM** `rol_usuario` (`usuario`, `comerciante`, `admin`). En Table Editor aparece un menú desplegable | Antes ya se rechazaban valores inválidos (CHECK), pero se escribían a mano; con ENUM no se puede escribir otro valor |

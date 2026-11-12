@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/preferencias_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
+import 'negocio_screen.dart';
 import 'principal_screen.dart';
 
 /// BIENVENIDA: se muestra solo la primera vez que se abre la app.
@@ -132,6 +133,16 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
                   onPressed: _siguiente,
                   child: Text(_pagina == _totalPaginas - 1 ? 'Empezar' : 'Siguiente'),
                 ),
+              ),
+            ),
+            // Acceso para comerciantes: abre directo el registro del negocio.
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: TextButton.icon(
+                onPressed: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const NegocioScreen())),
+                icon: const Icon(Icons.storefront_outlined),
+                label: const Text('Soy un negocio'),
               ),
             ),
           ],

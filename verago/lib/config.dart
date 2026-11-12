@@ -15,6 +15,11 @@ class Config {
   /// La clave secreta (service_role) NUNCA va aquí.
   static const supabaseKey = String.fromEnvironment('SUPABASE_KEY');
 
+  /// Correo del equipo para "¿Olvidaste tu contraseña?" (opcional).
+  /// Se agrega a env.json como "SOPORTE_CORREO". Si está vacío, la app dice
+  /// "contacta al equipo de VeraGo" sin correo.
+  static const correoSoporte = String.fromEnvironment('SOPORTE_CORREO');
+
   /// ¿Están las dos claves? Si no, la app muestra cómo configurarlas.
   static bool get estaConfigurado =>
       supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty;

@@ -15,7 +15,7 @@ import 'ajustes_screen.dart';
 import 'escanear_screen.dart';
 import 'estadisticas_screen.dart';
 import 'login_screen.dart';
-import 'qr_comercio_screen.dart';
+import 'panel_comerciante_screen.dart';
 
 /// Datos que necesita la pantalla del pasaporte, cargados juntos.
 class DatosPasaporte {
@@ -224,9 +224,9 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const QrComercioScreen())),
-              icon: const Icon(Icons.qr_code_2),
-              label: const Text('Mostrar el QR de mi comercio'),
+                  .push(MaterialPageRoute(builder: (_) => const PanelComercianteScreen())),
+              icon: const Icon(Icons.storefront_outlined),
+              label: const Text('Panel de mi negocio'),
             ),
           ],
           if (d.perfil.esAdmin) ...[

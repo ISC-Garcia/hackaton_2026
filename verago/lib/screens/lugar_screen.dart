@@ -31,6 +31,8 @@ class LugarScreen extends StatelessWidget {
         .where((l) =>
             l.id != lugar.id &&
             l.esComercio &&
+            l.puntoId != lugar.id && // los del punto ya salen en su propia sección
+
             Distancia.minutosCaminando(lugar.punto, l.punto) <= _minutosCerca)
         .toList()
       ..sort((a, b) => Distancia.metros(lugar.punto, a.punto)
@@ -38,10 +40,24 @@ class LugarScreen extends StatelessWidget {
     return cercanos.take(4).toList();
   }
 
+  /// Si este lugar es un Punto VeraGo: los comerciantes que venden aquí.
+  List<Lugar> _comerciantesDelPunto() =>
+      todos.where((l) => l.puntoId == lugar.id).toList();
+
+  /// Si este lugar es un comerciante informal: su Punto VeraGo.
+  Lugar? get _miPunto {
+    for (final l in todos) {
+      if (l.id == lugar.puntoId) return l;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final estilo = CategoriaEstilo.de(lugar.categoriaClave);
     final cercanos = _comerciosCercanos();
+    final delPunto = lugar.esPunto ? _comerciantesDelPunto() : <Lugar>[];
+    final miPunto = lugar.esInformal ? _miPunto : null;
     final hoy = DateTime.now().weekday % 7;
 
     return Scaffold(
@@ -90,6 +106,24 @@ class LugarScreen extends StatelessWidget {
                   'Visita sugerida: ${lugar.duracionVisitaMin} min',
                   style: TextStyle(color: Colors.black.withValues(alpha: 0.65)),
                 ),
+                // Comerciante informal: en qué Punto VeraGo vende y su giro.
+                if (miPunto != null) ...[
+                  const SizedBox(height: 16),
+                  _Aviso(
+                    icono: Icons.storefront_outlined,
+                    texto: '${lugar.giroNombre ?? 'Emprendedor local'} · Lo encuentras en '
+                        '${miPunto.nombre}, en el horario del punto.',
+                  ),
+                ],
+                // Punto VeraGo: explicación y lista de comerciantes.
+                if (lugar.esPunto) ...[
+                  const SizedBox(height: 16),
+                  const _Aviso(
+                    icono: Icons.storefront_outlined,
+                    texto: 'Punto VeraGo: mesas de emprendedores locales en un lugar especial '
+                        'del centro, con un negocio de cada giro.',
+                  ),
+                ],
                 if (lugar.participaPasaporte) ...[
                   const SizedBox(height: 16),
                   _Aviso(
@@ -152,6 +186,20 @@ class LugarScreen extends StatelessWidget {
               ],
             ),
           ),
+          if (delPunto.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _Seccion('Comerciantes en este punto'),
+            ),
+            for (final c in delPunto)
+              TarjetaLugar(
+                lugar: c,
+                desde: lugar.punto,
+                alTocar: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => LugarScreen(lugar: c, todos: todos)),
+                ),
+              ),
+          ],
           if (cercanos.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
