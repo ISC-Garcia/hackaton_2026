@@ -7,7 +7,7 @@ Documentación del equipo (documentos compartidos de Claude):
 
 - **Documentación integral** (qué es VeraGo, módulos, arquitectura, base de datos, seguridad):
   https://claude.ai/artifact/Hp9CAXgVd5qvhU9xVvV5Dq
-- **Guía de estudio del código + 116 preguntas para la demo**:
+- **Guía de estudio del código + 160 preguntas para la demo**:
   https://claude.ai/artifact/GxJK58vGE6jzZZe4ckyUuE
 
 ## Tecnologías
@@ -27,6 +27,23 @@ Documentación del equipo (documentos compartidos de Claude):
 | `http` + Google Gemini (IA) | Chat **"Pregúntale a VeraGo"**: la persona escribe lo que busca y la IA recomienda lugares de la app. Se envían sus mensajes y la lista pública de lugares (nunca ubicación, correo ni sellos). Modelo por defecto `gemini-flash-lite-latest` |
 | Supabase Storage + `image_picker` | **Fotos de los lugares**: `image_picker` abre la galería o la cámara (en web, el selector de archivos); la foto se achica (máx. 1280 px) y se guarda en el bucket público `fotos-lugares`. Las reglas del bucket solo dejan subir al admin (cualquier lugar) y al comerciante (su negocio) |
 | `url_launcher` | Botón de emergencia: abre la app de llamadas del celular con el **911** ya escrito |
+| Diccionario propio (`lib/i18n/`) + Gemini | **Idiomas**: español, inglés, francés, alemán y portugués. Botones y menús con un diccionario propio (sin paquetes nuevos); descripciones, eventos y documentos legales traducidos con Gemini al abrirlos |
+
+## Reto "Atraca un crucero"
+
+**El reto:** atraca un crucero con 3,000 visitantes que tienen solo 5 horas en tierra y no hablan
+español. La solución debe proponerles qué hacer y llevarlos a negocios del centro.
+
+**Cómo lo atendimos:**
+
+| Necesidad | Qué hace VeraGo |
+| --- | --- |
+| No hablan español | **Botón de idioma 🌐** en la Bienvenida (arriba a la izquierda), en Explorar y en Ajustes: español, **English, Français, Deutsch, Português**. Toda la parte del turista cambia al instante. Las descripciones de los lugares, la vitrina, los eventos y los documentos legales (que vienen de la base en español) se traducen con IA (Gemini) al abrirlos, con el aviso "Traducción automática con IA" |
+| Proponerles qué hacer | **Rutas** de hasta **5 h** (lo que dura su escala): eligen tiempo e intereses y la app arma el recorrido a pie con hora de llegada a cada parada. El chat **"Pregúntale a VeraGo"** responde en su idioma y recomienda lugares reales de la app |
+| Llevarlos a negocios del centro | Las rutas incluyen comercios locales, los **Puntos VeraGo** (emprendedores) y la sugerencia "Te quedan X min libres: a 3 min está…". La ficha de cada lugar muestra "Cerca de aquí" (comercios a menos de 10 min). El **pasaporte de sellos** motiva a visitar más negocios |
+| Seguridad en una ciudad que no conocen | Botón **911**, camino por las calles (no en línea recta) y avisos en su idioma |
+
+Las pantallas de **comerciante y administración se quedan en español**: las usan personas de Veracruz.
 
 ## Estado
 
@@ -36,7 +53,7 @@ Documentación del equipo (documentos compartidos de Claude):
 | 2. Turista | Explorar (mapa/lista, búsqueda, filtros, leyenda, centrar), ficha del lugar con "Cerca de aquí", agenda | Implementado y probado en celular |
 | 3. Rutas | Formulario (tiempo, intereses **obligatorio al menos uno**, ritmo, inicio), algoritmo voraz **filtrado por intereses** (**solo** entran las categorías elegidas; los Puntos VeraGo también se pueden elegir), ruta en mapa, "Quitar" parada, sugerencia cercana | Implementado, con pruebas automáticas del algoritmo |
 | 4. Pasaporte | Login con correo y contraseña (con confirmar contraseña), QR del comerciante (cambia cada 60 s), escaneo con cámara o código escrito, animación del sello, colección e historial | Implementado |
-| 5. Cierre | Estadísticas (DATOS SIMULADOS, solo admin), pruebas, compilación web | Implementado. Falta ensayo de la demo |
+| 5. Cierre | Estadísticas reales (admin y comerciante), pruebas, compilación web, auditoría final de navegación | Implementado. Falta ensayo de la demo |
 | Extra UI/UX | Pantalla de bienvenida (primera vez), botón de ojo en contraseñas, leyenda y centrar en el mapa | Implementado, con pruebas automáticas |
 | Ajustes | Engrane en el Pasaporte: mi cuenta (correo, rol, cambiar nombre), mis intereses, ver bienvenida otra vez, privacidad y cerrar sesión | Implementado, con pruebas automáticas |
 | Comerciantes | "Soy un negocio" (bienvenida y Ajustes): registro de negocio formal (local en mapa) o informal (giro en un **Punto VeraGo**), inicio de sesión, estado de la solicitud y panel (QR, ficha, editar datos) | Implementado, con pruebas automáticas. **Falta correr SQL 008 y 009** y probar con Supabase |
@@ -61,22 +78,26 @@ Documentación del equipo (documentos compartidos de Claude):
 | Estadísticas | Admin (Panel de administración) y comerciante ("Mis estadísticas"): **solo datos reales** de la base (cuentas, turistas con sellos, sellos por día de los últimos 14 días, negocios con más sellos), solo totales | Implementado, con pruebas automáticas. Necesita el SQL 016 |
 | Borrar mi cuenta | Ajustes → "Borrar mi cuenta" (con confirmación): borra cuenta, perfil y sellos; un negocio sin aprobar se borra y uno publicado se oculta. Un admin no se borra desde la app | Implementado, con pruebas automáticas. **Falta correr SQL 016** |
 | Costo de entrada | Ficha: "Entrada gratis", "Entrada aprox. $X MXN" o (lugar público sin dato) "no disponible". Lo pone el negocio formal en "Editar mis datos" (se publica directo) y el admin en lugares y en cada negocio formal | Implementado, con pruebas automáticas. **Falta correr SQL 014** |
+| Idiomas (reto crucero) | Botón 🌐 en Bienvenida, Explorar y Ajustes con 5 idiomas (es, en, fr, de, pt). Se guarda en el celular. Textos fijos con `tr()` y el diccionario `lib/i18n/traducciones.dart` (~310 textos × 4 idiomas); contenido de la base traducido con Gemini (`TraductorService`, guarda en memoria lo ya traducido). El chat contesta en el idioma elegido. Rutas de hasta 5 h | Implementado, con pruebas automáticas (una prueba revisa que ningún texto marcado se quede sin traducción). Traducción con IA probada en vivo |
 | Legal y confianza | Ajustes → **Legal y confianza**: ¿Cómo funciona VeraGo?, Reglas operativas, Términos de uso, Términos para negocios y Aviso de privacidad (textos en `lib/legal/documentos.dart`). Ventana **Confirmar / Cancelar** con los términos antes de registrar un negocio; enlaces a Términos y Aviso al crear cuenta; **Reportar un problema** en la ficha de cada lugar (copia un reporte para enviarlo por correo) | Implementado, con pruebas automáticas. Son textos de hackatón: **un abogado debe revisarlos** antes de un uso real |
 
-Verificado en esta computadora: `flutter analyze` sin problemas, **144 pruebas automáticas** pasan
+Verificado en esta computadora: `flutter analyze` sin problemas, **154 pruebas automáticas** pasan
 y la app compila para web (`flutter build web`).
 
 ### Qué NO hace la app (a propósito, MVP)
 
-- No hay premios ni canjes: el pasaporte **solo junta sellos**.
+- No hay premios ni canjes: el pasaporte **solo junta sellos** (y una insignia de 5 niveles).
 - **Solo los negocios formales** (local propio) dan sellos. Los no formales (en un Punto VeraGo),
   los Puntos y los lugares públicos no.
-- **Solo los desarrolladores entran a Supabase.** El admin de VeraGo maneja desde la app la
-  **Agenda**, las **solicitudes de negocios** y los **lugares y Puntos VeraGo**.
-  Todavía se hace en Supabase (por un desarrollador): **cambiar roles** (por ejemplo, nombrar a un admin).
+- **Solo los desarrolladores entran a Supabase.** El admin hace todo lo demás desde la app.
+  En Supabase solo se hace: **cambiar roles** (nombrar a un admin), borrar cuentas y correr los SQL.
 - Los pagos de los comerciantes por su espacio se acuerdan **fuera de la app**.
-- Los comercios y eventos son **ficticios**; los lugares públicos no tienen horarios inventados.
-- Las estadísticas son **simuladas**.
+- **Sin modo sin conexión:** sin internet no se cargan los datos y el sello no se valida.
+- **Sin notificaciones:** el admin avisa al comerciante por teléfono o correo.
+- La **IA** solo se usa en el chat "Pregúntale a VeraGo"; el resto (rutas, sellos) no usa IA.
+- Los lugares solo se pueden marcar **dentro del municipio de Veracruz**.
+- Los comercios y eventos de demostración son **ficticios**; los lugares públicos no tienen
+  horarios ni precios inventados.
 
 ## Cómo configurar Supabase (una sola vez)
 
@@ -135,95 +156,42 @@ y la app compila para web (`flutter build web`).
 update auth.users set email_confirmed_at = now() where email_confirmed_at is null;
 ```
 
-## Administrar desde Supabase
+## Administración
 
-La app no tiene pantallas de administración: todo esto se hace en el panel de Supabase.
+### Desde la app (cuenta con rol `admin`)
 
-### Cambiar el rol (permisos) de una persona
+Pasaporte → **Panel de administración**:
 
-Roles: `usuario` (por defecto), `comerciante` (puede mostrar el QR de su comercio) y
-`admin` (ve estadísticas y administra todo).
+| Opción | Qué se hace |
+| --- | --- |
+| Solicitudes de negocios | Aprobar, rechazar, suspender, reactivar o eliminar negocios; comparar la dirección escrita con la del mapa; horario, costo de entrada y foto; aceptar o rechazar **cambios de ubicación**. Filtros: pendientes, cambios, aprobados, rechazados/suspendidos; formales o no formales |
+| Lugares y Puntos VeraGo | Crear, editar, ocultar o eliminar; foto, horario y costo de entrada. La dirección se llena sola con el mapa (bloqueada) |
+| Agenda | Crear (también eventos que se repiten), editar, publicar, pasar a borrador, cancelar o eliminar eventos. No acepta duplicados |
+| Estadísticas | Datos reales de uso (solo totales) |
 
-- **Con clics:** Table Editor → `perfiles` → buscar a la persona → columna `rol`.
-- **Con SQL** (SQL Editor):
+Un negocio con sellos no se elimina (se oculta) y un Punto con negocios no se elimina hasta vaciarlo.
+La app no envía notificaciones: el admin avisa al comerciante por teléfono o correo.
+
+### Solo en Supabase (desarrolladores)
+
+**Cambiar el rol de una persona** (por ejemplo, nombrar a un admin). Roles: `usuario` (por defecto),
+`comerciante` (lo pone solo la app al registrar un negocio) y `admin`.
 
 ```sql
-update public.perfiles set rol = 'comerciante'
+update public.perfiles set rol = 'admin'
 where id = (select id from auth.users where email = 'correo@ejemplo.com');
 ```
 
 El cambio se ve al recargar el Pasaporte (jalar hacia abajo) o al volver a iniciar sesión.
 
-### Asignar un comercio a un comerciante (para mostrar el QR en la demo)
+**Borrar una cuenta:** Authentication → Users (se borran también su perfil y sus sellos). La persona
+también puede hacerlo sola en Ajustes → "Borrar mi cuenta".
 
-1. Crear una cuenta desde la app (Pasaporte → Iniciar sesión → crear una).
-2. Cambiar su `rol` a `comerciante` (arriba).
-3. Asignarle el comercio:
+**Si los eventos de demostración ya pasaron:** las fechas se calculan al correr `004_datos_demo.sql`.
+En SQL Editor: `delete from eventos where es_demo;` y volver a correr solo el bloque de eventos de ese
+archivo (o crear eventos nuevos desde la app).
 
-```sql
-update public.lugares
-set dueno_id = (select id from auth.users where email = 'correo@ejemplo.com')
-where nombre = 'Café Brisa del Golfo';
-```
-
-### Revisar y aprobar negocios ("Soy un negocio")
-
-**Desde la app (lo normal):** cuenta admin → Pasaporte → **Panel de administración** →
-**Solicitudes de negocios**. Ahí se ve cada solicitud con su ubicación en el mapa, la dirección
-que escribió el comerciante y la dirección que da el mapa (para revisar que coincidan), y los
-botones **Aprobar / Rechazar / Suspender / Reactivar** y **Guardar horario**.
-
-Las solicitudes nuevas quedan con `estado_aprobacion = 'pendiente'` y **no** se ven en la app
-hasta aprobarlas. El SQL de abajo es solo de respaldo para los desarrolladores.
-
-```sql
--- APROBAR (después de que el comerciante pagó su espacio): aparece en la app.
--- participa_pasaporte = true SOLO si es formal (local propio); si es de un Punto VeraGo, false.
-update public.lugares
-set estado_aprobacion = 'aprobado', publicado = true, participa_pasaporte = (punto_id is null)
-where nombre = 'Nombre del negocio';
-
--- RECHAZAR (libera el giro en el punto):
-update public.lugares set estado_aprobacion = 'rechazado' where nombre = 'Nombre del negocio';
-
--- SUSPENDER (deja de verse en la app):
-update public.lugares
-set estado_aprobacion = 'suspendido', publicado = false
-where nombre = 'Nombre del negocio';
-
--- HORARIO de un comerciante informal (ej. sábado y domingo de 17:00 a 21:00):
-delete from public.horarios
-where lugar_id = (select id from public.lugares where nombre = 'Nombre del negocio');
-insert into public.horarios (lugar_id, dia_semana, abre, cierra)
-select id, d, '17:00'::time, '21:00'::time from public.lugares, unnest(array[0, 6]) as d
-where nombre = 'Nombre del negocio';
-```
-
-"Te notificaremos" es **manual**: el equipo avisa por correo o teléfono al comerciante.
-El comerciante también puede ver su estado entrando en "Soy un negocio → Iniciar sesión".
-
-**Crear un Punto VeraGo nuevo:** insertar un lugar con `es_punto = true`, `categoria_id = 8`,
-`publicado = true`, sus coordenadas y su horario (ver el bloque de demo al final de `008_negocios.sql`).
-
-**Correo para "¿Olvidaste tu contraseña?":** agregar `"SOPORTE_CORREO": "correo@del-equipo.com"`
-a `env.json`. Si se deja vacío, la app dice "Contacta al equipo de VeraGo".
-
-### Administrar la Agenda (desde la app)
-
-Una cuenta con rol `admin` (asignado por un desarrollador) entra a la app y en **Agenda** ve:
-
-- **"Nuevo evento"** (botón abajo a la derecha): título, descripción, lugar, inicio, fin,
-  gratuito o costo aproximado, y estado.
-- Al tocar un evento: **Editar**, **Publicar**, **Borrador**, **Cancelar** y **Eliminar**.
-
-Estados: `publicado` (todos lo ven), **borrador** (`pendiente`, solo lo ven los admins) y
-`cancelado` (se ve tachado para avisar). Requiere correr `010_admin_eventos.sql`.
-
-### Si los eventos ya pasaron
-
-Las fechas de los eventos ficticios se calculan cuando se corre `004_datos_demo.sql`.
-Si ya pasaron, en **SQL Editor** borrar los eventos (`delete from eventos where es_demo;`)
-y volver a correr solo el bloque de eventos de ese archivo.
+**Correo de soporte:** `SOPORTE_CORREO` en `env.json` (por defecto `ververagoo@gmail.com`).
 
 ## Cómo ejecutar la app
 
@@ -249,17 +217,23 @@ Si `flutter` no se reconoce, usar la ruta completa (ej. `C:\Users\HP\flutter\bin
 
 ## Guion de la demo
 
-0. (Primera vez) Pantalla de **bienvenida**: elegir intereses o "Saltar".
-   Ahí mismo está **"Soy un negocio"** para mostrar el registro de comerciantes.
-   Para volver a verla, borrar los datos de la app o desinstalarla.
-1. Abrir VeraGo → **Explorar**: mapa del centro, filtrar "Cafeterías", abrir una ficha.
-2. **Rutas** → 3 h → Historia y monumentos + Restaurantes → **Generar ruta**.
-3. Mostrar paradas, motivos, "Quitar" una parada y la sugerencia "Te quedan X min".
-4. Abrir la ficha de un comercio → ver "Da sello en tu pasaporte" y "Cerca de aquí".
-5. **Pasaporte** → Iniciar sesión.
-6. En otro celular (cuenta comerciante): Pasaporte → **Mostrar el QR de mi comercio**.
-7. Visitante: **Escanear QR** → "¡Nuevo sello!" + sugerencia de otro lugar cercano.
-8. Ver la colección y el historial actualizados.
+Antes: correr los SQL 001 a 021, tener una cuenta **admin**, una de **comerciante** con negocio formal
+aprobado (con foto y vitrina) y la clave de Gemini en `env.json`.
+
+1. **Bienvenida** (primera vez): 7 páginas que explican cada pestaña; elegir intereses.
+   **Reto crucero:** tocar 🌐 "Español" (arriba a la izquierda) → **English**: toda la guía cambia.
+   Seguir la demo en inglés y, al final, volver a español desde Ajustes → Idioma.
+2. **Explorar**: punto azul "Estás aquí", filtrar "Cafeterías", abrir una ficha (foto, vitrina, costo de
+   entrada, "Cerca de aquí", "Reportar un problema"). Buscar "Tecnológico" → "Buscar en todo el mapa".
+3. **Pregúntale a VeraGo**: "quiero un lugar con sombra para ir con niños" → respuesta y tarjetas.
+4. **Rutas**: **5 h** (escala del crucero), Museos + Cafeterías + Puntos VeraGo → camino por las calles,
+   motivos, "Quitar" una parada, botón 911. Abrir la ficha de una parada: descripción traducida con IA.
+5. **Agenda**: Hoy / Próximos, ordenar, evento repetido agrupado ("Cada 2 h").
+6. **Pasaporte** (turista): iniciar sesión → **Escanear QR** del comerciante (otro celular: Panel de mi
+   negocio → Mostrar mi QR) → "¡Nuevo sello!" → colección con la foto del negocio e insignia.
+7. **Comerciante**: Panel → Mi vitrina, Mis estadísticas, Cambiar ubicación (queda en revisión).
+8. **Admin**: Panel de administración → aceptar el cambio de ubicación, crear un evento que se repite,
+   mostrar que un lugar fuera del municipio no se acepta.
 
 Si no hay segundo celular: copiar el código que aparece debajo del QR y escribirlo en
 "¿No funciona la cámara? Escribe el código".
@@ -290,17 +264,23 @@ Si Google está saturado (error 503) o se acaba la cuota gratuita (429), el chat
 ```text
 lib/
 ├─ main.dart       → arranque: conecta con Supabase y abre la app
-├─ config.dart     → lee las claves de env.json
+├─ config.dart     → lee env.json (Supabase, correo de soporte, Gemini)
 ├─ theme/          → colores y letras de VeraGo
-├─ screens/        → pantallas (bienvenida, principal, explorar, lugar, rutas, ruta,
-│                    agenda, pasaporte, ajustes, login, escanear, qr_comercio, estadisticas,
-│                    negocio, negocio_registrado, estado_negocio, panel_comerciante, editar_negocio,
-│                    evento_form, admin, admin_negocios, admin_lugares, admin_lugar_form)
-├─ services/       → hablan con Supabase o hacen cálculos (rutas, distancias)
-├─ models/         → clases de datos (Lugar, Evento, Sello, Perfil)
-├─ legal/          → textos de Aviso de privacidad, Términos y Reglas operativas
-└─ widgets/        → piezas visuales reutilizables (mapa, tarjetas, etiquetas)
-test/              → pruebas automáticas (45)
+├─ i18n/           → idioma elegido, tr() y diccionario de traducciones (en, fr, de, pt)
+├─ legal/          → Aviso de privacidad, Términos, Reglas operativas, ¿Cómo funciona?
+├─ models/         → Lugar, Evento, Sello/Perfil, Insignia, GrupoEventos
+├─ services/       → Supabase y cálculos: lugares, eventos, rutas, trazo (OSRM), geocodificación
+│                    (Nominatim), guía IA (Gemini), traductor (Gemini), pasaporte, negocios, admin, fotos, eliminar,
+│                    estadísticas, municipio de Veracruz, validaciones, ubicación, preferencias
+├─ screens/        → turista: bienvenida, principal, explorar, lugar, rutas, ruta, chat_guia,
+│                    agenda, pasaporte, escanear, ajustes, login, documento
+│                    comerciante: negocio, negocio_registrado, estado_negocio, panel_comerciante,
+│                    editar_negocio, editar_vitrina, cambiar_ubicacion, qr_comercio
+│                    admin: admin, admin_negocios, admin_lugares, admin_lugar_form, evento_form,
+│                    estadisticas
+└─ widgets/        → mapa, tarjetas, etiquetas, insignia, foto, editores (horario, costo, foto),
+                     selector de ubicación, botón 911, botón de idioma, reportar problema, eliminar
+test/              → pruebas automáticas (ver "Estado")
 supabase/migrations/ → SQL de la base de datos (001 a 021)
 ```
 
@@ -317,7 +297,9 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | Herramienta | Para qué la usamos |
 | --- | --- |
 | **Claude Code** (modelo Claude Opus 5.5, en VS Code) | Escribir y revisar el código Flutter/Dart y el SQL, correr `flutter analyze` y `flutter test`, diagnosticar errores con Supabase |
-| **Claude Docs** (documentos compartidos de Claude) | Documentación integral del proyecto y guía de estudio con 100 preguntas para la demo |
+| **Claude Docs** (documentos compartidos de Claude) | Documentación integral del proyecto y guía de estudio con preguntas para la demo |
+| **Claude (Artifacts)** | Ficha técnica de una hoja del proyecto |
+| **Google Gemini** (dentro de la app) | Guía "Pregúntale a VeraGo": recomienda lugares de la app |
 | **ChatGPT** | Mencionado en `README.txt` de la raíz. *Pendiente: el equipo debe describir para qué se usó* |
 
 ### Registro
@@ -387,3 +369,6 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | 61 | 2026-11-12 | En la Agenda: poder ordenar "Próximos" de más pronto a más lejano y juntar el mismo evento que se repite el mismo día con las horas a la derecha | Claude Code | `GrupoEventos` (nuevo): ordena por hora y junta los eventos con el mismo nombre (sin importar mayúsculas ni espacios), el mismo lugar y el mismo día. La tarjeta muestra el horario a la derecha: una hora "18:00 – 20:00", varias "10:00 · 17:30" o, si van parejas (3 o más), "Cada 2 h · 10:00 a 14:00" con ícono de repetición y "N horarios"; al tocarla se elige la hora y se abre su detalle (cada hora se edita o cancela por separado); etiqueta "Alguna hora cancelada". "Próximos" tiene botón "Más pronto primero / Más lejano primero" y encabezados por día ("sábado 14 de noviembre"). 5 pruebas nuevas (**139 en total**) | Agrupar solo cambia cómo se ve: en la base cada hora sigue siendo un evento aparte (así funcionan los eventos que se repiten y la regla sin duplicados) |
 | 62 | 2026-11-12 | 1) En el panel de administración, "Agenda" regresa al Pasaporte; 2) al crear lugares, la dirección deshabilitada (solo la que da el mapa); 3) que no se pueda terminar un formulario si falta un dato importante como la dirección; 4) igual en los demás formularios | Claude Code | **1 (causa):** la opción "Agenda" solo cerraba el panel (`pop`); ahora abre la Agenda (con "Nuevo evento" para el admin). Texto de Estadísticas corregido ("datos reales"). **2:** en el formulario de Lugares y Puntos la dirección es de solo lectura (candado, fondo gris): se llena sola al tocar el mapa, se borra al mover el punto mientras busca la nueva y tiene botón "Reintentar" si Nominatim falla. **3:** ubicación, dirección, nombre, categoría y descripción son obligatorios en Lugares; descripción obligatoria en Eventos. **4:** se revisaron los formularios (registro de negocio, editar negocio, cambiar ubicación, vitrina, eventos, lugares): todos validan sus datos obligatorios y ahora avisan "Faltan datos importantes: revisa lo marcado en rojo" aunque el error quede fuera de pantalla. 1 prueba nueva (**140 en total**) | Dirección bloqueada solo en Lugares (como se pidió); en el registro de negocios y en el cambio de ubicación el comerciante todavía puede ajustarla (el admin compara la escrita con la del mapa) |
 | 63 | 2026-11-12 | Delimitar el área de los puntos turísticos solo al municipio de Veracruz (dejaba crear un Punto VeraGo en otros países) | Claude Code | Se descargó de OpenStreetMap el contorno oficial del municipio (relación 6037860, simplificado a ~50 m: 217 puntos + 2 islas) y se comprobó que los 39 lugares publicados quedan dentro. `MunicipioVeracruz` (punto en polígono, método del rayo) y `SelectorUbicacion`: dibuja el contorno, limita el mapa (`cameraConstraint`, zoom mínimo 11) y rechaza toques fuera. **SQL 021:** funciones `_punto_en_poligono` y `dentro_municipio_veracruz` (sin PostGIS), oculta lo que ya estaba fuera y agrega reglas CHECK (`not valid`) para lugares y cambios de ubicación. La app traduce el error. Probado: Zócalo, Malecón, Tecnológico y San Juan de Ulúa dentro; Boca del Río, Xalapa, CDMX y Madrid fuera. 4 pruebas nuevas (**144 en total**) | El mapa de Explorar no se limita (el turista puede estar en otro lado); solo donde se MARCAN lugares. Boca del Río es otro municipio, así que queda fuera. **Falta correr SQL 021** |
+| 64 | 2026-11-12 | ¿Cuál era el comando para correr en Chrome? | Claude Code | Sin cambios de código. Se recordó: `flutter run -d chrome --dart-define-from-file=env.json` (desde la carpeta `verago`) | — |
+| 65 | 2026-11-12 | Última auditoría: revisar que la navegación de todos los roles sea correcta, corregir errores y actualizar guía y documentación | Claude Code + Claude Docs | Se recorrieron los caminos de invitado, turista, comerciante y admin. **Errores corregidos:** 1) "Ver lugar" tras escanear cerraba la ficha al instante y trababa el escáner (ahora `pushReplacement` con resultado); 2) el Pasaporte no se recargaba tras registrar un negocio con sesión abierta; 3) lo mismo desde Ajustes → "Soy un negocio"; 4) README desactualizado (decía que no había pantallas de admin y que las estadísticas eran simuladas). README: Estado, "Qué NO hace la app", nueva sección Administración, Guion de la demo. **Guía:** paquetes, árbol de archivos, migraciones 015–021, privacidad (Gemini y búsqueda), sección 19 (versión final y auditoría) y sección 20 (preguntas 141–152). `flutter analyze` limpio, **144 pruebas** pasan, `flutter build web` compila | Pedido del *Equipo* (autorizó editar la guía). No se agregaron funciones nuevas |
+| 66 | 2026-11-12 | Reto "Atraca un crucero" (3,000 visitantes, 5 h en tierra, no hablan español): botón de idioma para cambiar la app al idioma del visitante | Claude Code + Claude Docs | Se preguntó al *Equipo*: 5 idiomas (es, en, fr, de, pt), solo botón (sin QR), sin "modo crucero" (es el nombre del reto) y contenido traducido con Gemini. **Hecho:** `lib/i18n/idioma.dart` (idioma guardado en el celular, `tr()` con variables `{n}`, días y meses por idioma), diccionario `traducciones.dart` (~310 textos × 4 idiomas), `BotonIdioma` (🌐) en Bienvenida, Explorar y Ajustes; todas las pantallas del turista (pestañas, Explorar, ficha, Rutas, ruta, Agenda, Pasaporte, escáner, chat, login, Ajustes, documentos, mapa, 911, reportar) y sus mensajes de error. `TraductorService` (Gemini, JSON con `responseSchema`, memoria) traduce descripciones, vitrina, eventos y documentos legales al abrirlos; el chat contesta en el idioma elegido; Rutas acepta **5 h**. Comerciante y admin se quedan en español. **Error encontrado y corregido:** la lista de idiomas se desbordaba en pantallas bajitas (ahora se desplaza). 10 pruebas nuevas (**154 en total**), incluida una que revisa que ningún texto marcado se quede sin traducción y que las variables coincidan. `flutter analyze` limpio; traducción con Gemini probada en vivo (inglés y alemán). README: sección "Reto Atraca un crucero" y guion de demo; guía de estudio: sección 21 y preguntas 153–160 | Las traducciones de botones las escribió la IA: conviene que alguien que hable cada idioma las revise. La primera traducción con Gemini de una ficha puede tardar unos segundos (mientras, se ve en español) |

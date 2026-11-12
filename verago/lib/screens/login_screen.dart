@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../services/auth_service.dart';
+import '../i18n/idioma.dart';
 import '../legal/documentos.dart';
+import '../services/auth_service.dart';
 import '../services/error_verago.dart';
 import '../services/validaciones.dart';
 import 'documento_screen.dart';
@@ -33,9 +34,15 @@ class _LoginScreenState extends State<LoginScreen> {
   /// true = la contraseña se ve como puntos. El botón de ojo lo cambia.
   bool _ocultar = true;
 
+  /// Traduce el mensaje de una validación (las reglas se escriben en español).
+  static String? Function(String?) _traducido(String? Function(String?) validar) => (v) {
+        final error = validar(v);
+        return error == null ? null : tr(error);
+      };
+
   /// Botón de ojo para ver u ocultar la contraseña.
   Widget get _botonOjo => IconButton(
-        tooltip: _ocultar ? 'Mostrar contraseña' : 'Ocultar contraseña',
+        tooltip: _ocultar ? tr('Mostrar contraseña') : tr('Ocultar contraseña'),
         icon: Icon(_ocultar ? Icons.visibility_outlined : Icons.visibility_off_outlined),
         onPressed: () => setState(() => _ocultar = !_ocultar),
       );
@@ -61,9 +68,8 @@ class _LoginScreenState extends State<LoginScreen> {
           // no puede entrar hasta confirmar el correo.
           setState(() => _crearCuenta = false);
           await _aviso(
-            'Confirma tu correo',
-            'Creamos tu cuenta, pero falta confirmarla. Abre el enlace que te '
-                'enviamos por correo y después entra aquí con tu contraseña.',
+            tr('Confirma tu correo'),
+            tr('Creamos tu cuenta, pero falta confirmarla. Abre el enlace que te enviamos por correo y después entra aquí con tu contraseña.'),
           );
           return;
         }
@@ -72,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (mounted) Navigator.of(context).pop(true);
     } on ErrorVeraGo catch (e) {
-      await _aviso('No pudimos continuar', e.mensaje);
+      await _aviso(tr('No pudimos continuar'), tr(e.mensaje));
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -88,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
         title: Text(titulo),
         content: Text(texto),
         actions: [
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Entendido')),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(tr('Entendido'))),
         ],
       ),
     );
@@ -97,38 +103,38 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_crearCuenta ? 'Crear cuenta' : 'Iniciar sesión')),
+      appBar: AppBar(title: Text(_crearCuenta ? tr('Crear cuenta') : tr('Iniciar sesión'))),
       body: Form(
         key: _formulario,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text('Con tu cuenta guardamos los sellos de tu pasaporte.'),
+            Text(tr('Con tu cuenta guardamos los sellos de tu pasaporte.')),
             const SizedBox(height: 20),
             if (_crearCuenta) ...[
               TextFormField(
                 controller: _nombre,
-                decoration: const InputDecoration(labelText: 'Tu nombre', border: OutlineInputBorder()),
+                decoration: InputDecoration(labelText: tr('Tu nombre'), border: const OutlineInputBorder()),
                 textCapitalization: TextCapitalization.words,
                 inputFormatters: Validaciones.nombrePersonaFormato, // sin números
-                validator: Validaciones.nombrePersona(),
+                validator: _traducido(Validaciones.nombrePersona()),
               ),
               const SizedBox(height: 12),
             ],
             TextFormField(
               controller: _correo,
-              decoration: const InputDecoration(labelText: 'Correo', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: tr('Correo'), border: const OutlineInputBorder()),
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
               autocorrect: false,
               inputFormatters: Validaciones.correoFormato, // sin espacios
-              validator: Validaciones.correo,
+              validator: _traducido(Validaciones.correo),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _contrasena,
               decoration: InputDecoration(
-                labelText: 'Contraseña',
+                labelText: tr('Contraseña'),
                 border: const OutlineInputBorder(),
                 suffixIcon: _botonOjo,
               ),
@@ -136,8 +142,8 @@ class _LoginScreenState extends State<LoginScreen> {
               inputFormatters: Validaciones.contrasenaFormato,
               // Al crear cuenta: misma regla que los negocios (8+, letras y números).
               validator: _crearCuenta
-                  ? Validaciones.contrasenaSegura
-                  : (v) => (v ?? '').isEmpty ? 'Escribe tu contraseña' : null,
+                  ? _traducido(Validaciones.contrasenaSegura)
+                  : (v) => (v ?? '').isEmpty ? tr('Escribe tu contraseña') : null,
             ),
             // Solo al crear cuenta: escribir la contraseña dos veces evita
             // que alguien se registre con un error de dedo y no pueda entrar.
@@ -146,12 +152,12 @@ class _LoginScreenState extends State<LoginScreen> {
               TextFormField(
                 controller: _confirmar,
                 decoration: InputDecoration(
-                  labelText: 'Confirmar contraseña',
+                  labelText: tr('Confirmar contraseña'),
                   border: const OutlineInputBorder(),
                   suffixIcon: _botonOjo,
                 ),
                 obscureText: _ocultar,
-                validator: (v) => v != _contrasena.text ? 'Las contraseñas no coinciden' : null,
+                validator: (v) => v != _contrasena.text ? tr('Las contraseñas no coinciden') : null,
               ),
             ],
             const SizedBox(height: 20),
@@ -159,29 +165,29 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: _enviando ? null : _enviar,
               child: _enviando
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(_crearCuenta ? 'Crear cuenta' : 'Entrar'),
+                  : Text(_crearCuenta ? tr('Crear cuenta') : tr('Entrar')),
             ),
             // Elegido por el equipo: solo un texto con enlaces (sin ventana).
             if (_crearCuenta) ...[
               const SizedBox(height: 8),
-              const Text('Al crear tu cuenta aceptas los', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+              Text(tr('Al crear tu cuenta aceptas los'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
               Wrap(
                 alignment: WrapAlignment.center,
                 children: [
                   TextButton(
                     onPressed: () => DocumentoScreen.abrir(context, Documentos.terminosUso),
-                    child: const Text('Términos de uso'),
+                    child: Text(tr('Términos de uso')),
                   ),
                   TextButton(
                     onPressed: () => DocumentoScreen.abrir(context, Documentos.avisoPrivacidad),
-                    child: const Text('Aviso de privacidad'),
+                    child: Text(tr('Aviso de privacidad')),
                   ),
                 ],
               ),
             ],
             TextButton(
               onPressed: _enviando ? null : () => setState(() => _crearCuenta = !_crearCuenta),
-              child: Text(_crearCuenta ? 'Ya tengo cuenta' : 'No tengo cuenta: crear una'),
+              child: Text(_crearCuenta ? tr('Ya tengo cuenta') : tr('No tengo cuenta: crear una')),
             ),
           ],
         ),

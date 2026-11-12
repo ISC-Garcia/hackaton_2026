@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/distancia.dart';
+import '../services/traductor_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/etiqueta.dart';
 import '../widgets/foto_lugar.dart';
@@ -14,7 +16,11 @@ import '../widgets/tarjeta_lugar.dart';
 /// Incluye "Cerca de aquí": comercios a pocos minutos caminando.
 /// Es el descubrimiento comercial del documento: después de ver un lugar,
 /// VeraGo sugiere otro cercano de forma natural, no como publicidad.
-class LugarScreen extends StatelessWidget {
+///
+/// IDIOMA: si la app no está en español, la descripción, la promoción y los
+/// productos (que vienen de la base en español) se traducen con Gemini
+/// (`TraductorService`). Mientras llega la traducción se ve el español.
+class LugarScreen extends StatefulWidget {
   const LugarScreen({super.key, required this.lugar, required this.todos});
 
   final Lugar lugar;
@@ -22,10 +28,38 @@ class LugarScreen extends StatelessWidget {
   /// Todos los lugares (para calcular cuáles están cerca de este).
   final List<Lugar> todos;
 
+  @override
+  State<LugarScreen> createState() => _LugarScreenState();
+}
+
+class _LugarScreenState extends State<LugarScreen> {
+  Lugar get lugar => widget.lugar;
+  List<Lugar> get todos => widget.todos;
+
   /// Distancia máxima para "Cerca de aquí": 10 minutos caminando.
   static const _minutosCerca = 10;
 
-  static const _dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  /// Texto original → traducción (vacío si la app está en español).
+  Map<String, String> _traducido = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (!Idioma.esEspanol) _traducir();
+  }
+
+  Future<void> _traducir() async {
+    final r = await TraductorService().traducir([
+      ?lugar.descripcion,
+      ?lugar.promocion,
+      ?lugar.giroNombre,
+      for (final p in lugar.productos) p.nombre,
+    ]);
+    if (mounted) setState(() => _traducido = r);
+  }
+
+  /// Texto traducido si ya llegó; si no, el original.
+  String _t(String original) => _traducido[original] ?? original;
 
   List<Lugar> _comerciosCercanos() {
     final cercanos = todos
@@ -79,7 +113,10 @@ class LugarScreen extends StatelessWidget {
                 Text(lugar.nombre, style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 4),
                 Text(
-                  '${lugar.categoriaNombre} · ${Distancia.texto(Distancia.zocalo, lugar.punto)} del Zócalo',
+                  tr('{categoria} · {distancia} del Zócalo', {
+                    'categoria': tr(lugar.categoriaNombre),
+                    'distancia': Distancia.texto(Distancia.zocalo, lugar.punto),
+                  }),
                   style: TextStyle(color: Colors.black.withValues(alpha: 0.65)),
                 ),
                 const SizedBox(height: 10),
@@ -90,13 +127,19 @@ class LugarScreen extends StatelessWidget {
                     Etiqueta.apertura(lugar.estadoEn(DateTime.now())),
                     ?Etiqueta.tipoNegocio(lugar),
                     if (lugar.participaPasaporte)
-                      const Etiqueta('Da sello en tu pasaporte', color: VgColores.azulGolfo, icono: Icons.approval),
+                      Etiqueta(tr('Da sello en tu pasaporte'), color: VgColores.azulGolfo, icono: Icons.approval),
                     if (lugar.esDemo) const Etiqueta.demo(),
                   ],
                 ),
                 if (lugar.descripcion != null) ...[
                   const SizedBox(height: 16),
-                  Text(lugar.descripcion!, style: const TextStyle(fontSize: 16, height: 1.4)),
+                  Text(_t(lugar.descripcion!), style: const TextStyle(fontSize: 16, height: 1.4)),
+                  if (_traducido.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(tr('Traducción automática con IA.'),
+                          style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.55))),
+                    ),
                 ],
                 if (lugar.textoEntrada case final entrada?) ...[
                   const SizedBox(height: 12),
@@ -110,12 +153,12 @@ class LugarScreen extends StatelessWidget {
                 ],
                 const SizedBox(height: 8),
                 Text(
-                  'Visita sugerida: ${lugar.duracionVisitaMin} min',
+                  tr('Visita sugerida: {min} min', {'min': lugar.duracionVisitaMin}),
                   style: TextStyle(color: Colors.black.withValues(alpha: 0.65)),
                 ),
                 // VITRINA DIGITAL: promoción y productos o servicios (SQL 015).
                 if (lugar.tieneVitrina) ...[
-                  _Seccion('Vitrina'),
+                  _Seccion(tr('Vitrina')),
                   if (lugar.promocion case final promo?)
                     Container(
                       width: double.infinity,
@@ -130,7 +173,7 @@ class LugarScreen extends StatelessWidget {
                         children: [
                           const Icon(Icons.local_offer_outlined, color: VgColores.terracota),
                           const SizedBox(width: 10),
-                          Expanded(child: Text(promo, style: const TextStyle(fontWeight: FontWeight.w600))),
+                          Expanded(child: Text(_t(promo), style: const TextStyle(fontWeight: FontWeight.w600))),
                         ],
                       ),
                     ),
@@ -139,14 +182,14 @@ class LugarScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
                         children: [
-                          Expanded(child: Text(p.nombre)),
+                          Expanded(child: Text(_t(p.nombre))),
                           Text(p.precioMxn == null ? '—' : '≈ \$${p.precioMxn}',
                               style: const TextStyle(fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
                   if (lugar.productos.isNotEmpty)
-                    Text('Precios aproximados que da el negocio.',
+                    Text(tr('Precios aproximados que da el negocio.'),
                         style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.55))),
                 ],
                 // Comerciante informal: en qué Punto VeraGo vende y su giro.
@@ -154,34 +197,34 @@ class LugarScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _Aviso(
                     icono: Icons.storefront_outlined,
-                    texto: '${lugar.giroNombre ?? 'Emprendedor local'} · Lo encuentras en '
-                        '${miPunto.nombre}, en el horario del punto.',
+                    texto: tr('{giro} · Lo encuentras en {punto}, en el horario del punto.', {
+                      'giro': lugar.giroNombre == null ? tr('Emprendedor local') : _t(lugar.giroNombre!),
+                      'punto': miPunto.nombre,
+                    }),
                   ),
                 ],
                 // Punto VeraGo: explicación y lista de comerciantes.
                 if (lugar.esPunto) ...[
                   const SizedBox(height: 16),
-                  const _Aviso(
+                  _Aviso(
                     icono: Icons.storefront_outlined,
-                    texto: 'Punto VeraGo: mesas de emprendedores locales en un lugar especial '
-                        'del centro, con un negocio de cada giro.',
+                    texto: tr('Punto VeraGo: mesas de emprendedores locales en un lugar especial del centro, con un negocio de cada giro.'),
                   ),
                 ],
                 if (lugar.participaPasaporte) ...[
                   const SizedBox(height: 16),
                   _Aviso(
                     icono: Icons.qr_code_2,
-                    texto: 'Pide en el comercio su código QR y escanéalo desde la pestaña '
-                        'Pasaporte para ganar su sello.',
+                    texto: tr('Pide en el comercio su código QR y escanéalo desde la pestaña Pasaporte para ganar su sello.'),
                   ),
                 ],
-                _Seccion('Horario'),
+                _Seccion(tr('Horario')),
                 if (lugar.horarios.isEmpty)
-                  const Text('Horario no disponible. Consulta directamente en el lugar.')
+                  Text(tr('Horario no disponible. Consulta directamente en el lugar.'))
                 else
                   for (var d = 0; d < 7; d++)
                     _FilaHorario(
-                      dia: _dias[d],
+                      dia: _mayuscula(Idioma.dia(d)),
                       horario: lugar.horarioDel(d),
                       esHoy: d == hoy,
                     ),
@@ -189,12 +232,12 @@ class LugarScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
-                      'Horario ficticio de demostración.',
+                      tr('Horario ficticio de demostración.'),
                       style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.55)),
                     ),
                   ),
                 if (lugar.direccion != null || lugar.telefono != null) ...[
-                  _Seccion('Contacto'),
+                  _Seccion(tr('Contacto')),
                   if (lugar.direccion != null)
                     ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -208,7 +251,7 @@ class LugarScreen extends StatelessWidget {
                       title: Text(lugar.telefono!),
                     ),
                 ],
-                _Seccion('Ubicación'),
+                _Seccion(tr('Ubicación')),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: SizedBox(
@@ -223,7 +266,7 @@ class LugarScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Ubicación aproximada.',
+                  tr('Ubicación aproximada.'),
                   style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.55)),
                 ),
                 const SizedBox(height: 8),
@@ -232,7 +275,7 @@ class LugarScreen extends StatelessWidget {
                   child: TextButton.icon(
                     onPressed: () => ReportarProblema.abrir(context, lugar),
                     icon: const Icon(Icons.flag_outlined),
-                    label: const Text('Reportar un problema'),
+                    label: Text(tr('Reportar un problema')),
                   ),
                 ),
               ],
@@ -241,7 +284,7 @@ class LugarScreen extends StatelessWidget {
           if (delPunto.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _Seccion('Comerciantes en este punto'),
+              child: _Seccion(tr('Comerciantes en este punto')),
             ),
             for (final c in delPunto)
               TarjetaLugar(
@@ -255,12 +298,12 @@ class LugarScreen extends StatelessWidget {
           if (cercanos.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _Seccion('Cerca de aquí'),
+              child: _Seccion(tr('Cerca de aquí')),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
               child: Text(
-                'Comercios locales a menos de $_minutosCerca minutos caminando.',
+                tr('Comercios locales a menos de {min} minutos caminando.', {'min': _minutosCerca}),
                 style: TextStyle(color: Colors.black.withValues(alpha: 0.65)),
               ),
             ),
@@ -278,6 +321,8 @@ class LugarScreen extends StatelessWidget {
     );
   }
 }
+
+String _mayuscula(String t) => t.isEmpty ? t : t[0].toUpperCase() + t.substring(1);
 
 class _Seccion extends StatelessWidget {
   const _Seccion(this.titulo);
@@ -305,9 +350,9 @@ class _FilaHorario extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Expanded(child: Text(esHoy ? '$dia (hoy)' : dia, style: estilo)),
+          Expanded(child: Text(esHoy ? tr('{dia} (hoy)', {'dia': dia}) : dia, style: estilo)),
           Text(
-            h == null ? 'Cerrado' : '${Horario.formato(h.abre)} – ${Horario.formato(h.cierra)}',
+            h == null ? tr('Cerrado') : '${Horario.formato(h.abre)} – ${Horario.formato(h.cierra)}',
             style: estilo,
           ),
         ],

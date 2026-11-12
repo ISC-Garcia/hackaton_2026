@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../legal/documentos.dart';
 import '../models/sello.dart';
 import '../services/auth_service.dart';
@@ -8,6 +9,7 @@ import '../services/pasaporte_service.dart';
 import '../services/preferencias_service.dart';
 import '../services/validaciones.dart';
 import '../theme/app_theme.dart';
+import '../widgets/boton_idioma.dart';
 import '../widgets/categoria_estilo.dart';
 import 'bienvenida_screen.dart';
 import 'documento_screen.dart';
@@ -65,16 +67,16 @@ class _AjustesScreenState extends State<AjustesScreen> {
     final nombre = _nombre.text.trim();
     final error = Validaciones.nombrePersona()(nombre);
     if (error != null) {
-      _mensaje(error);
+      _mensaje(tr(error));
       return;
     }
     setState(() => _guardandoNombre = true);
     try {
       await _pasaporte.cambiarNombre(nombre);
       _huboCambios = true;
-      _mensaje('Nombre guardado.');
+      _mensaje(tr('Nombre guardado.'));
     } on ErrorVeraGo catch (e) {
-      _mensaje(e.mensaje);
+      _mensaje(tr(e.mensaje));
     } finally {
       if (mounted) setState(() => _guardandoNombre = false);
     }
@@ -103,17 +105,16 @@ class _AjustesScreenState extends State<AjustesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         icon: const Icon(Icons.delete_forever_outlined, color: Color(0xFF9B2C2C), size: 40),
-        title: const Text('¿Borrar tu cuenta para siempre?'),
-        content: const Text(
-          'Se borran tu cuenta, tu nombre y todos tus sellos. Si tienes un negocio: si aún no se '
-          'aprobaba, se borra; si ya estaba en la app, se oculta.\n\nEsto no se puede deshacer.',
+        title: Text(tr('¿Borrar tu cuenta para siempre?')),
+        content: Text(
+          tr('Se borran tu cuenta, tu nombre y todos tus sellos. Si tienes un negocio: si aún no se aprobaba, se borra; si ya estaba en la app, se oculta.\n\nEsto no se puede deshacer.'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(tr('Cancelar'))),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFF9B2C2C)),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Borrar para siempre'),
+            child: Text(tr('Borrar para siempre')),
           ),
         ],
       ),
@@ -122,7 +123,7 @@ class _AjustesScreenState extends State<AjustesScreen> {
     final error = await _pasaporte.borrarMiCuenta();
     if (!mounted) return;
     if (error != null) {
-      _mensaje(error);
+      _mensaje(tr(error));
       return;
     }
     // La cuenta ya no existe: cerramos la sesión guardada en el celular.
@@ -130,7 +131,7 @@ class _AjustesScreenState extends State<AjustesScreen> {
       await _auth.salir();
     } catch (_) {}
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tu cuenta se borró.')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr('Tu cuenta se borró.'))));
     Navigator.of(context).pop(true);
   }
 
@@ -140,9 +141,9 @@ class _AjustesScreenState extends State<AjustesScreen> {
   }
 
   static String _nombreRol(String rol) => switch (rol) {
-        'comerciante' => 'Comerciante',
-        'admin' => 'Administrador',
-        _ => 'Visitante',
+        'comerciante' => tr('Comerciante'),
+        'admin' => tr('Administrador'),
+        _ => tr('Visitante'),
       };
 
   @override
@@ -155,10 +156,21 @@ class _AjustesScreenState extends State<AjustesScreen> {
         if (!didPop) Navigator.of(context).pop(_huboCambios);
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Ajustes')),
+        appBar: AppBar(title: Text(tr('Ajustes'))),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
           children: [
+            // 0. Idioma (visitantes que no hablan español). Al cambiarlo se
+            // reabre la app en la pantalla principal, ya traducida.
+            const _Titulo('Idioma'),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.language, color: VgColores.azulGolfo),
+              title: Text(Idioma.disponibles[Idioma.codigo]!),
+              subtitle: const Text('Español · English · Français · Deutsch · Português'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => BotonIdioma.elegir(context),
+            ),
             // 1. Mi cuenta
             if (perfil != null) ...[
               const _Titulo('Mi cuenta'),
@@ -169,15 +181,15 @@ class _AjustesScreenState extends State<AjustesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _Dato(icono: Icons.mail_outline, texto: _pasaporte.miCorreo ?? '—'),
-                      _Dato(icono: Icons.badge_outlined, texto: 'Rol: ${_nombreRol(perfil.rol)}'),
+                      _Dato(icono: Icons.badge_outlined, texto: tr('Rol: {rol}', {'rol': _nombreRol(perfil.rol)})),
                       const SizedBox(height: 12),
                       TextField(
                         controller: _nombre,
                         textCapitalization: TextCapitalization.words,
                         inputFormatters: Validaciones.nombrePersonaFormato, // sin números
-                        decoration: const InputDecoration(
-                          labelText: 'Mi nombre',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: tr('Mi nombre'),
+                          border: const OutlineInputBorder(),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -185,7 +197,7 @@ class _AjustesScreenState extends State<AjustesScreen> {
                         alignment: Alignment.centerRight,
                         child: FilledButton(
                           onPressed: _guardandoNombre ? null : _guardarNombre,
-                          child: Text(_guardandoNombre ? 'Guardando…' : 'Guardar nombre'),
+                          child: Text(_guardandoNombre ? tr('Guardando…') : tr('Guardar nombre')),
                         ),
                       ),
                     ],
@@ -196,7 +208,7 @@ class _AjustesScreenState extends State<AjustesScreen> {
 
             // 2. Mis intereses
             const _Titulo('Mis intereses'),
-            const Text('Se marcan solos al pedir una ruta. Se guardan en este celular.'),
+            Text(tr('Se marcan solos al pedir una ruta. Se guardan en este celular.')),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -205,7 +217,7 @@ class _AjustesScreenState extends State<AjustesScreen> {
                 for (final c in CategoriaEstilo.nombres.entries)
                   FilterChip(
                     avatar: Icon(CategoriaEstilo.de(c.key).icono, size: 18),
-                    label: Text(c.value),
+                    label: Text(tr(c.value)),
                     selected: _intereses.contains(c.key),
                     onSelected: (sel) => _cambiarInteres(c.key, sel),
                   ),
@@ -215,10 +227,13 @@ class _AjustesScreenState extends State<AjustesScreen> {
             // Acceso para comerciantes
             const _Titulo('¿Tienes un negocio?'),
             OutlinedButton.icon(
-              onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const NegocioScreen())),
+              onPressed: () async {
+                await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NegocioScreen()));
+                // Al volver al Pasaporte, que se recargue (pudo cambiar el rol).
+                _huboCambios = true;
+              },
               icon: const Icon(Icons.storefront_outlined),
-              label: const Text('Soy un negocio'),
+              label: Text(tr('Soy un negocio')),
             ),
 
             // 3. Bienvenida
@@ -226,7 +241,7 @@ class _AjustesScreenState extends State<AjustesScreen> {
             OutlinedButton.icon(
               onPressed: _verBienvenida,
               icon: const Icon(Icons.replay),
-              label: const Text('Ver la guía de la app otra vez'),
+              label: Text(tr('Ver la guía de la app otra vez')),
             ),
 
             // 4. Privacidad
@@ -237,20 +252,18 @@ class _AjustesScreenState extends State<AjustesScreen> {
                 color: VgColores.azulGolfo.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Qué guardamos', style: TextStyle(fontWeight: FontWeight.w700)),
-                  SizedBox(height: 4),
-                  Text('• Tu correo y tu nombre.\n• Los sellos que ganas (lugar y fecha).'),
-                  SizedBox(height: 10),
-                  Text('Qué NO guardamos', style: TextStyle(fontWeight: FontWeight.w700)),
-                  SizedBox(height: 4),
-                  Text('• Tu ubicación: se usa en tu celular para el mapa (si das permiso). '
-                      'Solo el inicio de una ruta desde "Mi ubicación" se envía para dibujar el camino.\n'
-                      '• No te seguimos en segundo plano.'),
-                  SizedBox(height: 10),
-                  Text('Tus intereses se guardan solo en este celular.'),
+                  Text(tr('Qué guardamos'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text(tr('• Tu correo y tu nombre.\n• Los sellos que ganas (lugar y fecha).')),
+                  const SizedBox(height: 10),
+                  Text(tr('Qué NO guardamos'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text(tr('• Tu ubicación: se usa en tu celular para el mapa (si das permiso). Solo el inicio de una ruta desde "Mi ubicación" se envía para dibujar el camino.\n• No te seguimos en segundo plano.')),
+                  const SizedBox(height: 10),
+                  Text(tr('Tus intereses y tu idioma se guardan solo en este celular.')),
                 ],
               ),
             ),
@@ -260,8 +273,8 @@ class _AjustesScreenState extends State<AjustesScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.description_outlined, color: VgColores.azulGolfo),
-                title: Text(d.titulo),
-                subtitle: Text(d.resumen),
+                title: Text(tr(d.titulo)),
+                subtitle: Text(tr(d.resumen)),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => DocumentoScreen.abrir(context, d),
               ),
@@ -271,18 +284,18 @@ class _AjustesScreenState extends State<AjustesScreen> {
                 onPressed: _cerrarSesion,
                 style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF9B2C2C)),
                 icon: const Icon(Icons.logout),
-                label: const Text('Cerrar sesión'),
+                label: Text(tr('Cerrar sesión')),
               ),
               const SizedBox(height: 8),
               if (perfil.esAdmin)
-                const Text('Una cuenta de administrador no se borra desde la app.',
-                    style: TextStyle(fontSize: 12), textAlign: TextAlign.center)
+                Text(tr('Una cuenta de administrador no se borra desde la app.'),
+                    style: const TextStyle(fontSize: 12), textAlign: TextAlign.center)
               else
                 TextButton.icon(
                   onPressed: _borrarCuenta,
                   style: TextButton.styleFrom(foregroundColor: const Color(0xFF9B2C2C)),
                   icon: const Icon(Icons.delete_forever_outlined),
-                  label: const Text('Borrar mi cuenta'),
+                  label: Text(tr('Borrar mi cuenta')),
                 ),
             ],
           ],
@@ -299,7 +312,7 @@ class _Titulo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 24, bottom: 10),
-        child: Text(texto, style: Theme.of(context).textTheme.titleLarge),
+        child: Text(tr(texto), style: Theme.of(context).textTheme.titleLarge),
       );
 }
 

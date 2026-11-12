@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/evento.dart';
 import '../models/grupo_eventos.dart';
 import '../services/auth_service.dart';
 import '../services/error_verago.dart';
 import '../services/eventos_service.dart';
 import '../services/pasaporte_service.dart';
+import '../services/traductor_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/etiqueta.dart';
@@ -42,14 +44,25 @@ class _AgendaScreenState extends State<AgendaScreen> {
   /// Orden de "Próximos": false = más pronto primero (por defecto).
   bool _masLejanoPrimero = false;
 
-  static const _diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-  static const _mesesLargos = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
-  ];
+  /// "sábado 14 de noviembre" (en el idioma de la app).
+  String _nombreDia(DateTime d) => Idioma.fechaLarga(d);
 
-  /// "sábado 14 de noviembre"
-  String _nombreDia(DateTime d) => '${_diasSemana[d.weekday % 7]} ${d.day} de ${_mesesLargos[d.month - 1]}';
+  /// IDIOMA: títulos y descripciones traducidos con Gemini (vacío en español).
+  Map<String, String> _traducido = const {};
+  String _t(String original) => _traducido[original] ?? original;
+
+  Future<List<Evento>> _cargar() async {
+    final eventos = await _servicio.obtenerProximos();
+    if (!Idioma.esEspanol && eventos.isNotEmpty) {
+      // Una sola llamada para todos los textos; mientras llega se ve el español.
+      TraductorService().traducir([
+        for (final e in eventos) ...[e.titulo, ?e.descripcion],
+      ]).then((r) {
+        if (mounted) setState(() => _traducido = r);
+      });
+    }
+    return eventos;
+  }
 
   /// Tarjetas de la lista, con un encabezado cada vez que cambia el día
   /// (solo en "Próximos": en "Hoy" todo es del mismo día).
@@ -75,6 +88,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
         esAdmin: _esAdmin,
         alEditar: _abrirFormulario,
         alCambiar: _recargar,
+        traducir: _t,
       ));
     }
     return filas;
@@ -85,7 +99,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
   @override
   void initState() {
     super.initState();
-    _futuro = _servicio.obtenerProximos();
+    _futuro = _cargar();
     _revisarAdmin();
     // Si alguien entra o sale, volvemos a revisar si es admin.
     _suscripcion = AuthService().cambios.listen((_) => _revisarAdmin());
@@ -121,7 +135,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
   }
 
   void _recargar() => setState(() {
-        _futuro = _servicio.obtenerProximos()..ignore();
+        _futuro = _cargar()..ignore();
       });
 
   bool _esHoy(Evento e, DateTime ahora) =>
@@ -132,10 +146,10 @@ class _AgendaScreenState extends State<AgendaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Agenda'),
+        title: Text(tr('Agenda')),
         actions: [
           // Sin eventos no hay lista que jalar para recargar: por eso el botón.
-          IconButton(tooltip: 'Actualizar', icon: const Icon(Icons.refresh), onPressed: _recargar),
+          IconButton(tooltip: tr('Actualizar'), icon: const Icon(Icons.refresh), onPressed: _recargar),
         ],
       ),
       floatingActionButton: _esAdmin
@@ -154,9 +168,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
           if (snapshot.hasError) {
             return EstadoVacio(
               icono: Icons.wifi_off,
-              titulo: 'Algo salió mal',
-              mensaje: snapshot.error.toString(),
-              textoBoton: 'Reintentar',
+              titulo: tr('Algo salió mal'),
+              mensaje: tr(snapshot.error.toString()),
+              textoBoton: tr('Reintentar'),
               alPresionar: _recargar,
             );
           }
@@ -172,8 +186,8 @@ class _AgendaScreenState extends State<AgendaScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: SegmentedButton<bool>(
                   segments: [
-                    ButtonSegment(value: true, label: Text('Hoy (${hoy.length})')),
-                    ButtonSegment(value: false, label: Text('Próximos (${proximos.length})')),
+                    ButtonSegment(value: true, label: Text(tr('Hoy ({n})', {'n': hoy.length}))),
+                    ButtonSegment(value: false, label: Text(tr('Próximos ({n})', {'n': proximos.length}))),
                   ],
                   selected: {_verHoy},
                   onSelectionChanged: (s) => setState(() => _verHoy = s.first),
@@ -188,7 +202,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
                     child: TextButton.icon(
                       onPressed: () => setState(() => _masLejanoPrimero = !_masLejanoPrimero),
                       icon: const Icon(Icons.swap_vert),
-                      label: Text(_masLejanoPrimero ? 'Más lejano primero' : 'Más pronto primero'),
+                      label: Text(_masLejanoPrimero ? tr('Más lejano primero') : tr('Más pronto primero')),
                     ),
                   ),
                 ),
@@ -196,11 +210,11 @@ class _AgendaScreenState extends State<AgendaScreen> {
                 child: visibles.isEmpty
                     ? EstadoVacio(
                         icono: Icons.event_busy,
-                        titulo: _verHoy ? 'No hay eventos hoy' : 'No hay eventos próximos',
+                        titulo: _verHoy ? tr('No hay eventos hoy') : tr('No hay eventos próximos'),
                         mensaje: _verHoy
-                            ? 'Revisa los próximos días.'
-                            : 'Vuelve pronto: aquí aparecerán nuevos eventos.',
-                        textoBoton: _verHoy ? 'Ver próximos' : null,
+                            ? tr('Revisa los próximos días.')
+                            : tr('Vuelve pronto: aquí aparecerán nuevos eventos.'),
+                        textoBoton: _verHoy ? tr('Ver próximos') : null,
                         alPresionar: _verHoy ? () => setState(() => _verHoy = false) : null,
                       )
                     : RefreshIndicator(
@@ -230,7 +244,11 @@ class _TarjetaEvento extends StatelessWidget {
     required this.esAdmin,
     required this.alEditar,
     required this.alCambiar,
+    required this.traducir,
   });
+
+  /// Texto traducido (título/descripción) o el original.
+  final String Function(String) traducir;
 
   final Evento evento;
 
@@ -272,7 +290,8 @@ class _TarjetaEvento extends StatelessWidget {
     }
   }
 
-  static const _meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  /// Mes corto en el idioma de la app ("nov", "Nov", ...).
+  static String _mesCorto(int mes) => Idioma.mes(mes).substring(0, 3);
 
   String _hora(DateTime d) =>
       '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
@@ -287,19 +306,20 @@ class _TarjetaEvento extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(evento.titulo, style: Theme.of(context).textTheme.titleLarge),
+            Text(traducir(evento.titulo), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            Text('${evento.inicia.day} ${_meses[evento.inicia.month - 1]} · '
+            Text('${evento.inicia.day} ${_mesCorto(evento.inicia.month)} · '
                 '${_hora(evento.inicia)} – ${_hora(evento.termina)}'),
             if (evento.lugarNombre != null) Text(evento.lugarNombre!),
             const SizedBox(height: 4),
             Text(
-              'Costo: ${evento.textoCosto}${evento.esDemo && !evento.esGratuito ? ' (ficticio)' : ''}',
+              tr('Costo: {costo}', {'costo': tr(evento.textoCosto)}) +
+                  (evento.esDemo && !evento.esGratuito ? tr(' (ficticio)') : ''),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             if (evento.descripcion != null) ...[
               const SizedBox(height: 12),
-              Text(evento.descripcion!, style: const TextStyle(height: 1.4)),
+              Text(traducir(evento.descripcion!), style: const TextStyle(height: 1.4)),
             ],
             // Opciones solo para el admin.
             if (esAdmin) ...[
@@ -367,14 +387,14 @@ class _TarjetaEvento extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: Text(evento.titulo, style: Theme.of(hoja).textTheme.titleLarge),
+              child: Text(traducir(evento.titulo), style: Theme.of(hoja).textTheme.titleLarge),
             ),
             for (final e in g.eventos)
               ListTile(
                 leading: const Icon(Icons.schedule),
                 title: Text('${_hora(e.inicia)} – ${_hora(e.termina)}',
                     style: TextStyle(decoration: e.cancelado ? TextDecoration.lineThrough : null)),
-                subtitle: e.cancelado ? const Text('Cancelado') : (e.borrador ? const Text('Borrador') : null),
+                subtitle: e.cancelado ? Text(tr('Cancelado')) : (e.borrador ? const Text('Borrador') : null),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.of(hoja).pop();
@@ -384,6 +404,7 @@ class _TarjetaEvento extends StatelessWidget {
                     esAdmin: esAdmin,
                     alEditar: alEditar,
                     alCambiar: alCambiar,
+                    traducir: traducir,
                   )._verDetalle(context);
                 },
               ),
@@ -430,7 +451,7 @@ class _TarjetaEvento extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      _meses[evento.inicia.month - 1],
+                      _mesCorto(evento.inicia.month),
                       style: const TextStyle(color: VgColores.terracota),
                     ),
                   ],
@@ -442,7 +463,7 @@ class _TarjetaEvento extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      evento.titulo,
+                      traducir(evento.titulo),
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, decoration: tachado),
                     ),
                     if (evento.lugarNombre != null) ...[
@@ -492,7 +513,7 @@ class _TarjetaEvento extends StatelessWidget {
                           textAlign: TextAlign.right,
                           style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6))),
                     if (varios)
-                      Text('${g.eventos.length} horarios',
+                      Text(tr('{n} horarios', {'n': g.eventos.length}),
                           style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6))),
                   ],
                 ),

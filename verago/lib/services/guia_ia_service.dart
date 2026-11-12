@@ -125,9 +125,12 @@ class GuiaIaService {
     });
   }
 
-  static String instrucciones(String contexto, {String? perfil}) => '''
+  /// `idioma` = idioma de la app en inglés ("Spanish", "English", ...): la guía
+  /// contesta en ese idioma aunque la lista de lugares esté en español.
+  static String instrucciones(String contexto, {String? perfil, String idioma = 'Spanish'}) => '''
 Eres el guía turístico oficial de VeraGo en el Centro Histórico de Veracruz, México.
-Responde en español, de forma natural, amigable y breve (máximo 3 oraciones).
+Responde SIEMPRE en este idioma: $idioma (aunque la lista esté en español), de forma natural, amigable y breve (máximo 3 oraciones).
+Los nombres propios de los lugares no se traducen.
 
 Reglas:
 - Recomienda SOLO lugares de la LISTA de abajo y usa sus "id" exactos. Máximo 4 lugares.
@@ -165,6 +168,7 @@ $perfil
     required List<MensajeChat> historial,
     required Set<String> idsValidos,
     String? perfil,
+    String idioma = 'Spanish',
   }) async {
     if (_apiKey.isEmpty) {
       throw const ErrorVeraGo('Falta configurar la guía: agrega GEMINI_API_KEY en env.json.');
@@ -175,7 +179,7 @@ $perfil
     final cuerpo = {
       'systemInstruction': {
         'parts': [
-          {'text': instrucciones(contexto, perfil: perfil)},
+          {'text': instrucciones(contexto, perfil: perfil, idioma: idioma)},
         ],
       },
       'contents': [

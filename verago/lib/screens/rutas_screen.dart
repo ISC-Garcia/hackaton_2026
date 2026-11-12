@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/distancia.dart';
 import '../services/error_verago.dart';
@@ -43,7 +44,8 @@ class _RutasScreenState extends State<RutasScreen> {
   final _prefs = PreferenciasService();
   late Future<List<Lugar>> _futuro;
 
-  static const _opcionesMinutos = [60, 120, 180, 240];
+  /// Hasta 5 h: lo que un visitante de crucero pasa en tierra (reto del hackatón).
+  static const _opcionesMinutos = [60, 120, 180, 240, 300];
 
   int _minutos = 120;
   Set<String> _intereses = {};
@@ -84,7 +86,7 @@ class _RutasScreenState extends State<RutasScreen> {
     // Seguridad extra: el botón ya está apagado si no hay intereses.
     if (_intereses.isEmpty) return;
     var inicio = Distancia.zocalo;
-    var nombreInicio = 'el Zócalo';
+    var nombreInicio = tr('el Zócalo');
 
     if (_desdeMiUbicacion) {
       setState(() => _buscandoUbicacion = true);
@@ -94,18 +96,18 @@ class _RutasScreenState extends State<RutasScreen> {
         // empezamos desde el Zócalo y lo avisamos.
         if (Distancia.metros(Distancia.zocalo, yo) > 15000) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Estás lejos del Centro Histórico. Armamos tu ruta desde el Zócalo.'),
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(tr('Estás lejos del Centro Histórico. Armamos tu ruta desde el Zócalo.')),
             ));
           }
         } else {
           inicio = yo;
-          nombreInicio = 'tu ubicación';
+          nombreInicio = tr('tu ubicación');
         }
       } on ErrorVeraGo catch (e) {
         if (!mounted) return;
         setState(() => _buscandoUbicacion = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.mensaje)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr(e.mensaje))));
         return;
       }
       if (!mounted) return;
@@ -132,11 +134,11 @@ class _RutasScreenState extends State<RutasScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rutas'),
+        title: Text(tr('Rutas')),
         actions: [
           // La pestaña queda abierta en memoria; con esto se ven los
           // negocios recién aprobados sin cerrar la app.
-          IconButton(tooltip: 'Actualizar', icon: const Icon(Icons.refresh), onPressed: _recargar),
+          IconButton(tooltip: tr('Actualizar'), icon: const Icon(Icons.refresh), onPressed: _recargar),
         ],
       ),
       body: FutureBuilder<List<Lugar>>(
@@ -148,9 +150,9 @@ class _RutasScreenState extends State<RutasScreen> {
           if (snapshot.hasError) {
             return EstadoVacio(
               icono: Icons.wifi_off,
-              titulo: 'Algo salió mal',
-              mensaje: snapshot.error.toString(),
-              textoBoton: 'Reintentar',
+              titulo: tr('Algo salió mal'),
+              mensaje: tr(snapshot.error.toString()),
+              textoBoton: tr('Reintentar'),
               alPresionar: _recargar,
             );
           }
@@ -172,11 +174,11 @@ class _RutasScreenState extends State<RutasScreen> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       children: [
         Text(
-          'Tu recorrido a la medida',
+          tr('Tu recorrido a la medida'),
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 4),
-        const Text('Dinos cuánto tiempo tienes y qué te gusta.'),
+        Text(tr('Dinos cuánto tiempo tienes y qué te gusta.')),
         const _Titulo('¿Cuánto tiempo tienes?'),
         Wrap(
           spacing: 8,
@@ -194,8 +196,8 @@ class _RutasScreenState extends State<RutasScreen> {
           padding: const EdgeInsets.only(bottom: 10),
           child: Text(
             faltaInteres
-                ? 'Elige al menos uno para generar tu ruta.'
-                : 'Tu ruta solo tendrá lugares de lo que elijas.',
+                ? tr('Elige al menos uno para generar tu ruta.')
+                : tr('Tu ruta solo tendrá lugares de lo que elijas.'),
             style: TextStyle(
               fontSize: 12,
               color: faltaInteres ? const Color(0xFF9B2C2C) : Colors.black.withValues(alpha: 0.6),
@@ -209,7 +211,7 @@ class _RutasScreenState extends State<RutasScreen> {
             for (final c in categorias.entries)
               FilterChip(
                 avatar: Icon(CategoriaEstilo.de(c.key).icono, size: 18),
-                label: Text(c.value),
+                label: Text(tr(c.value)),
                 selected: _intereses.contains(c.key),
                 onSelected: (sel) => setState(() {
                   _intereses = {..._intereses};
@@ -221,26 +223,26 @@ class _RutasScreenState extends State<RutasScreen> {
         const _Titulo('Tu ritmo al caminar'),
         SegmentedButton<Ritmo>(
           segments: [
-            for (final r in Ritmo.values) ButtonSegment(value: r, label: Text(r.nombre)),
+            for (final r in Ritmo.values) ButtonSegment(value: r, label: Text(tr(r.nombre))),
           ],
           selected: {_ritmo},
           onSelectionChanged: (s) => setState(() => _ritmo = s.first),
         ),
         const _Titulo('¿Desde dónde empiezas?'),
         SegmentedButton<bool>(
-          segments: const [
-            ButtonSegment(value: false, icon: Icon(Icons.location_city), label: Text('Zócalo')),
-            ButtonSegment(value: true, icon: Icon(Icons.my_location), label: Text('Mi ubicación')),
+          segments: [
+            ButtonSegment(value: false, icon: const Icon(Icons.location_city), label: Text(tr('Zócalo'))),
+            ButtonSegment(value: true, icon: const Icon(Icons.my_location), label: Text(tr('Mi ubicación'))),
           ],
           selected: {_desdeMiUbicacion},
           onSelectionChanged: (s) => setState(() => _desdeMiUbicacion = s.first),
         ),
         if (_desdeMiUbicacion)
-          const Padding(
-            padding: EdgeInsets.only(top: 6),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
             child: Text(
-              'Usamos tu ubicación solo para empezar la ruta. No la guardamos.',
-              style: TextStyle(fontSize: 12),
+              tr('Usamos tu ubicación solo para empezar la ruta. No la guardamos.'),
+              style: const TextStyle(fontSize: 12),
             ),
           ),
         const SizedBox(height: 28),
@@ -252,7 +254,7 @@ class _RutasScreenState extends State<RutasScreen> {
                 ? const SizedBox(
                     width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.route),
-            label: const Text('Generar ruta'),
+            label: Text(tr('Generar ruta')),
           ),
         ),
       ],
@@ -267,6 +269,6 @@ class _Titulo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 24, bottom: 10),
-        child: Text(texto, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        child: Text(tr(texto), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
       );
 }

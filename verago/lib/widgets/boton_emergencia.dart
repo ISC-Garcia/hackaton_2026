@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../i18n/idioma.dart';
+
 /// BOTÓN DE EMERGENCIA 911.
 ///
 /// Qué hace: abre la app de llamadas del celular con el 911 ya escrito
@@ -25,15 +27,15 @@ class BotonEmergencia {
       abrio = false;
     }
     if (!abrio && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('No pudimos abrir la app de llamadas. Marca 911 desde tu teléfono.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(tr('No pudimos abrir la app de llamadas. Marca 911 desde tu teléfono.')),
       ));
     }
   }
 
   /// Botón pequeño para la barra de arriba (Explorar).
   static Widget icono(BuildContext context) => IconButton(
-        tooltip: 'Emergencia: llamar al 911',
+        tooltip: tr('Emergencia: llamar al 911'),
         icon: const Icon(Icons.emergency_outlined, color: _color),
         onPressed: () => llamar(context),
       );
@@ -41,7 +43,7 @@ class BotonEmergencia {
   /// Botón grande y visible para la pantalla de la ruta.
   static Widget flotante(BuildContext context) => FloatingActionButton.extended(
         heroTag: 'emergencia-911',
-        tooltip: 'Emergencia: llamar al 911',
+        tooltip: tr('Emergencia: llamar al 911'),
         backgroundColor: _color,
         foregroundColor: Colors.white,
         onPressed: () => llamar(context),

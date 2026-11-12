@@ -18,9 +18,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Mi cuenta'), findsNothing);
+    expect(find.text('Idioma'), findsOneWidget); // primera sección
     expect(find.text('Mis intereses'), findsOneWidget);
+    // La lista es larga: se desplaza hasta ver cada cosa.
+    await tester.scrollUntilVisible(find.text('Ver la guía de la app otra vez'), 200);
     expect(find.text('Ver la guía de la app otra vez'), findsOneWidget);
 
+    await tester.scrollUntilVisible(find.text('Museos'), -200);
     await tester.tap(find.text('Museos'));
     await tester.pumpAndSettle();
     expect(await PreferenciasService().leerIntereses(), {'museo'});

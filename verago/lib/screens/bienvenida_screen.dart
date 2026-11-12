@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../services/preferencias_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/boton_idioma.dart';
 import '../widgets/categoria_estilo.dart';
 import '../widgets/vg_logo.dart';
 import 'negocio_screen.dart';
@@ -65,28 +67,32 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(onPressed: _terminar, child: const Text('Saltar')),
+            // Idioma (izquierda) y Saltar (derecha). Al cambiar el idioma
+            // solo se redibuja esta pantalla (setState).
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                BotonIdioma(conTexto: true, alCambiar: () => setState(() {})),
+                TextButton(onPressed: _terminar, child: Text(tr('Saltar'))),
+              ],
             ),
             Expanded(
               child: PageView(
                 controller: _paginas,
                 onPageChanged: (i) => setState(() => _pagina = i),
                 children: [
-                  const _Pagina(
+                  _Pagina(
                     icono: Icons.explore,
                     color: VgColores.azulGolfo,
                     logo: true, // primera página: logo de VeraGo
-                    titulo: 'Descubre el Centro Histórico',
-                    texto: 'Lugares, cafés, museos y comercios locales de Veracruz, '
-                        'a pocos minutos caminando.',
+                    titulo: tr('Descubre el Centro Histórico'),
+                    texto: tr('Lugares, cafés, museos y comercios locales de Veracruz, a pocos minutos caminando.'),
                   ),
                   _Pagina(
                     icono: Icons.route,
                     color: VgColores.terracota,
-                    titulo: '¿Qué te interesa?',
-                    texto: 'Elige lo que te gusta y armaremos rutas a tu medida.',
+                    titulo: tr('¿Qué te interesa?'),
+                    texto: tr('Elige lo que te gusta y armaremos rutas a tu medida.'),
                     extra: Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -95,7 +101,7 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
                         for (final c in CategoriaEstilo.nombres.entries)
                           FilterChip(
                             avatar: Icon(CategoriaEstilo.de(c.key).icono, size: 18),
-                            label: Text(c.value),
+                            label: Text(tr(c.value)),
                             selected: _intereses.contains(c.key),
                             onSelected: (sel) => setState(() {
                               sel ? _intereses.add(c.key) : _intereses.remove(c.key);
@@ -104,44 +110,40 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
                       ],
                     ),
                   ),
-                  const _Pagina(
+                  _Pagina(
                     icono: Icons.explore,
                     color: VgColores.azulGolfo,
-                    titulo: 'Explorar',
-                    texto: 'Mapa y lista de lugares del centro. Busca cualquier sitio de Veracruz, '
-                        'toca el botón de ubicación para ver dónde estás y abre la ficha de cada lugar.',
-                    extra: _MiniBarra(resaltada: 0),
+                    titulo: tr('Explorar'),
+                    texto: tr('Mapa y lista de lugares del centro. Busca cualquier sitio de Veracruz, toca el botón de ubicación para ver dónde estás y abre la ficha de cada lugar.'),
+                    extra: const _MiniBarra(resaltada: 0),
                   ),
-                  const _Pagina(
+                  _Pagina(
                     icono: Icons.route,
                     color: VgColores.terracota,
-                    titulo: 'Rutas',
-                    texto: 'Dinos cuánto tiempo tienes y qué te interesa: armamos tu recorrido a pie, '
-                        'con el camino por las calles y la hora de llegada a cada parada.',
-                    extra: _MiniBarra(resaltada: 1),
+                    titulo: tr('Rutas'),
+                    texto: tr('Dinos cuánto tiempo tienes y qué te interesa: armamos tu recorrido a pie, con el camino por las calles y la hora de llegada a cada parada.'),
+                    extra: const _MiniBarra(resaltada: 1),
                   ),
-                  const _Pagina(
+                  _Pagina(
                     icono: Icons.event,
                     color: VgColores.terracota,
-                    titulo: 'Agenda',
-                    texto: 'Eventos de hoy y de los próximos días en el centro, con su horario '
-                        'y si son gratis o su costo aproximado.',
-                    extra: _MiniBarra(resaltada: 2),
+                    titulo: tr('Agenda'),
+                    texto: tr('Eventos de hoy y de los próximos días en el centro, con su horario y si son gratis o su costo aproximado.'),
+                    extra: const _MiniBarra(resaltada: 2),
                   ),
-                  const _Pagina(
+                  _Pagina(
                     icono: Icons.approval,
                     color: VgColores.verdePalma,
-                    titulo: 'Colecciona sellos',
-                    texto: 'En Pasaporte, escanea el QR de los negocios locales y junta sellos. '
-                        'Con cada grupo de sellos subes de insignia, hasta "Embajador VeraGo".',
-                    extra: _MiniBarra(resaltada: 3),
+                    titulo: tr('Colecciona sellos'),
+                    texto: tr('En Pasaporte, escanea el QR de los negocios locales y junta sellos. Con cada grupo de sellos subes de insignia, hasta "Embajador VeraGo".'),
+                    extra: const _MiniBarra(resaltada: 3),
                   ),
-                  const _Pagina(
+                  _Pagina(
                     icono: Icons.health_and_safety_outlined,
-                    color: Color(0xFFC62828),
-                    titulo: 'Tu seguridad y más',
+                    color: const Color(0xFFC62828),
+                    titulo: tr('Tu seguridad y más'),
                     texto: '',
-                    extra: _Consejos(),
+                    extra: const _Consejos(),
                   ),
                 ],
               ),
@@ -169,7 +171,7 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _siguiente,
-                  child: Text(_pagina == _totalPaginas - 1 ? 'Empezar' : 'Siguiente'),
+                  child: Text(_pagina == _totalPaginas - 1 ? tr('Empezar') : tr('Siguiente')),
                 ),
               ),
             ),
@@ -180,7 +182,7 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
                 onPressed: () => Navigator.of(context)
                     .push(MaterialPageRoute(builder: (_) => const NegocioScreen())),
                 icon: const Icon(Icons.storefront_outlined),
-                label: const Text('Soy un negocio'),
+                label: Text(tr('Soy un negocio')),
               ),
             ),
           ],
@@ -208,7 +210,7 @@ class _MiniBarra extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Pestaña ${_pestanas[resaltada].$2} en la barra de abajo',
+      label: tr('Pestaña {nombre} en la barra de abajo', {'nombre': tr(_pestanas[resaltada].$2)}),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
@@ -231,7 +233,7 @@ class _MiniBarra extends StatelessWidget {
                   children: [
                     Icon(_pestanas[i].$1,
                         color: i == resaltada ? VgColores.azulGolfo : Colors.black38),
-                    Text(_pestanas[i].$2,
+                    Text(tr(_pestanas[i].$2),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: i == resaltada ? FontWeight.w700 : FontWeight.w400,
@@ -274,12 +276,12 @@ class _Consejos extends StatelessWidget {
         );
     return Column(
       children: [
-        fila(Icons.emergency_outlined, const Color(0xFFC62828), 'Botón 911',
-            'En Explorar y en tu ruta hay un botón rojo que abre la app de llamadas con el 911.'),
-        fila(Icons.settings_outlined, VgColores.azulGolfo, 'Ajustes',
-            'En Pasaporte, el engrane: tu cuenta, tus intereses, esta guía y los términos.'),
-        fila(Icons.storefront_outlined, VgColores.terracota, '¿Tienes un negocio?',
-            'Regístralo con "Soy un negocio" (abajo) y aparece en el mapa y en las rutas.'),
+        fila(Icons.emergency_outlined, const Color(0xFFC62828), tr('Botón 911'),
+            tr('En Explorar y en tu ruta hay un botón rojo que abre la app de llamadas con el 911.')),
+        fila(Icons.settings_outlined, VgColores.azulGolfo, tr('Ajustes'),
+            tr('En Pasaporte, el engrane: tu cuenta, tus intereses, esta guía, el idioma y los términos.')),
+        fila(Icons.storefront_outlined, VgColores.terracota, tr('¿Tienes un negocio?'),
+            tr('Regístralo con "Soy un negocio" (abajo) y aparece en el mapa y en las rutas.')),
       ],
     );
   }

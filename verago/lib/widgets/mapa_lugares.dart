@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/geocodificacion_service.dart';
 import '../theme/app_theme.dart';
@@ -150,7 +151,7 @@ class _MapaLugaresState extends State<MapaLugares> {
                     height: 40,
                     alignment: Alignment.topCenter, // la punta del pin en el lugar
                     child: Semantics(
-                      label: '${otro.nombre} (lugar del mapa)',
+                      label: tr('{lugar} (lugar del mapa)', {'lugar': otro.nombre}),
                       button: widget.alTocarDelMapa != null,
                       child: GestureDetector(
                         onTap: widget.alTocarDelMapa == null ? null : () => widget.alTocarDelMapa!(otro),
@@ -178,7 +179,7 @@ class _MapaLugaresState extends State<MapaLugares> {
                 if (widget.alPedirUbicacion != null) ...[
                   _BotonMapa(
                     icono: Icons.my_location,
-                    descripcion: 'Mostrar dónde estoy',
+                    descripcion: tr('Mostrar dónde estoy'),
                     alPresionar: widget.buscandoUbicacion ? null : widget.alPedirUbicacion,
                     cargando: widget.buscandoUbicacion,
                   ),
@@ -188,13 +189,13 @@ class _MapaLugaresState extends State<MapaLugares> {
                 // solo regresa el mapa al punto inicial.
                 _BotonMapa(
                   icono: Icons.center_focus_strong_outlined,
-                  descripcion: 'Volver a centrar el mapa',
+                  descripcion: tr('Volver a centrar el mapa'),
                   alPresionar: _centrar,
                 ),
                 const SizedBox(height: 8),
                 _BotonMapa(
                   icono: _verLeyenda ? Icons.close : Icons.info_outline,
-                  descripcion: _verLeyenda ? 'Ocultar leyenda' : 'Ver leyenda de colores',
+                  descripcion: _verLeyenda ? tr('Ocultar leyenda') : tr('Ver leyenda de colores'),
                   alPresionar: () => setState(() => _verLeyenda = !_verLeyenda),
                 ),
               ],
@@ -225,7 +226,7 @@ class _MapaLugaresState extends State<MapaLugares> {
                                   child: Icon(CategoriaEstilo.de(clave).icono, size: 13, color: Colors.white),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(CategoriaEstilo.nombres[clave]!, style: const TextStyle(fontSize: 13)),
+                                Text(tr(CategoriaEstilo.nombres[clave]!), style: const TextStyle(fontSize: 13)),
                               ],
                             ),
                           ),
@@ -277,7 +278,7 @@ class _EstasAqui extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-        label: 'Estás aquí',
+        label: tr('Estás aquí'),
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFF1E88E5),

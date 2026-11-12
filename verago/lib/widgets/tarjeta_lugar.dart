@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/distancia.dart';
 import 'etiqueta.dart';
@@ -47,7 +48,7 @@ class TarjetaLugar extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${lugar.categoriaNombre} · ${Distancia.texto(desde, lugar.punto)}',
+                      '${tr(lugar.categoriaNombre)} · ${Distancia.texto(desde, lugar.punto)}',
                       style: TextStyle(color: Colors.black.withValues(alpha: 0.6)),
                     ),
                     const SizedBox(height: 8),
@@ -59,7 +60,7 @@ class TarjetaLugar extends StatelessWidget {
                         ?Etiqueta.tipoNegocio(lugar),
                         // Solo si cobra entrada (gratis o sin dato no ocupan espacio).
                         if ((lugar.costoEntradaMxn ?? 0) > 0)
-                          Etiqueta('Entrada ≈ \$${lugar.costoEntradaMxn}',
+                          Etiqueta(tr('Entrada ≈ \${n}', {'n': lugar.costoEntradaMxn}),
                               color: const Color(0xFF6B4E16), icono: Icons.confirmation_number_outlined),
                         if (lugar.promocion != null)
                           const Etiqueta('Promoción', color: Color(0xFFB8492F), icono: Icons.local_offer_outlined),

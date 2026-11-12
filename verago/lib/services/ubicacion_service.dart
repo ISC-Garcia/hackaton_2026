@@ -1,6 +1,7 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../i18n/idioma.dart';
 import 'error_verago.dart';
 
 /// SERVICIO de ubicación (paquete `geolocator`).
@@ -11,7 +12,7 @@ import 'error_verago.dart';
 class UbicacionService {
   Future<LatLng> obtenerUbicacion() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
-      throw const ErrorVeraGo('Activa la ubicación (GPS) de tu celular.');
+      throw ErrorVeraGo(tr('Activa la ubicación (GPS) de tu celular.'));
     }
 
     var permiso = await Geolocator.checkPermission();
@@ -19,7 +20,7 @@ class UbicacionService {
       permiso = await Geolocator.requestPermission(); // aquí aparece el aviso
     }
     if (permiso == LocationPermission.denied || permiso == LocationPermission.deniedForever) {
-      throw const ErrorVeraGo('Sin permiso de ubicación. Puedes iniciar desde el Zócalo.');
+      throw ErrorVeraGo(tr('Sin permiso de ubicación. Puedes iniciar desde el Zócalo.'));
     }
 
     try {
@@ -31,7 +32,7 @@ class UbicacionService {
       );
       return LatLng(pos.latitude, pos.longitude);
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos obtener tu ubicación. Intenta desde el Zócalo.');
+      throw ErrorVeraGo(tr('No pudimos obtener tu ubicación. Intenta desde el Zócalo.'));
     }
   }
 }

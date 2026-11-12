@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import 'error_verago.dart';
 
@@ -27,9 +28,9 @@ class LugaresService {
         return await _consultar('*, categorias(clave, nombre), horarios(*)');
       }
     } on PostgrestException {
-      throw const ErrorVeraGo('No pudimos cargar los lugares. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos cargar los lugares. Intenta de nuevo.'));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
   }
 

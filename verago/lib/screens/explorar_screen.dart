@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show LengthLimitingTextInputFormatter;
 
 import 'package:latlong2/latlong.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/distancia.dart';
 import '../services/error_verago.dart';
@@ -11,6 +12,7 @@ import '../services/lugares_service.dart';
 import '../services/ubicacion_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/boton_emergencia.dart';
+import '../widgets/boton_idioma.dart';
 import '../widgets/categoria_estilo.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/etiqueta.dart';
@@ -58,7 +60,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
   Future<void> _buscarEnMapa() async {
     final texto = _busqueda.trim();
     if (texto.length < 3) {
-      _aviso('Escribe al menos 3 letras para buscar en el mapa.');
+      _aviso(tr('Escribe al menos 3 letras para buscar en el mapa.'));
       return;
     }
     FocusScope.of(context).unfocus();
@@ -72,7 +74,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
       _seleccionado = null;
       if (resultados.isNotEmpty) _verMapa = true;
     });
-    if (resultados.isEmpty) _aviso('No encontramos "$texto" en el mapa de Veracruz.');
+    if (resultados.isEmpty) _aviso(tr('No encontramos "{texto}" en el mapa de Veracruz.', {'texto': texto}));
   }
 
   /// Dónde está el turista (null = no la ha pedido o está lejos del centro).
@@ -92,11 +94,11 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
   /// calcula en el celular; no se envía a nadie).
   String get _textoZona {
     final yo = _miUbicacion;
-    if (yo == null) return 'Mostrando el Centro Histórico · distancias desde el Zócalo';
+    if (yo == null) return tr('Mostrando el Centro Histórico · distancias desde el Zócalo');
     final metros = Distancia.metros(Distancia.zocalo, yo);
-    if (metros <= _metrosCentro) return 'Estás en el Centro Histórico · distancias desde donde estás';
-    return 'Estás a ${(metros / 1000).toStringAsFixed(1)} km del Centro Histórico · '
-        'distancias desde donde estás';
+    if (metros <= _metrosCentro) return tr('Estás en el Centro Histórico · distancias desde donde estás');
+    return tr('Estás a {km} km del Centro Histórico · distancias desde donde estás',
+        {'km': (metros / 1000).toStringAsFixed(1)});
   }
 
   /// Radio aproximado del Centro Histórico alrededor del Zócalo.
@@ -112,13 +114,13 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
       if (Distancia.metros(Distancia.zocalo, yo) > _metrosMaximos) {
         setState(() => _miUbicacion = null);
         if (!automatico) {
-          _aviso('Estás lejos del Centro Histórico. Seguimos midiendo las distancias desde el Zócalo.');
+          _aviso(tr('Estás lejos del Centro Histórico. Seguimos midiendo las distancias desde el Zócalo.'));
         }
       } else {
         setState(() => _miUbicacion = yo);
       }
     } on ErrorVeraGo catch (e) {
-      if (!automatico) _aviso(e.mensaje);
+      if (!automatico) _aviso(tr(e.mensaje));
     } catch (_) {
       // Celular o navegador sin GPS: seguimos desde el Zócalo.
     } finally {
@@ -227,16 +229,18 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
               heroTag: 'guia-ia',
               onPressed: () => _abrirGuia(cargados),
               icon: const Icon(Icons.support_agent),
-              label: const Text('Pregúntale a VeraGo'),
+              label: Text(tr('Pregúntale a VeraGo')),
             )
           : null,
       appBar: AppBar(
-        title: const Text('Explorar'),
+        title: Text(tr('Explorar')),
         actions: [
+          // Idioma: para visitantes que no hablan español (ej. cruceristas).
+          const BotonIdioma(),
           BotonEmergencia.icono(context),
           // La pestaña queda abierta en memoria; con esto se ven los
           // negocios recién aprobados sin cerrar la app.
-          IconButton(tooltip: 'Actualizar', icon: const Icon(Icons.refresh), onPressed: _recargar),
+          IconButton(tooltip: tr('Actualizar'), icon: const Icon(Icons.refresh), onPressed: _recargar),
         ],
       ),
       body: FutureBuilder<List<Lugar>>(
@@ -248,18 +252,18 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
           if (snapshot.hasError) {
             return EstadoVacio(
               icono: Icons.wifi_off,
-              titulo: 'Algo salió mal',
-              mensaje: snapshot.error.toString(),
-              textoBoton: 'Reintentar',
+              titulo: tr('Algo salió mal'),
+              mensaje: tr(snapshot.error.toString()),
+              textoBoton: tr('Reintentar'),
               alPresionar: _recargar,
             );
           }
           final todos = snapshot.data!;
           if (todos.isEmpty) {
-            return const EstadoVacio(
+            return EstadoVacio(
               icono: Icons.map_outlined,
-              titulo: 'Aún no hay lugares',
-              mensaje: 'Cuando se carguen lugares en la base de datos, aparecerán aquí.',
+              titulo: tr('Aún no hay lugares'),
+              mensaje: tr('Cuando se carguen lugares en la base de datos, aparecerán aquí.'),
             );
           }
           return _contenido(todos);
@@ -309,12 +313,12 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
             },
             onTapOutside: (_) => FocusScope.of(context).unfocus(),
             decoration: InputDecoration(
-              hintText: 'Busca un lugar, café, museo…',
+              hintText: tr('Busca un lugar, café, museo…'),
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _busqueda.isEmpty
                   ? null
                   : IconButton(
-                      tooltip: 'Borrar búsqueda',
+                      tooltip: tr('Borrar búsqueda'),
                       icon: const Icon(Icons.close),
                       onPressed: _limpiarBusqueda,
                     ),
@@ -345,8 +349,8 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.travel_explore),
                 label: Text(_delMapa.isEmpty
-                    ? 'Buscar "${_busqueda.trim()}" en todo el mapa'
-                    : '${_delMapa.length} en el mapa de OpenStreetMap'),
+                    ? tr('Buscar "{texto}" en todo el mapa', {'texto': _busqueda.trim()})
+                    : tr('{n} en el mapa de OpenStreetMap', {'n': _delMapa.length})),
               ),
             ),
           ),
@@ -360,7 +364,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: ChoiceChip(
-                  label: const Text('Todos'),
+                  label: Text(tr('Todos')),
                   selected: _categoria == null,
                   onSelected: (_) => setState(() => _categoria = null),
                 ),
@@ -370,7 +374,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
                     avatar: Icon(CategoriaEstilo.de(entrada.key).icono, size: 18),
-                    label: Text(entrada.value),
+                    label: Text(tr(entrada.value)),
                     selected: _categoria == entrada.key,
                     onSelected: (_) => setState(() {
                       _categoria = _categoria == entrada.key ? null : entrada.key;
@@ -384,9 +388,9 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: SegmentedButton<bool>(
-            segments: const [
-              ButtonSegment(value: true, icon: Icon(Icons.map_outlined), label: Text('Mapa')),
-              ButtonSegment(value: false, icon: Icon(Icons.list), label: Text('Lista')),
+            segments: [
+              ButtonSegment(value: true, icon: const Icon(Icons.map_outlined), label: Text(tr('Mapa'))),
+              ButtonSegment(value: false, icon: const Icon(Icons.list), label: Text(tr('Lista'))),
             ],
             selected: {_verMapa},
             onSelectionChanged: (s) => setState(() => _verMapa = s.first),
@@ -396,11 +400,11 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
           child: filtrados.isEmpty && _delMapa.isEmpty
               ? EstadoVacio(
                   icono: Icons.search_off,
-                  titulo: 'Sin resultados en VeraGo',
+                  titulo: tr('Sin resultados en VeraGo'),
                   mensaje: _busqueda.trim().length >= 3
-                      ? 'Puedes buscarlo en todo el mapa de Veracruz.'
-                      : 'Prueba con otra palabra o quita el filtro.',
-                  textoBoton: _busqueda.trim().length >= 3 ? 'Buscar en el mapa' : null,
+                      ? tr('Puedes buscarlo en todo el mapa de Veracruz.')
+                      : tr('Prueba con otra palabra o quita el filtro.'),
+                  textoBoton: _busqueda.trim().length >= 3 ? tr('Buscar en el mapa') : null,
                   alPresionar: _busqueda.trim().length >= 3 ? _buscarEnMapa : null,
                 )
               : _verMapa
@@ -418,10 +422,10 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
         for (final l in filtrados)
           TarjetaLugar(lugar: l, desde: _origen, alTocar: () => _abrirFicha(l, todos)),
         if (_delMapa.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Text('En el mapa (OpenStreetMap, no son parte de VeraGo)',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text(tr('En el mapa (OpenStreetMap, no son parte de VeraGo)'),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
           for (final o in _delMapa)
             ListTile(
@@ -476,10 +480,10 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                 title: Text(o.nombre, style: const TextStyle(fontWeight: FontWeight.w700)),
                 subtitle: Text('${Distancia.texto(_origen, o.punto)}'
                     '${o.direccion != null ? '\n${o.direccion}' : ''}'
-                    '\nLugar de OpenStreetMap: no es parte de VeraGo.'),
+                    '\n${tr('Lugar de OpenStreetMap: no es parte de VeraGo.')}'),
                 isThreeLine: true,
                 trailing: IconButton(
-                  tooltip: 'Cerrar',
+                  tooltip: tr('Cerrar'),
                   icon: const Icon(Icons.close),
                   onPressed: () => setState(() => _delMapaSeleccionado = null),
                 ),
@@ -507,14 +511,14 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'Cerrar',
+                          tooltip: tr('Cerrar'),
                           icon: const Icon(Icons.close),
                           onPressed: () => setState(() => _seleccionado = null),
                         ),
                       ],
                     ),
                     Text(
-                      '${seleccionado.categoriaNombre} · '
+                      '${tr(seleccionado.categoriaNombre)} · '
                       '${Distancia.texto(_origen, seleccionado.punto)}',
                     ),
                     const SizedBox(height: 8),
@@ -531,7 +535,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                       width: double.infinity,
                       child: FilledButton(
                         onPressed: () => _abrirFicha(seleccionado, todos),
-                        child: const Text('Ver ficha'),
+                        child: Text(tr('Ver ficha')),
                       ),
                     ),
                   ],

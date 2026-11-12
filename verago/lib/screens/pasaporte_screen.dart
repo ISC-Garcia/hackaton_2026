@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
+import '../i18n/idioma.dart';
 import '../models/insignia.dart';
 import '../models/lugar.dart';
 import '../models/sello.dart';
@@ -121,10 +122,14 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
 
   /// "Soy un negocio": abre directo el registro de negocios.
   Widget _botonSoyNegocio() => OutlinedButton.icon(
-        onPressed: () => Navigator.of(context)
-            .push(MaterialPageRoute(builder: (_) => const NegocioScreen())),
+        onPressed: () async {
+          await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NegocioScreen()));
+          // Al volver: si registró su negocio con la sesión abierta, ahora es
+          // comerciante y debe ver "Panel de mi negocio" (antes no se recargaba).
+          if (mounted && _conSesion) _recargar();
+        },
         icon: const Icon(Icons.storefront_outlined),
-        label: const Text('Soy un negocio'),
+        label: Text(tr('Soy un negocio')),
       );
 
   Future<void> _escanear(DatosPasaporte d) async {
@@ -145,10 +150,10 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
     if (conSesion && _futuro == null) _futuro = _cargar();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pasaporte'),
+        title: Text(tr('Pasaporte')),
         actions: [
           IconButton(
-            tooltip: 'Ajustes',
+            tooltip: tr('Ajustes'),
             icon: const Icon(Icons.settings_outlined),
             onPressed: _abrirAjustes,
           ),
@@ -161,10 +166,9 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
                   children: [
                     EstadoVacio(
                       icono: Icons.approval_outlined,
-                      titulo: 'Tu pasaporte VeraGo',
-                      mensaje: 'Escanea el QR de los comercios participantes y colecciona sus sellos. '
-                          'Necesitas una cuenta para guardarlos.',
-                      textoBoton: 'Iniciar sesión',
+                      titulo: tr('Tu pasaporte VeraGo'),
+                      mensaje: tr('Escanea el QR de los comercios participantes y colecciona sus sellos. Necesitas una cuenta para guardarlos.'),
+                      textoBoton: tr('Iniciar sesión'),
                       alPresionar: _iniciarSesion,
                     ),
                     _botonSoyNegocio(),
@@ -181,9 +185,9 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
                 if (snapshot.hasError) {
                   return EstadoVacio(
                     icono: Icons.wifi_off,
-                    titulo: 'Algo salió mal',
-                    mensaje: snapshot.error.toString(),
-                    textoBoton: 'Reintentar',
+                    titulo: tr('Algo salió mal'),
+                    mensaje: tr(snapshot.error.toString()),
+                    textoBoton: tr('Reintentar'),
                     alPresionar: _recargar,
                   );
                 }
@@ -217,11 +221,11 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Hola, ${d.perfil.nombre}',
+                Text(tr('Hola, {nombre}', {'nombre': d.perfil.nombre}),
                     style: const TextStyle(color: Colors.white, fontSize: 18)),
                 const SizedBox(height: 8),
                 Text(
-                  '$logrados de ${participantes.length}',
+                  tr('{n} de {total}', {'n': logrados, 'total': participantes.length}),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 36,
@@ -230,8 +234,8 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
                     fontFamilyFallback: ['Georgia'],
                   ),
                 ),
-                const Text('comercios sellados en tu pasaporte',
-                    style: TextStyle(color: Colors.white70)),
+                Text(tr('comercios sellados en tu pasaporte'),
+                    style: const TextStyle(color: Colors.white70)),
               ],
             ),
           ),
@@ -241,7 +245,7 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
           FilledButton.icon(
             onPressed: () => _escanear(d),
             icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('Escanear QR'),
+            label: Text(tr('Escanear QR')),
           ),
           if (d.perfil.esComerciante) ...[
             const SizedBox(height: 8),
@@ -269,7 +273,7 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
             ),
           ],
           const SizedBox(height: 24),
-          Text('Tu colección', style: Theme.of(context).textTheme.titleLarge),
+          Text(tr('Tu colección'), style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           GridView.count(
             crossAxisCount: 3,
@@ -283,11 +287,11 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          Text('Historial', style: Theme.of(context).textTheme.titleLarge),
+          Text(tr('Historial'), style: Theme.of(context).textTheme.titleLarge),
           if (d.sellos.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('Aún no tienes sellos. Visita un comercio participante y escanea su QR.'),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(tr('Aún no tienes sellos. Visita un comercio participante y escanea su QR.')),
             )
           else
             for (final s in d.sellos)
@@ -333,10 +337,13 @@ class TarjetaInsignia extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(actual?.nombre ?? 'Sin insignia todavía',
+                      Text(actual == null ? tr('Sin insignia todavía') : tr(actual.nombre),
                           style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 2),
-                      Text(actual?.descripcion ?? 'Consigue sellos para ganar tu primera insignia.',
+                      Text(
+                          actual == null
+                              ? tr('Consigue sellos para ganar tu primera insignia.')
+                              : tr(actual.descripcion),
                           style: TextStyle(color: Colors.black.withValues(alpha: 0.65))),
                     ],
                   ),
@@ -351,11 +358,13 @@ class TarjetaInsignia extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'Te ${p.faltan == 1 ? 'falta 1 sello' : 'faltan ${p.faltan} sellos'} para "${siguiente.nombre}"',
+                p.faltan == 1
+                    ? tr('Te falta 1 sello para "{nivel}"', {'nivel': tr(siguiente.nombre)})
+                    : tr('Te faltan {n} sellos para "{nivel}"', {'n': p.faltan, 'nivel': tr(siguiente.nombre)}),
                 style: const TextStyle(fontSize: 13),
               ),
             ] else
-              const Text('¡Tienes todas las insignias!', style: TextStyle(fontWeight: FontWeight.w700)),
+              Text(tr('¡Tienes todas las insignias!'), style: const TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
             // Los 5 niveles: ganados a color, los demás con candado.
             Row(
@@ -363,7 +372,7 @@ class TarjetaInsignia extends StatelessWidget {
               children: [
                 for (final n in Insignia.niveles)
                   Tooltip(
-                    message: '${n.nombre}: ${p.metas[n.numero - 1]} sellos',
+                    message: tr('{nivel}: {n} sellos', {'nivel': tr(n.nombre), 'n': p.metas[n.numero - 1]}),
                     child: InsigniaVisual(nivel: n.numero, tamano: 34, bloqueada: n.numero > p.nivel),
                   ),
               ],
@@ -387,7 +396,7 @@ class _SelloVisual extends StatelessWidget {
     final estilo = CategoriaEstilo.de(lugar.categoriaClave);
     final color = obtenido ? estilo.color : Colors.black26;
     return Semantics(
-      label: '${lugar.nombre}: ${obtenido ? 'sello obtenido' : 'sello pendiente'}',
+      label: '${lugar.nombre}: ${obtenido ? tr('sello obtenido') : tr('sello pendiente')}',
       child: Column(
         children: [
           // Sello ganado con foto: la foto del negocio dentro del círculo y un

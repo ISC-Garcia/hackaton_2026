@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import '../config.dart';
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 
 /// "REPORTAR UN PROBLEMA" de un lugar.
@@ -10,6 +11,8 @@ import '../models/lugar.dart';
 /// y otra pantalla de admin). La ventana arma un mensaje con el nombre del
 /// lugar y lo copia, para pegarlo en un correo al equipo de VeraGo.
 /// `Clipboard` es el portapapeles del celular (copiar y pegar).
+/// El reporte copiado va SIEMPRE en español (lo lee el equipo); solo la
+/// ventana se muestra en el idioma de la app.
 class ReportarProblema {
   static const motivos = [
     'La ubicación está mal',
@@ -30,13 +33,13 @@ class ReportarProblema {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setStateDialogo) => AlertDialog(
-          title: const Text('Reportar un problema'),
+          title: Text(tr('Reportar un problema')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('¿Qué pasa con ${lugar.nombre}?'),
+                Text(tr('¿Qué pasa con {lugar}?', {'lugar': lugar.nombre})),
                 const SizedBox(height: 8),
                 RadioGroup<String>(
                   groupValue: motivo,
@@ -46,7 +49,7 @@ class ReportarProblema {
                       for (final m in motivos)
                         RadioListTile<String>(
                           value: m,
-                          title: Text(m),
+                          title: Text(tr(m)),
                           dense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
@@ -56,26 +59,26 @@ class ReportarProblema {
                 const SizedBox(height: 8),
                 Text(
                   Config.correoSoporte.isEmpty
-                      ? 'Copia el reporte y envíalo al equipo de VeraGo.'
-                      : 'Copia el reporte y envíalo a ${Config.correoSoporte}.',
+                      ? tr('Copia el reporte y envíalo al equipo de VeraGo.')
+                      : tr('Copia el reporte y envíalo a {correo}.', {'correo': Config.correoSoporte}),
                   style: const TextStyle(fontSize: 13),
                 ),
                 const SizedBox(height: 4),
-                const Text('No guardamos tu reporte en la app.', style: TextStyle(fontSize: 12)),
+                Text(tr('No guardamos tu reporte en la app.'), style: const TextStyle(fontSize: 12)),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(tr('Cancelar'))),
             FilledButton.icon(
               icon: const Icon(Icons.copy),
-              label: const Text('Copiar reporte'),
+              label: Text(tr('Copiar reporte')),
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: mensaje(lugar, motivo)));
                 if (!ctx.mounted) return;
                 Navigator.of(ctx).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Reporte copiado. Pégalo en un correo al equipo de VeraGo.')),
+                  SnackBar(content: Text(tr('Reporte copiado. Pégalo en un correo al equipo de VeraGo.'))),
                 );
               },
             ),

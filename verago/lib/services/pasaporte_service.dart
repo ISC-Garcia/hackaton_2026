@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../i18n/idioma.dart';
 import '../models/sello.dart';
 import 'validaciones.dart';
 import 'error_verago.dart';
@@ -20,15 +21,15 @@ class ResultadoEscaneo {
   String get mensaje {
     switch (estado) {
       case 'OK':
-        return '¡Sello obtenido en $lugarNombre! Llevas $totalSellos en tu pasaporte.';
+        return tr('¡Sello obtenido en {lugar}! Llevas {n} en tu pasaporte.', {'lugar': lugarNombre, 'n': totalSellos});
       case 'YA_TIENE_SELLO_HOY':
-        return 'Ya tienes el sello de $lugarNombre de hoy. Vuelve otro día o descubre otro lugar.';
+        return tr('Ya tienes el sello de {lugar} de hoy. Vuelve otro día o descubre otro lugar.', {'lugar': lugarNombre});
       case 'NECESITA_SESION':
-        return 'Inicia sesión para guardar tus sellos.';
+        return tr('Inicia sesión para guardar tus sellos.');
       case 'ES_TU_NEGOCIO':
-        return 'No puedes darte un sello de tu propio negocio. Pide a un turista que lo escanee.';
+        return tr('No puedes darte un sello de tu propio negocio. Pide a un turista que lo escanee.');
       default:
-        return 'Este código ya venció o no es válido. Pide al comercio que te muestre el QR actual.';
+        return tr('Este código ya venció o no es válido. Pide al comercio que te muestre el QR actual.');
     }
   }
 }
@@ -52,7 +53,7 @@ class PasaporteService {
     try {
       fila = await _db.from('perfiles').select('nombre, rol').eq('id', _uid!).maybeSingle();
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos cargar tu perfil. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos cargar tu perfil. Intenta de nuevo.'));
     }
     if (fila != null) return Perfil.fromJson(fila);
     final correo = _db.auth.currentUser?.email ?? 'Visitante';
@@ -75,7 +76,7 @@ class PasaporteService {
     try {
       await _db.from('perfiles').update({'nombre': nombre.trim()}).eq('id', _uid!);
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos guardar tu nombre. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos guardar tu nombre. Intenta de nuevo.'));
     }
   }
 
@@ -88,19 +89,19 @@ class PasaporteService {
       r = await _db.rpc('borrar_mi_cuenta') as Map<String, dynamic>;
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST202') {
-        return 'Falta actualizar la base de datos (correr el SQL 016). Avisa a los desarrolladores.';
+        return tr('Falta actualizar la base de datos (correr el SQL 016). Avisa a los desarrolladores.');
       }
-      return 'No pudimos borrar tu cuenta. Intenta de nuevo.';
+      return tr('No pudimos borrar tu cuenta. Intenta de nuevo.');
     } catch (_) {
-      return 'Revisa tu conexión a internet e intenta de nuevo.';
+      return tr('Revisa tu conexión a internet e intenta de nuevo.');
     }
     switch (r['estado']) {
       case 'OK':
         return null;
       case 'ES_ADMIN':
-        return 'Una cuenta de administrador no se borra desde la app. Pídeselo a los desarrolladores.';
+        return tr('Una cuenta de administrador no se borra desde la app. Pídeselo a los desarrolladores.');
       default:
-        return 'No pudimos borrar tu cuenta. Intenta de nuevo.';
+        return tr('No pudimos borrar tu cuenta. Intenta de nuevo.');
     }
   }
 
@@ -121,7 +122,7 @@ class PasaporteService {
           .order('creado_en', ascending: false);
       return filas.map(Sello.fromJson).toList();
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos cargar tus sellos. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos cargar tus sellos. Intenta de nuevo.'));
     }
   }
 
@@ -138,12 +139,12 @@ class PasaporteService {
       );
     } on PostgrestException {
       // Sí hubo conexión, pero la base de datos respondió con un error.
-      throw const ErrorVeraGo('No pudimos validar el código. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos validar el código. Intenta de nuevo.'));
     } catch (_) {
       // SIN CONEXIÓN (decisión del equipo): NO se guarda para después. El QR
       // vence en 60 s y se valida en el momento; guardarlo para luego
       // obligaría a aceptar códigos vencidos (y servirían las capturas).
-      throw const ErrorVeraGo(sinConexionAlEscanear);
+      throw ErrorVeraGo(tr(sinConexionAlEscanear));
     }
   }
 
@@ -162,7 +163,7 @@ class PasaporteService {
           .order('nombre');
       return [for (final f in filas) (id: f['id'] as String, nombre: f['nombre'] as String)];
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos cargar tu comercio. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos cargar tu comercio. Intenta de nuevo.'));
     }
   }
 
@@ -172,10 +173,10 @@ class PasaporteService {
     try {
       r = await _db.rpc('generar_codigo_qr', params: {'p_lugar': lugarId}) as Map<String, dynamic>;
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos generar el código. Revisa tu conexión.');
+      throw ErrorVeraGo(tr('No pudimos generar el código. Revisa tu conexión.'));
     }
     if (r['estado'] != 'OK') {
-      throw const ErrorVeraGo('Tu cuenta no está autorizada para mostrar el QR de este comercio.');
+      throw ErrorVeraGo(tr('Tu cuenta no está autorizada para mostrar el QR de este comercio.'));
     }
     return (
       codigo: r['codigo'] as String,

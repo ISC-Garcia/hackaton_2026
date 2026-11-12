@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../theme/app_theme.dart';
 
 /// Etiqueta pequeña de texto con fondo de color (ej. "Abierto", "Ficticio").
+/// El texto se escribe en español y se traduce al dibujarse (`tr`), así las
+/// etiquetas pueden seguir siendo `const`.
 class Etiqueta extends StatelessWidget {
   const Etiqueta(this.texto, {super.key, required this.color, this.icono});
 
@@ -58,7 +61,7 @@ class Etiqueta extends StatelessWidget {
             const SizedBox(width: 4),
           ],
           Text(
-            texto,
+            tr(texto),
             style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
           ),
         ],

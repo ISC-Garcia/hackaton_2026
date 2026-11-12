@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LengthLimitingTextInputFormatter;
 
 import '../config.dart';
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/distancia.dart';
 import '../services/error_verago.dart';
@@ -75,12 +76,12 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
     return (sellos: sellos, intereses: intereses);
   }
 
-  static const _sugerencias = [
-    'Algo con sombra para ir con niños',
-    '¿Dónde como mariscos cerca del Zócalo?',
-    'Un museo o lugar gratis',
-    '¿Qué café está abierto ahora?',
-  ];
+  static List<String> get _sugerencias => [
+        tr('Algo con sombra para ir con niños'),
+        tr('¿Dónde como mariscos cerca del Zócalo?'),
+        tr('Un museo o lugar gratis'),
+        tr('¿Qué café está abierto ahora?'),
+      ];
 
   @override
   void dispose() {
@@ -105,6 +106,7 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
         historial: [..._conversacion, mio],
         idsValidos: _porId.keys.toSet(),
         perfil: await _perfil,
+        idioma: Idioma.nombreParaIa[Idioma.codigo]!, // contesta en el idioma de la app
       );
       if (!mounted) return;
       final guia = MensajeChat(deUsuario: false, texto: r.respuesta, lugaresIds: r.lugaresIds);
@@ -117,7 +119,7 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
     } on ErrorVeraGo catch (e) {
       if (!mounted) return;
       // El error se muestra como mensaje de la guía, pero no se manda a Gemini.
-      setState(() => _mensajes.add(MensajeChat(deUsuario: false, texto: '⚠️ ${e.mensaje}')));
+      setState(() => _mensajes.add(MensajeChat(deUsuario: false, texto: '⚠️ ${tr(e.mensaje)}')));
     } finally {
       if (mounted) setState(() => _esperando = false);
       _bajar();
@@ -137,12 +139,12 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pregúntale a VeraGo')),
+      appBar: AppBar(title: Text(tr('Pregúntale a VeraGo'))),
       body: !Config.chatConfigurado && widget.servicio == null
-          ? const EstadoVacio(
+          ? EstadoVacio(
               icono: Icons.support_agent,
-              titulo: 'Falta configurar la guía',
-              mensaje: 'Los desarrolladores deben agregar GEMINI_API_KEY en env.json y volver a correr la app.',
+              titulo: tr('Falta configurar la guía'),
+              mensaje: tr('Los desarrolladores deben agregar GEMINI_API_KEY en env.json y volver a correr la app.'),
             )
           : Column(
               children: [
@@ -151,10 +153,9 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
                     controller: _desplazar,
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                     children: [
-                      const _Burbuja(
+                      _Burbuja(
                         deUsuario: false,
-                        texto: '¡Hola! Soy la guía de VeraGo. Cuéntame qué se te antoja hacer en el Centro '
-                            'Histórico y te recomiendo lugares.',
+                        texto: tr('¡Hola! Soy la guía de VeraGo. Cuéntame qué se te antoja hacer en el Centro Histórico y te recomiendo lugares.'),
                       ),
                       if (_mensajes.isEmpty)
                         Padding(
@@ -181,13 +182,13 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
                             ),
                       ],
                       if (_esperando)
-                        const Padding(
-                          padding: EdgeInsets.all(12),
+                        Padding(
+                          padding: const EdgeInsets.all(12),
                           child: Row(
                             children: [
-                              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                              SizedBox(width: 10),
-                              Text('VeraGo está pensando…'),
+                              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                              const SizedBox(width: 10),
+                              Text(tr('VeraGo está pensando…')),
                             ],
                           ),
                         ),
@@ -199,7 +200,7 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
                   child: Text(
                     // Texto pedido por el equipo. Los detalles de privacidad (qué se
                     // envía a Gemini) están en el Aviso de privacidad.
-                    'Estás hablando con una IA. Puede cometer errores.',
+                    tr('Estás hablando con una IA. Puede cometer errores.'),
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6)),
                   ),
@@ -219,7 +220,7 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
                             inputFormatters: [LengthLimitingTextInputFormatter(300)],
                             onSubmitted: _enviar,
                             decoration: InputDecoration(
-                              hintText: 'Escribe lo que buscas…',
+                              hintText: tr('Escribe lo que buscas…'),
                               filled: true,
                               fillColor: Colors.white,
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
@@ -228,7 +229,7 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
                         ),
                         const SizedBox(width: 8),
                         IconButton.filled(
-                          tooltip: 'Enviar',
+                          tooltip: tr('Enviar'),
                           onPressed: _esperando ? null : () => _enviar(_texto.text),
                           icon: const Icon(Icons.send),
                         ),

@@ -1,3 +1,4 @@
+import '../i18n/idioma.dart';
 import 'evento.dart';
 
 /// Un GRUPO de la Agenda: el mismo evento (mismo nombre y lugar) el MISMO DÍA
@@ -30,8 +31,8 @@ class GrupoEventos {
     };
     if (eventos.length >= 3 && pasos.length == 1 && pasos.first > 0) {
       return (
-        principal: 'Cada ${_duracion(pasos.first)}',
-        detalle: '${hora(inicios.first)} a ${hora(inicios.last)}',
+        principal: tr('Cada {tiempo}', {'tiempo': _duracion(pasos.first)}),
+        detalle: tr('{desde} a {hasta}', {'desde': hora(inicios.first), 'hasta': hora(inicios.last)}),
       );
     }
     return (principal: inicios.map(hora).join(' · '), detalle: null);

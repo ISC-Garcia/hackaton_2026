@@ -1,5 +1,6 @@
 import 'package:latlong2/latlong.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import 'distancia.dart';
 
@@ -199,17 +200,19 @@ class RutasService {
   String _motivo(Lugar l, PeticionRuta p, int caminata, bool esPrimera, int comerciantes) {
     final razones = <String>[];
     if (l.esPunto) {
-      razones.add('Punto VeraGo: $comerciantes ${comerciantes == 1 ? 'emprendedor local' : 'emprendedores locales'}');
+      razones.add(comerciantes == 1
+          ? tr('Punto VeraGo: 1 emprendedor local')
+          : tr('Punto VeraGo: {n} emprendedores locales', {'n': comerciantes}));
     }
     if (p.intereses.contains(l.categoriaClave) && !l.esPunto) {
-      razones.add('Te interesa: ${l.categoriaNombre.toLowerCase()}');
+      razones.add(tr('Te interesa: {categoria}', {'categoria': tr(l.categoriaNombre).toLowerCase()}));
     }
-    if (l.interes >= 5) razones.add('Imperdible del centro');
-    if (l.esFormal) razones.add('Comercio local');
-    if (l.participaPasaporte) razones.add('Da sello en tu pasaporte');
+    if (l.interes >= 5) razones.add(tr('Imperdible del centro'));
+    if (l.esFormal) razones.add(tr('Comercio local'));
+    if (l.participaPasaporte) razones.add(tr('Da sello en tu pasaporte'));
     razones.add(esPrimera
-        ? 'A $caminata min de ${p.nombreInicio}'
-        : 'A $caminata min de la parada anterior');
+        ? tr('A {min} min de {inicio}', {'min': caminata, 'inicio': p.nombreInicio})
+        : tr('A {min} min de la parada anterior', {'min': caminata}));
     return razones.join(' · ');
   }
 }

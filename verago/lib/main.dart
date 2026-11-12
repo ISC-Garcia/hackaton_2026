@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config.dart';
+import 'i18n/idioma.dart';
 import 'screens/bienvenida_screen.dart';
 import 'screens/configuracion_faltante_screen.dart';
 import 'screens/principal_screen.dart';
@@ -26,6 +27,7 @@ Future<void> main() async {
   }
 
   final mostrarBienvenida = !await PreferenciasService().bienvenidaVista();
+  await Idioma.cargar(); // idioma elegido antes (español si es la primera vez)
 
   runApp(VeraGoApp(mostrarBienvenida: mostrarBienvenida));
 }

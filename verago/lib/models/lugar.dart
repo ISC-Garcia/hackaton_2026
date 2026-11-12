@@ -1,5 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
+import '../i18n/idioma.dart';
+
 /// Un día del horario de un lugar (una fila de la tabla `horarios`).
 class Horario {
   const Horario({required this.diaSemana, required this.abre, required this.cierra});
@@ -114,9 +116,9 @@ class Lugar {
   String? get textoEntrada {
     if (!admiteCostoEntrada) return null;
     final c = costoEntradaMxn;
-    if (c == null) return esComercio ? null : 'Costo de entrada no disponible: confírmalo en el lugar.';
-    if (c == 0) return 'Entrada gratis';
-    return 'Entrada aprox. \$$c MXN';
+    if (c == null) return esComercio ? null : tr('Costo de entrada no disponible: confírmalo en el lugar.');
+    if (c == 0) return tr('Entrada gratis');
+    return tr('Entrada aprox. \${c} MXN', {'c': c});
   }
 
   /// CAMBIO DE UBICACIÓN PENDIENTE (SQL 013): lo que pidió el comerciante y

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/distancia.dart';
 import '../services/error_verago.dart';
@@ -86,15 +87,25 @@ class _EscanearScreenState extends State<EscanearScreen> {
     try {
       final r = await _servicio.registrarVisita(codigo);
       if (!mounted) return;
-      await _mostrarResultado(r);
+      final verLugar = await _mostrarResultado(r);
       if (!mounted) return;
       if (r.exito) {
-        Navigator.of(context).pop(true); // vuelve al pasaporte y lo recarga
+        if (verLugar != null) {
+          // "Ver lugar": la ficha REEMPLAZA al escáner y el Pasaporte recibe
+          // `true` para recargarse. (Antes la ficha se abría y este mismo
+          // código la cerraba al instante, dejando el escáner bloqueado.)
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => LugarScreen(lugar: verLugar, todos: widget.lugares)),
+            result: true,
+          );
+        } else {
+          Navigator.of(context).pop(true); // vuelve al pasaporte y lo recarga
+        }
         return;
       }
     } on ErrorVeraGo catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.mensaje)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr(e.mensaje))));
       }
     }
 
@@ -104,7 +115,9 @@ class _EscanearScreenState extends State<EscanearScreen> {
     }
   }
 
-  Future<void> _mostrarResultado(ResultadoEscaneo r) {
+  /// Muestra el resultado. Devuelve el lugar sugerido si la persona tocó
+  /// "Ver lugar" (null si tocó "Listo").
+  Future<Lugar?> _mostrarResultado(ResultadoEscaneo r) {
     // Sugerencia: el comercio más cercano al lugar sellado que aún no tenga.
     Lugar? sugerencia;
     Lugar? sellado;
@@ -121,13 +134,13 @@ class _EscanearScreenState extends State<EscanearScreen> {
       }
     }
 
-    return showDialog<void>(
+    return showDialog<Lugar>(
       context: context,
       builder: (ctx) => AlertDialog(
         icon: r.exito
             ? const _SelloAnimado()
             : const Icon(Icons.info_outline, size: 48, color: VgColores.terracota),
-        title: Text(r.exito ? '¡Nuevo sello!' : 'No se registró el sello'),
+        title: Text(r.exito ? tr('¡Nuevo sello!') : tr('No se registró el sello')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -135,8 +148,10 @@ class _EscanearScreenState extends State<EscanearScreen> {
             if (sugerencia != null && sellado != null) ...[
               const SizedBox(height: 16),
               Text(
-                'A ${Distancia.minutosCaminando(sellado.punto, sugerencia.punto)} min de aquí '
-                'está ${sugerencia.nombre}. ¿Por qué no vas?',
+                tr('A {min} min de aquí está {lugar}. ¿Por qué no vas?', {
+                  'min': Distancia.minutosCaminando(sellado.punto, sugerencia.punto),
+                  'lugar': sugerencia.nombre,
+                }),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
@@ -146,15 +161,10 @@ class _EscanearScreenState extends State<EscanearScreen> {
         actions: [
           if (sugerencia != null)
             TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => LugarScreen(lugar: sugerencia!, todos: widget.lugares),
-                ));
-              },
-              child: const Text('Ver lugar'),
+              onPressed: () => Navigator.of(ctx).pop(sugerencia),
+              child: Text(tr('Ver lugar')),
             ),
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Listo')),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(tr('Listo'))),
         ],
       ),
     );
@@ -163,11 +173,11 @@ class _EscanearScreenState extends State<EscanearScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Escanear QR')),
+      appBar: AppBar(title: Text(tr('Escanear QR'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Apunta la cámara al código QR que te muestra el comercio.'),
+          Text(tr('Apunta la cámara al código QR que te muestra el comercio.')),
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
@@ -181,13 +191,13 @@ class _EscanearScreenState extends State<EscanearScreen> {
                       final valor = captura.barcodes.firstOrNull?.rawValue;
                       if (valor != null) _procesar(valor);
                     },
-                    errorBuilder: (context, error) => const ColoredBox(
+                    errorBuilder: (context, error) => ColoredBox(
                       color: Colors.black12,
                       child: Center(
                         child: Padding(
-                          padding: EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(24),
                           child: Text(
-                            'No pudimos usar la cámara. Revisa el permiso o escribe el código abajo.',
+                            tr('No pudimos usar la cámara. Revisa el permiso o escribe el código abajo.'),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -204,8 +214,8 @@ class _EscanearScreenState extends State<EscanearScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text('¿No funciona la cámara? Escribe el código:',
-              style: TextStyle(fontWeight: FontWeight.w600)),
+          Text(tr('¿No funciona la cámara? Escribe el código:'),
+              style: const TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextField(
             controller: _manual,
@@ -224,12 +234,12 @@ class _EscanearScreenState extends State<EscanearScreen> {
                     // Código escrito a mano: revisamos el formato antes de enviarlo.
                     final error = Validaciones.codigoQr(_manual.text);
                     if (error != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr(error))));
                       return;
                     }
                     _procesar(_manual.text);
                   },
-            child: const Text('Validar código'),
+            child: Text(tr('Validar código')),
           ),
         ],
       ),

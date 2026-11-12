@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import 'agenda_screen.dart';
 import 'explorar_screen.dart';
 import 'pasaporte_screen.dart';
@@ -39,26 +40,26 @@ class _PrincipalScreenState extends State<PrincipalScreen> {
           FocusScope.of(context).unfocus(); // cierra el teclado al cambiar de pestaña
           setState(() => _pestana = i);
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: 'Explorar',
+            icon: const Icon(Icons.explore_outlined),
+            selectedIcon: const Icon(Icons.explore),
+            label: tr('Explorar'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.route_outlined),
-            selectedIcon: Icon(Icons.route),
-            label: 'Rutas',
+            icon: const Icon(Icons.route_outlined),
+            selectedIcon: const Icon(Icons.route),
+            label: tr('Rutas'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.event_outlined),
-            selectedIcon: Icon(Icons.event),
-            label: 'Agenda',
+            icon: const Icon(Icons.event_outlined),
+            selectedIcon: const Icon(Icons.event),
+            label: tr('Agenda'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.approval_outlined),
-            selectedIcon: Icon(Icons.approval),
-            label: 'Pasaporte',
+            icon: const Icon(Icons.approval_outlined),
+            selectedIcon: const Icon(Icons.approval),
+            label: tr('Pasaporte'),
           ),
         ],
       ),

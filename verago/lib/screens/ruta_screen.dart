@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/distancia.dart';
 import '../services/rutas_service.dart';
@@ -99,10 +100,10 @@ class _RutaScreenState extends State<RutaScreen> {
     final i = _peticion.intereses;
     final historia = i.contains('historia') || i.contains('museo');
     final sabores = i.contains('restaurante') || i.contains('cafeteria');
-    if (historia && sabores) return 'Entre historia y sabores';
-    if (historia) return 'Recorrido histórico';
-    if (sabores) return 'Ruta de sabores';
-    return 'Tu recorrido por el centro';
+    if (historia && sabores) return tr('Entre historia y sabores');
+    if (historia) return tr('Recorrido histórico');
+    if (sabores) return tr('Ruta de sabores');
+    return tr('Tu recorrido por el centro');
   }
 
   @override
@@ -113,10 +114,9 @@ class _RutaScreenState extends State<RutaScreen> {
         appBar: AppBar(),
         body: EstadoVacio(
           icono: Icons.route_outlined,
-          titulo: 'No encontramos una ruta',
-          mensaje: 'Con ese tiempo, horario o intereses no alcanzamos a incluir lugares '
-              'abiertos. Prueba con más tiempo o elige más intereses.',
-          textoBoton: 'Cambiar preferencias',
+          titulo: tr('No encontramos una ruta'),
+          mensaje: tr('Con ese tiempo, horario o intereses no alcanzamos a incluir lugares abiertos. Prueba con más tiempo o elige más intereses.'),
+          textoBoton: tr('Cambiar preferencias'),
           alPresionar: () => Navigator.of(context).pop(),
         ),
       );
@@ -156,18 +156,21 @@ class _RutaScreenState extends State<RutaScreen> {
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
             child: Text(
               _buscandoCalles
-                  ? 'Trazando el camino por las calles…'
+                  ? tr('Trazando el camino por las calles…')
                   : calles != null
-                      ? 'Camino a pie por las calles (OpenStreetMap). Es aproximado: sigue las señales y cruza con cuidado.'
-                      : 'Sin conexión para trazar las calles: la línea es recta y aproximada.',
+                      ? tr('Camino a pie por las calles (OpenStreetMap). Es aproximado: sigue las señales y cruza con cuidado.')
+                      : tr('Sin conexión para trazar las calles: la línea es recta y aproximada.'),
               style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6)),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              '${paradas.length} paradas · ${_ruta.minutosCaminando} min caminando · '
-              'termina a las ${_hora(_ruta.fin)}',
+              tr('{n} paradas · {min} min caminando · termina a las {hora}', {
+                'n': paradas.length,
+                'min': _ruta.minutosCaminando,
+                'hora': _hora(_ruta.fin),
+              }),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
@@ -176,8 +179,7 @@ class _RutaScreenState extends State<RutaScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Text(
-                'Algunos lugares no tienen horario cargado: confirma en el lugar antes de ir. '
-                'Los tiempos de caminata son aproximados.',
+                tr('Algunos lugares no tienen horario cargado: confirma en el lugar antes de ir. Los tiempos de caminata son aproximados.'),
                 style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6)),
               ),
             ),
@@ -214,7 +216,8 @@ class _RutaScreenState extends State<RutaScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              '${p.minutosCaminando} min caminando · visita sugerida ${p.lugar.duracionVisitaMin} min',
+              tr('{min} min caminando · visita sugerida {visita} min',
+                  {'min': p.minutosCaminando, 'visita': p.lugar.duracionVisitaMin}),
               style: TextStyle(color: Colors.black.withValues(alpha: 0.65)),
             ),
             const SizedBox(height: 4),
@@ -229,14 +232,14 @@ class _RutaScreenState extends State<RutaScreen> {
                 TextButton.icon(
                   onPressed: () => _quitar(p.lugar),
                   icon: const Icon(Icons.remove_circle_outline),
-                  label: const Text('Quitar'),
+                  label: Text(tr('Quitar')),
                 ),
                 TextButton.icon(
                   onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => LugarScreen(lugar: p.lugar, todos: widget.lugares),
                   )),
                   icon: const Icon(Icons.info_outline),
-                  label: const Text('Ver ficha'),
+                  label: Text(tr('Ver ficha')),
                 ),
               ],
             ),
@@ -255,8 +258,9 @@ class _RutaScreenState extends State<RutaScreen> {
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
         leading: Icon(CategoriaEstilo.de(s.categoriaClave).icono, color: VgColores.azulGolfo),
-        title: Text('Te quedan ${_ruta.minutosLibres} min libres'),
-        subtitle: Text('A $min min de tu última parada está ${s.nombre}. ¿Por qué no vas?'),
+        title: Text(tr('Te quedan {min} min libres', {'min': _ruta.minutosLibres})),
+        subtitle: Text(tr('A {min} min de tu última parada está {lugar}. ¿Por qué no vas?',
+            {'min': min, 'lugar': s.nombre})),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => LugarScreen(lugar: s, todos: widget.lugares),

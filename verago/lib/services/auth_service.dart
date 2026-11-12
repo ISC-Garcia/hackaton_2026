@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../i18n/idioma.dart';
 import 'error_verago.dart';
 
 /// SERVICIO de cuentas (Supabase Auth): registrarse, entrar y salir.
@@ -33,7 +34,7 @@ class AuthService {
     try {
       final r = await _auth.signInWithPassword(email: correo.trim(), password: contrasena);
       if (r.session == null) {
-        throw const ErrorVeraGo('No pudimos iniciar sesión. Intenta de nuevo.');
+        throw ErrorVeraGo(tr('No pudimos iniciar sesión. Intenta de nuevo.'));
       }
     } on ErrorVeraGo {
       rethrow;
@@ -41,7 +42,7 @@ class AuthService {
       // Solo el mensaje amable (ej. "Correo o contraseña incorrectos.").
       throw ErrorVeraGo(_mensaje(e));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
   }
 
@@ -60,7 +61,7 @@ class AuthService {
     } on AuthException catch (e) {
       throw ErrorVeraGo(_mensaje(e));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
   }
 
@@ -69,17 +70,15 @@ class AuthService {
   /// Traduce los errores de Supabase Auth a mensajes claros.
   String _mensaje(AuthException e) {
     final m = e.message.toLowerCase();
-    if (m.contains('invalid login')) return 'Correo o contraseña incorrectos.';
-    if (m.contains('already registered')) return 'Ese correo ya tiene cuenta. Entra con tu contraseña.';
+    if (m.contains('invalid login')) return tr('Correo o contraseña incorrectos.');
+    if (m.contains('already registered')) return tr('Ese correo ya tiene cuenta. Entra con tu contraseña.');
     if (m.contains('not confirmed')) {
-      return 'Tu correo aún no está confirmado. Abre el enlace que te enviamos '
-          'o pide al administrador que confirme tu cuenta.';
+      return tr('Tu correo aún no está confirmado. Abre el enlace que te enviamos o pide al administrador que confirme tu cuenta.');
     }
     if (m.contains('rate limit')) {
-      return 'Se enviaron demasiados correos. Espera unos minutos o pide al '
-          'administrador que confirme tu cuenta.';
+      return tr('Se enviaron demasiados correos. Espera unos minutos o pide al administrador que confirme tu cuenta.');
     }
-    if (m.contains('password')) return 'La contraseña debe tener al menos 6 caracteres.';
-    return 'No pudimos completar la operación. Intenta de nuevo.';
+    if (m.contains('password')) return tr('La contraseña debe tener al menos 6 caracteres.');
+    return tr('No pudimos completar la operación. Intenta de nuevo.');
   }
 }
