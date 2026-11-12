@@ -65,6 +65,7 @@ class TarjetaLugar extends StatelessWidget {
                       runSpacing: 6,
                       children: [
                         Etiqueta.apertura(lugar.estadoEn(DateTime.now())),
+                        ?Etiqueta.tipoNegocio(lugar),
                         if (lugar.participaPasaporte)
                           const Etiqueta('Da sello', color: Color(0xFF0B3C5D), icono: Icons.approval),
                         if (lugar.esDemo) const Etiqueta.demo(),

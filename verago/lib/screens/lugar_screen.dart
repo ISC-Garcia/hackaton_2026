@@ -92,6 +92,7 @@ class LugarScreen extends StatelessWidget {
                   runSpacing: 6,
                   children: [
                     Etiqueta.apertura(lugar.estadoEn(DateTime.now())),
+                    ?Etiqueta.tipoNegocio(lugar),
                     if (lugar.participaPasaporte)
                       const Etiqueta('Da sello en tu pasaporte', color: VgColores.azulGolfo, icono: Icons.approval),
                     if (lugar.esDemo) const Etiqueta.demo(),

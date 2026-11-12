@@ -80,12 +80,14 @@ class AdminService {
   /// Aprobar, rechazar, suspender o reactivar un negocio.
   /// - aprobado: se ve en la app y da sellos.
   /// - rechazado / suspendido: deja de verse.
-  Future<void> cambiarEstadoNegocio(String id, String estado) {
+  /// Aprobar = se publica. Solo un negocio FORMAL da sellos (regla del
+  /// equipo; la base de datos también lo exige, archivo 012).
+  Future<void> cambiarEstadoNegocio(String id, String estado, {required bool formal}) {
     final aprobado = estado == 'aprobado';
     return _escribir(() => _db.from('lugares').update({
           'estado_aprobacion': estado,
           'publicado': aprobado,
-          'participa_pasaporte': aprobado,
+          'participa_pasaporte': aprobado && formal,
         }).eq('id', id));
   }
 

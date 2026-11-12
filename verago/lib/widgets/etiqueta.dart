@@ -30,6 +30,18 @@ class Etiqueta extends StatelessWidget {
     }
   }
 
+  /// Tipo de negocio: "Negocio formal" (local propio, da sellos) o
+  /// "No formal · Punto VeraGo". null si el lugar no es un negocio.
+  static Etiqueta? tipoNegocio(Lugar l) {
+    if (l.esFormal) {
+      return const Etiqueta('Negocio formal', color: VgColores.verdePalma, icono: Icons.store);
+    }
+    if (l.esInformal) {
+      return const Etiqueta('No formal · Punto VeraGo', color: VgColores.terracota, icono: Icons.storefront_outlined);
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(

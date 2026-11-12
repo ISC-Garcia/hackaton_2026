@@ -15,7 +15,8 @@ import 'qr_comercio_screen.dart';
 /// PANEL DEL COMERCIANTE (negocio aprobado).
 ///
 /// Tres acciones (elegidas por el equipo):
-/// 1. Mostrar mi QR (cambia cada 60 s).
+/// 1. Mostrar mi QR (cambia cada 60 s). Solo negocios FORMALES: los de
+///    un Punto VeraGo no dan sellos.
 /// 2. Ver mi ficha (como la ven los turistas).
 /// 3. Editar mis datos.
 class PanelComercianteScreen extends StatefulWidget {
@@ -127,13 +128,25 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        _Accion(
-          icono: Icons.qr_code_2,
-          titulo: 'Mostrar mi QR',
-          texto: 'Los turistas lo escanean para ganar el sello de tu negocio.',
-          alTocar: () => Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => const QrComercioScreen())),
-        ),
+        // Solo los negocios FORMALES dan sellos (regla del equipo).
+        if (n.esFormal)
+          _Accion(
+            icono: Icons.qr_code_2,
+            titulo: 'Mostrar mi QR',
+            texto: 'Los turistas lo escanean para ganar el sello de tu negocio.',
+            alTocar: () => Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const QrComercioScreen())),
+          )
+        else
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text(
+              'Los negocios de un Punto VeraGo no dan sellos del pasaporte: solo los '
+              'negocios formales (local propio). Los turistas te encuentran en el mapa '
+              'y en las rutas, dentro de tu punto.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ),
         _Accion(
           icono: Icons.visibility_outlined,
           titulo: 'Ver mi ficha',

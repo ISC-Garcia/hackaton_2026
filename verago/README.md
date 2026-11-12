@@ -30,7 +30,7 @@ Documentación del equipo (documentos compartidos de Claude):
 | --- | --- | --- |
 | 1. Fundamentos | Paquetes, tema visual, navegación, SQL (tablas, RLS, funciones, datos demo, permisos) | Implementado; SQL corrido en Supabase |
 | 2. Turista | Explorar (mapa/lista, búsqueda, filtros, leyenda, centrar), ficha del lugar con "Cerca de aquí", agenda | Implementado y probado en celular |
-| 3. Rutas | Formulario (tiempo, intereses, ritmo, inicio), algoritmo voraz, ruta en mapa, "Quitar" parada, sugerencia cercana | Implementado, con pruebas automáticas del algoritmo |
+| 3. Rutas | Formulario (tiempo, intereses **obligatorio al menos uno**, ritmo, inicio), algoritmo voraz **filtrado por intereses** (solo entran las categorías elegidas, más 1 comercio formal y 1 Punto VeraGo), ruta en mapa, "Quitar" parada, sugerencia cercana | Implementado, con pruebas automáticas del algoritmo |
 | 4. Pasaporte | Login con correo y contraseña (con confirmar contraseña), QR del comerciante (cambia cada 60 s), escaneo con cámara o código escrito, animación del sello, colección e historial | Implementado |
 | 5. Cierre | Estadísticas (DATOS SIMULADOS, solo admin), pruebas, compilación web | Implementado. Falta ensayo de la demo |
 | Extra UI/UX | Pantalla de bienvenida (primera vez), botón de ojo en contraseñas, leyenda y centrar en el mapa | Implementado, con pruebas automáticas |
@@ -47,6 +47,8 @@ y la app compila para web (`flutter build web`).
 ### Qué NO hace la app (a propósito, MVP)
 
 - No hay premios ni canjes: el pasaporte **solo junta sellos**.
+- **Solo los negocios formales** (local propio) dan sellos. Los no formales (en un Punto VeraGo),
+  los Puntos y los lugares públicos no.
 - **Solo los desarrolladores entran a Supabase.** El admin de VeraGo maneja desde la app la
   **Agenda**, las **solicitudes de negocios** y los **lugares y Puntos VeraGo**.
   Todavía se hace en Supabase (por un desarrollador): **cambiar roles** (por ejemplo, nombrar a un admin).
@@ -73,6 +75,8 @@ y la app compila para web (`flutter build web`).
        (la regla RLS sigue impidiéndolo a cualquier otro rol).
    11. `011_admin_app.sql` — permite que el **admin** apruebe negocios y cree o edite lugares,
        Puntos VeraGo y horarios **desde la app** (tampoco se pueden borrar lugares: se ocultan).
+   12. `012_sellos_solo_formales.sql` — **solo los negocios formales dan sellos**: les quita el
+       sello a los no formales (Puntos VeraGo) y agrega una regla (CHECK) para que no vuelva a pasar.
 3. Revisar en **Table Editor** que existan las tablas y los datos.
 4. En **Authentication → Sign In / Providers → Email**:
    - Dejar activado **Email**.
@@ -129,9 +133,10 @@ Las solicitudes nuevas quedan con `estado_aprobacion = 'pendiente'` y **no** se 
 hasta aprobarlas. El SQL de abajo es solo de respaldo para los desarrolladores.
 
 ```sql
--- APROBAR (después de que el comerciante pagó su espacio): aparece en la app y da sellos.
+-- APROBAR (después de que el comerciante pagó su espacio): aparece en la app.
+-- participa_pasaporte = true SOLO si es formal (local propio); si es de un Punto VeraGo, false.
 update public.lugares
-set estado_aprobacion = 'aprobado', publicado = true, participa_pasaporte = true
+set estado_aprobacion = 'aprobado', publicado = true, participa_pasaporte = (punto_id is null)
 where nombre = 'Nombre del negocio';
 
 -- RECHAZAR (libera el giro en el punto):
@@ -237,7 +242,7 @@ lib/
 ├─ models/         → clases de datos (Lugar, Evento, Sello, Perfil)
 └─ widgets/        → piezas visuales reutilizables (mapa, tarjetas, etiquetas)
 test/              → pruebas automáticas (45)
-supabase/migrations/ → SQL de la base de datos (001 a 011)
+supabase/migrations/ → SQL de la base de datos (001 a 012)
 ```
 
 ## Bitácora de IA
@@ -290,3 +295,6 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | 28 | 2026-11-11 | "¿Ya añadiste todo a la guía de estudio?" | Claude Code | Se respondió que no: la guía quedó hasta las preguntas 111–116 (comerciantes y roles). Se listó lo que falta (logo, botón en Pasaporte, teléfono, Agenda del admin, dirección automática, panel de administración) | Sin cambios: el *Equipo* pidió no editar la documentación. Se ofreció actualizar la guía solo si lo confirman |
 | 29 | 2026-11-11 | "Eliminé a un compañero de la base de datos pero lo deja entrar" | Claude Code | Explicación: el acceso lo decide Supabase Auth (`auth.users`), no la tabla `perfiles`; borrar solo el perfil no quita la cuenta, y la app tolera cuentas sin perfil (rol "usuario"). Pasos para borrarlo en Authentication → Users (borra en cascada perfil y sellos) o, si solo se quieren quitar permisos, cambiar su rol | Sin cambios de código. Se ofreció bloquear en la app las cuentas sin perfil; queda a decisión del *Equipo* |
 | 30 | 2026-11-11 | Quitar el error largo que sale al iniciar sesión con datos incorrectos | Claude Code | Se eliminó el "[Detalle técnico: …]" que se agregó en la entrada 19 para diagnosticar; ahora solo sale el mensaje amable ("Correo o contraseña incorrectos."). 45 pruebas pasan | El diagnóstico ya no hace falta (el problema del Pasaporte se resolvió en la entrada 20). Mostrar solo mensajes amables evita revelar información interna |
+| 31 | 2026-11-11 | ¿Dónde se aceptan comerciantes desde la app? | Claude Code | Sin cambios de código. Se explicó la ruta: Pasaporte → Panel de administración → Solicitudes de negocios → pestaña Pendientes → tocar el negocio → revisar datos y direcciones → Aprobar (o Rechazar) | El botón solo aparece con rol `admin` y la aprobación necesita el SQL 011 corrido. La app no avisa al comerciante: se le debe avisar por teléfono o correo |
+| 32 | 2026-11-11 | ¿Dónde está la guía de estudio? | Claude Code | Sin cambios de código. Se volvió a compartir el enlace de la guía de estudio (también está al inicio de este README) | La guía no se ha actualizado desde que el *Equipo* pidió dejar de editar la documentación; lo más reciente (admin en la app, dirección automática, panel de negocios) solo está en este README |
+| 33 | 2026-11-11 | Mejorar las rutas (error sin intereses), rutas por categorías, separar negocios formales y no formales, solo formales dan sellos | Claude Code | **Rutas:** elegir al menos un interés es obligatorio (botón apagado y aviso en rojo); se limpian intereses guardados de categorías que ya no existen; el algoritmo ahora **solo usa las categorías elegidas** (antes solo les daba +2 puntos) más 1 comercio formal y 1 Punto VeraGo; los chips ya no muestran "Puntos VeraGo" ni categorías que no pueden ser parada; la sugerencia final solo propone negocios formales; si no hay ruta, botón "Cambiar preferencias". **Sellos:** SQL 012 (quita sellos a no formales + regla CHECK `sello_solo_formales`); al aprobar, solo los formales quedan con sello; el panel de un negocio no formal ya no muestra "Mostrar mi QR". **Formal / no formal:** etiqueta en tarjeta y ficha, y filtro Todos / Formales / No formales en Solicitudes de negocios. 5 pruebas nuevas (50 en total) | *Equipo* eligió: generador filtrado (la IA lo recomendó en vez de rutas creadas por el admin: menos trabajo y la ruta sigue siendo "a la medida"), no formales sin QR ni sellos, etiqueta en tarjeta/ficha y filtro en el panel del admin. Los sellos ya dados por no formales se quedan en el historial. **Falta correr SQL 012** |

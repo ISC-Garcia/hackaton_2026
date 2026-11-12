@@ -13,11 +13,24 @@ import 'ruta_screen.dart';
 
 /// RUTAS: formulario corto para pedir un recorrido.
 ///
-/// El visitante elige: tiempo disponible, intereses, ritmo y punto de
-/// partida. Al tocar "Generar ruta", `RutasService` arma el recorrido y
-/// se abre `RutaScreen` con el resultado.
+/// El visitante elige: tiempo disponible, intereses (OBLIGATORIO al menos
+/// uno), ritmo y punto de partida. Al tocar "Generar ruta", `RutasService`
+/// arma el recorrido y se abre `RutaScreen` con el resultado.
 class RutasScreen extends StatefulWidget {
   const RutasScreen({super.key});
+
+  /// Categorías que pueden ser parada de una ruta (ordenadas por nombre).
+  /// No incluye "Puntos VeraGo" (siempre entra uno) ni los negocios de un
+  /// punto (no son paradas sueltas), ni lugares a los que no se llega a pie.
+  static Map<String, String> categoriasDeRuta(List<Lugar> lugares) {
+    final categorias = <String, String>{
+      for (final l in lugares)
+        if (l.enRecorridoAPie && !l.esPunto && !l.esInformal) l.categoriaClave: l.categoriaNombre,
+    };
+    final claves = categorias.keys.toList()
+      ..sort((a, b) => categorias[a]!.compareTo(categorias[b]!));
+    return {for (final c in claves) c: categorias[c]!};
+  }
 
   @override
   State<RutasScreen> createState() => _RutasScreenState();
@@ -54,6 +67,8 @@ class _RutasScreenState extends State<RutasScreen> {
   }
 
   Future<void> _generar(List<Lugar> lugares) async {
+    // Seguridad extra: el botón ya está apagado si no hay intereses.
+    if (_intereses.isEmpty) return;
     var inicio = Distancia.zocalo;
     var nombreInicio = 'el Zócalo';
 
@@ -116,10 +131,12 @@ class _RutasScreenState extends State<RutasScreen> {
   }
 
   Widget _formulario(List<Lugar> lugares) {
-    final categorias = <String, String>{};
-    for (final l in lugares) {
-      categorias[l.categoriaClave] = l.categoriaNombre;
-    }
+    final categorias = RutasScreen.categoriasDeRuta(lugares);
+    // Quitamos intereses guardados de categorías que ya no existen
+    // (si no, el botón se activaría con un chip invisible).
+    final intereses = _intereses.where(categorias.containsKey).toSet();
+    if (intereses.length != _intereses.length) _intereses = intereses;
+    final faltaInteres = _intereses.isEmpty;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
@@ -143,6 +160,19 @@ class _RutasScreenState extends State<RutasScreen> {
           ],
         ),
         const _Titulo('¿Qué te interesa?'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Text(
+            faltaInteres
+                ? 'Elige al menos uno para generar tu ruta.'
+                : 'Tu ruta solo tendrá lugares de lo que elijas, más un comercio local '
+                    'y un Punto VeraGo.',
+            style: TextStyle(
+              fontSize: 12,
+              color: faltaInteres ? const Color(0xFF9B2C2C) : Colors.black.withValues(alpha: 0.6),
+            ),
+          ),
+        ),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -188,7 +218,7 @@ class _RutasScreenState extends State<RutasScreen> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: _buscandoUbicacion ? null : () => _generar(lugares),
+            onPressed: _buscandoUbicacion || faltaInteres ? null : () => _generar(lugares),
             icon: _buscandoUbicacion
                 ? const SizedBox(
                     width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))

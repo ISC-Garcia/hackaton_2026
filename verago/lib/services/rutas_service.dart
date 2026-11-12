@@ -75,9 +75,12 @@ class Ruta {
 /// en ese momento, lo agrega a la ruta y "se mueve" ahí. Repite hasta que
 /// ningún lugar quepa en el tiempo que queda.
 ///
-/// Puntuación de un lugar = (interés del lugar + 2 si es de una categoría
-/// favorita) ÷ (minutos caminando + minutos de visita).
-/// Así gana lo más interesante que cueste menos tiempo.
+/// FILTRO POR INTERESES: solo entran lugares de las categorías que eligió el
+/// visitante (más los comerciantes obligatorios de la regla de abajo). Si
+/// eligió "Museos", la ruta trae museos, no lo que sea.
+///
+/// Puntuación de un lugar = interés del lugar ÷ (minutos caminando + minutos
+/// de visita). Así gana lo más interesante que cueste menos tiempo.
 ///
 /// REGLA DEL EQUIPO: toda ruta incluye al menos 1 comercio FORMAL y al menos
 /// 1 PUNTO VERAGO (si caben en el tiempo y están abiertos). Mientras falte
@@ -86,7 +89,6 @@ class Ruta {
 ///
 /// Es Dart puro: no usa internet ni pantallas, por eso se prueba fácil.
 class RutasService {
-  static const _bonoFavorito = 2;
   static const _prioridad = 1000;
 
   Ruta generar(PeticionRuta p, List<Lugar> lugares) {
@@ -124,6 +126,9 @@ class RutasService {
 
       for (final l in candidatos) {
         if (usados.contains(l.id)) continue;
+        // Solo lo que le interesa, o un comerciante obligatorio que aún falte.
+        final obligatorio = (!tieneFormal && l.esFormal) || (!tienePunto && l.esPunto);
+        if (!_teInteresa(p, l) && !obligatorio) continue;
 
         final caminata = Distancia.minutosCaminando(posicion, l.punto,
             velocidad: p.ritmo.metrosPorMinuto);
@@ -135,9 +140,7 @@ class RutasService {
         // ¿Estará abierto al llegar y hasta terminar la visita?
         if (!_abiertoDurante(l, llegada, salida)) continue;
 
-        final favorito = p.intereses.contains(l.categoriaClave);
-        final prioridad = (!tieneFormal && l.esFormal) || (!tienePunto && l.esPunto) ? _prioridad : 0;
-        final puntaje = (l.interes + (favorito ? _bonoFavorito : 0) + prioridad) /
+        final puntaje = (l.interes + (obligatorio ? _prioridad : 0)) /
             (caminata + l.duracionVisitaMin);
 
         if (puntaje > mejorPuntaje) {
@@ -166,13 +169,19 @@ class RutasService {
     return Ruta(peticion: p, paradas: paradas);
   }
 
-  /// Sugerencia para seguir explorando: el comercio más cercano a `punto`
-  /// que no esté en `yaIncluidos`, a menos de 10 min caminando.
+  /// ¿El lugar es de una categoría que eligió el visitante?
+  /// (Sin intereses, todo cuenta: así nunca falla aunque llegue vacío).
+  bool _teInteresa(PeticionRuta p, Lugar l) =>
+      p.intereses.isEmpty || p.intereses.contains(l.categoriaClave);
+
+  /// Sugerencia para seguir explorando: el comercio FORMAL más cercano a
+  /// `punto` que no esté en `yaIncluidos`, a menos de 10 min caminando.
+  /// (Los informales no: ya se visitan dentro de su Punto VeraGo).
   Lugar? sugerenciaCercana(LatLng punto, List<Lugar> lugares, Set<String> yaIncluidos) {
     Lugar? mejor;
     var mejorMin = 11;
     for (final l in lugares) {
-      if (!l.esComercio || !l.enRecorridoAPie || yaIncluidos.contains(l.id)) continue;
+      if (!l.esFormal || !l.enRecorridoAPie || yaIncluidos.contains(l.id)) continue;
       final min = Distancia.minutosCaminando(punto, l.punto);
       if (min < mejorMin) {
         mejor = l;
@@ -200,7 +209,7 @@ class RutasService {
     if (l.esPunto) {
       razones.add('Punto VeraGo: $comerciantes ${comerciantes == 1 ? 'emprendedor local' : 'emprendedores locales'}');
     }
-    if (p.intereses.contains(l.categoriaClave)) {
+    if (p.intereses.contains(l.categoriaClave) && !l.esPunto) {
       razones.add('Te interesa: ${l.categoriaNombre.toLowerCase()}');
     }
     if (l.interes >= 5) razones.add('Imperdible del centro');

@@ -22,6 +22,9 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
   late Future<List<Lugar>> _futuro;
   String _filtro = 'pendiente';
 
+  /// Tipo de negocio: 'todos', 'formal' (local propio) o 'informal' (Punto VeraGo).
+  String _tipo = 'todos';
+
   @override
   void initState() {
     super.initState();
@@ -32,11 +35,19 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
         _futuro = _servicio.negocios()..ignore();
       });
 
-  bool _coincide(Lugar l) => switch (_filtro) {
-        'pendiente' => l.estadoAprobacion == 'pendiente',
-        'aprobado' => l.estadoAprobacion == 'aprobado',
-        _ => l.estadoAprobacion == 'rechazado' || l.estadoAprobacion == 'suspendido',
-      };
+  bool _coincide(Lugar l) {
+    final estado = switch (_filtro) {
+      'pendiente' => l.estadoAprobacion == 'pendiente',
+      'aprobado' => l.estadoAprobacion == 'aprobado',
+      _ => l.estadoAprobacion == 'rechazado' || l.estadoAprobacion == 'suspendido',
+    };
+    final tipo = switch (_tipo) {
+      'formal' => l.esFormal,
+      'informal' => l.esInformal,
+      _ => true,
+    };
+    return estado && tipo;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +85,24 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
                   onSelectionChanged: (s) => setState(() => _filtro = s.first),
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final t in const {
+                      'todos': 'Todos',
+                      'formal': 'Formales',
+                      'informal': 'No formales',
+                    }.entries)
+                      ChoiceChip(
+                        label: Text(t.value),
+                        selected: _tipo == t.key,
+                        onSelected: (_) => setState(() => _tipo = t.key),
+                      ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: visibles.isEmpty
                     ? const EstadoVacio(
@@ -90,7 +119,7 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
                               child: ListTile(
                                 title: Text(n.nombre, style: const TextStyle(fontWeight: FontWeight.w700)),
                                 subtitle: Text(
-                                  '${n.esInformal ? 'Punto VeraGo · ${n.giroNombre ?? ''}' : 'Local propio · ${n.categoriaNombre}'}'
+                                  '${n.esInformal ? 'No formal · Punto VeraGo · ${n.giroNombre ?? ''}' : 'Formal · Local propio · ${n.categoriaNombre}'}'
                                   '\nEstado: ${n.estadoAprobacion}',
                                 ),
                                 isThreeLine: true,
@@ -157,7 +186,7 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
   }
 
   Future<void> _cambiarEstado(String estado, String hecho) =>
-      _ejecutar(() => _servicio.cambiarEstadoNegocio(n.id, estado), hecho);
+      _ejecutar(() => _servicio.cambiarEstadoNegocio(n.id, estado, formal: n.esFormal), hecho);
 
   Future<void> _guardarHorario() async {
     final error = EditorHorario.validar(_horario);
@@ -182,8 +211,8 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
           Text(n.nombre, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 4),
           Text(n.esInformal
-              ? 'Punto VeraGo · Giro: ${n.giroNombre ?? '—'}'
-              : 'Local propio · ${n.categoriaNombre}'),
+              ? 'No formal · Punto VeraGo · Giro: ${n.giroNombre ?? '—'} (no da sellos)'
+              : 'Formal · Local propio · ${n.categoriaNombre} (da sellos)'),
           Text('Estado: $estado', style: const TextStyle(fontWeight: FontWeight.w600)),
           const Divider(height: 28),
           _Dato('Encargado', n.duenoNombre ?? '—'),
@@ -244,7 +273,7 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
             ),
           const SizedBox(height: 8),
           const Text(
-            'Aprobar = aparece en la app y da sellos. Recuerda avisar al comerciante '
+            'Aprobar = aparece en la app (y da sellos solo si es formal). Recuerda avisar al comerciante '
             '(por teléfono o correo): la app no envía notificaciones.',
             style: TextStyle(fontSize: 12),
           ),

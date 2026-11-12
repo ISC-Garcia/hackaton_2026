@@ -3,6 +3,8 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:verago/models/lugar.dart';
+import 'package:verago/screens/rutas_screen.dart';
+import 'package:verago/widgets/etiqueta.dart';
 import 'package:verago/services/distancia.dart';
 import 'package:verago/services/rutas_service.dart';
 
@@ -139,6 +141,51 @@ void main() {
     });
   });
 
+  group('Filtro por intereses', () {
+    final lugares = [
+      lugar('h1', categoria: 'historia', interes: 5, dLat: 0.0005),
+      lugar('h2', categoria: 'historia', interes: 5, dLat: 0.0008),
+      lugar('museo', categoria: 'museo', interes: 3, dLat: 0.001),
+      lugar('cafe', categoria: 'cafeteria', comercio: true, interes: 2, dLat: 0.002),
+      lugar('punto', esPunto: true, categoria: 'punto', interes: 2, dLat: -0.003),
+      lugar('guayaberas', comercio: true, puntoId: 'punto', dLat: -0.003),
+    ];
+
+    test('solo entran las categorías elegidas (más los comerciantes obligatorios)', () {
+      final ids = servicio
+          .generar(peticion(minutos: 240, intereses: {'museo'}), lugares)
+          .paradas
+          .map((p) => p.lugar.id);
+      expect(ids, contains('museo'));
+      expect(ids, isNot(contains('h1')));
+      expect(ids, isNot(contains('h2')));
+      // Regla del equipo: 1 comercio formal y 1 Punto VeraGo aunque no se eligieron.
+      expect(ids, containsAll(['cafe', 'punto']));
+    });
+
+    test('sin intereses no falla (usa todas las categorías)', () {
+      final ruta = servicio.generar(peticion(minutos: 240), lugares);
+      expect(ruta.paradas, isNotEmpty);
+    });
+
+    test('los chips de Rutas no muestran Puntos, negocios de un punto ni lugares lejanos', () {
+      final cats = RutasScreen.categoriasDeRuta([
+        ...lugares,
+        lugar('ulua', categoria: 'fuerte', aPie: false),
+      ]);
+      expect(cats.keys, containsAll(['historia', 'museo', 'cafeteria']));
+      expect(cats.keys, isNot(contains('punto')));
+      expect(cats.keys, isNot(contains('fuerte')));
+    });
+  });
+
+  test('etiqueta Formal / No formal', () {
+    expect(Etiqueta.tipoNegocio(lugar('f', comercio: true))?.texto, 'Negocio formal');
+    expect(Etiqueta.tipoNegocio(lugar('i', comercio: true, puntoId: 'p'))?.texto,
+        'No formal · Punto VeraGo');
+    expect(Etiqueta.tipoNegocio(lugar('plaza')), isNull);
+  });
+
   test('sugiere el comercio más cercano que no está en la ruta', () {
     final lugares = [
       lugar('lejos', comercio: true, dLat: 0.004),
@@ -147,5 +194,13 @@ void main() {
     ];
     final s = servicio.sugerenciaCercana(Distancia.zocalo, lugares, {});
     expect(s?.id, 'cerca');
+  });
+
+  test('la sugerencia nunca es un negocio no formal (se visita en su punto)', () {
+    final lugares = [
+      lugar('informal', comercio: true, puntoId: 'p', dLat: 0.0002),
+      lugar('formal', comercio: true, dLat: 0.002),
+    ];
+    expect(servicio.sugerenciaCercana(Distancia.zocalo, lugares, {})?.id, 'formal');
   });
 }

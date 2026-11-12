@@ -74,11 +74,13 @@ class _RutaScreenState extends State<RutaScreen> {
     if (paradas.isEmpty) {
       return Scaffold(
         appBar: AppBar(),
-        body: const EstadoVacio(
+        body: EstadoVacio(
           icono: Icons.route_outlined,
           titulo: 'No encontramos una ruta',
-          mensaje: 'Con ese tiempo u horario no alcanzamos a incluir lugares abiertos. '
-              'Prueba con más tiempo.',
+          mensaje: 'Con ese tiempo, horario o intereses no alcanzamos a incluir lugares '
+              'abiertos. Prueba con más tiempo o elige más intereses.',
+          textoBoton: 'Cambiar preferencias',
+          alPresionar: () => Navigator.of(context).pop(),
         ),
       );
     }
