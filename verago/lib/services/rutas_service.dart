@@ -75,30 +75,22 @@ class Ruta {
 /// en ese momento, lo agrega a la ruta y "se mueve" ahí. Repite hasta que
 /// ningún lugar quepa en el tiempo que queda.
 ///
-/// FILTRO POR INTERESES: solo entran lugares de las categorías que eligió el
-/// visitante (más los comerciantes obligatorios de la regla de abajo). Si
-/// eligió "Museos", la ruta trae museos, no lo que sea.
+/// FILTRO POR INTERESES: SOLO entran lugares de las categorías que eligió el
+/// visitante. Si eligió "Museos", la ruta trae solo museos. (Antes se metía a
+/// fuerza 1 negocio formal y 1 Punto VeraGo; el equipo pidió quitarlo. Los
+/// Puntos VeraGo ahora se pueden elegir como interés.)
 ///
 /// Puntuación de un lugar = interés del lugar ÷ (minutos caminando + minutos
 /// de visita). Así gana lo más interesante que cueste menos tiempo.
 ///
-/// REGLA DEL EQUIPO: toda ruta incluye al menos 1 comercio FORMAL y al menos
-/// 1 PUNTO VERAGO (si caben en el tiempo y están abiertos). Mientras falte
-/// alguno, esos lugares reciben una PRIORIDAD enorme (+1000), así el
-/// algoritmo los elige en cuanto son posibles.
-///
 /// Es Dart puro: no usa internet ni pantallas, por eso se prueba fácil.
 class RutasService {
-  static const _prioridad = 1000;
-
   Ruta generar(PeticionRuta p, List<Lugar> lugares) {
     final fin = p.horaInicio.add(Duration(minutes: p.minutosDisponibles));
     final paradas = <Parada>[];
     final usados = <String>{};
     var posicion = p.inicio;
     var reloj = p.horaInicio;
-    var tieneFormal = false;
-    var tienePunto = false;
 
     // Cuántos comerciantes hay en cada Punto VeraGo.
     final comerciantesPorPunto = <String, int>{};
@@ -126,9 +118,8 @@ class RutasService {
 
       for (final l in candidatos) {
         if (usados.contains(l.id)) continue;
-        // Solo lo que le interesa, o un comerciante obligatorio que aún falte.
-        final obligatorio = (!tieneFormal && l.esFormal) || (!tienePunto && l.esPunto);
-        if (!_teInteresa(p, l) && !obligatorio) continue;
+        // Solo lo que le interesa.
+        if (!_teInteresa(p, l)) continue;
 
         final caminata = Distancia.minutosCaminando(posicion, l.punto,
             velocidad: p.ritmo.metrosPorMinuto);
@@ -140,8 +131,7 @@ class RutasService {
         // ¿Estará abierto al llegar y hasta terminar la visita?
         if (!_abiertoDurante(l, llegada, salida)) continue;
 
-        final puntaje = (l.interes + (obligatorio ? _prioridad : 0)) /
-            (caminata + l.duracionVisitaMin);
+        final puntaje = l.interes / (caminata + l.duracionVisitaMin);
 
         if (puntaje > mejorPuntaje) {
           mejor = l;
@@ -160,8 +150,6 @@ class RutasService {
         motivo: _motivo(mejor, p, mejorCaminata, paradas.isEmpty, comerciantesPorPunto[mejor.id] ?? 0),
       ));
       usados.add(mejor.id);
-      if (mejor.esFormal) tieneFormal = true;
-      if (mejor.esPunto) tienePunto = true;
       posicion = mejor.punto;
       reloj = llegada.add(Duration(minutes: mejor.duracionVisitaMin));
     }
@@ -177,11 +165,15 @@ class RutasService {
   /// Sugerencia para seguir explorando: el comercio FORMAL más cercano a
   /// `punto` que no esté en `yaIncluidos`, a menos de 10 min caminando.
   /// (Los informales no: ya se visitan dentro de su Punto VeraGo).
-  Lugar? sugerenciaCercana(LatLng punto, List<Lugar> lugares, Set<String> yaIncluidos) {
+  /// Con `intereses` (al final de una ruta), solo de esas categorías: si
+  /// eligió museos, no le sugerimos una taquería.
+  Lugar? sugerenciaCercana(LatLng punto, List<Lugar> lugares, Set<String> yaIncluidos,
+      {Set<String> intereses = const {}}) {
     Lugar? mejor;
     var mejorMin = 11;
     for (final l in lugares) {
       if (!l.esFormal || !l.enRecorridoAPie || yaIncluidos.contains(l.id)) continue;
+      if (intereses.isNotEmpty && !intereses.contains(l.categoriaClave)) continue;
       final min = Distancia.minutosCaminando(punto, l.punto);
       if (min < mejorMin) {
         mejor = l;

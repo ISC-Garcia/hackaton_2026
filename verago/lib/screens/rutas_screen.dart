@@ -25,7 +25,9 @@ class RutasScreen extends StatefulWidget {
   static Map<String, String> categoriasDeRuta(List<Lugar> lugares) {
     final categorias = <String, String>{
       for (final l in lugares)
-        if (l.enRecorridoAPie && !l.esPunto && !l.esInformal) l.categoriaClave: l.categoriaNombre,
+        // Los Puntos VeraGo sí se pueden elegir; los negocios de un punto no
+        // (no son paradas sueltas: la parada es su punto).
+        if (l.enRecorridoAPie && !l.esInformal) l.categoriaClave: l.categoriaNombre,
     };
     final claves = categorias.keys.toList()
       ..sort((a, b) => categorias[a]!.compareTo(categorias[b]!));
@@ -193,8 +195,7 @@ class _RutasScreenState extends State<RutasScreen> {
           child: Text(
             faltaInteres
                 ? 'Elige al menos uno para generar tu ruta.'
-                : 'Tu ruta solo tendrá lugares de lo que elijas, más un comercio local '
-                    'y un Punto VeraGo.',
+                : 'Tu ruta solo tendrá lugares de lo que elijas.',
             style: TextStyle(
               fontSize: 12,
               color: faltaInteres ? const Color(0xFF9B2C2C) : Colors.black.withValues(alpha: 0.6),

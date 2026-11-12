@@ -16,6 +16,7 @@ import '../widgets/estado_vacio.dart';
 import '../widgets/etiqueta.dart';
 import '../widgets/mapa_lugares.dart';
 import '../widgets/tarjeta_lugar.dart';
+import 'chat_guia_screen.dart';
 import 'lugar_screen.dart';
 
 /// EXPLORAR: descubre los lugares del centro en un mapa o en una lista.
@@ -135,9 +136,22 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
   @override
   void initState() {
     super.initState();
-    _futuro = _servicio.obtenerLugares();
+    _futuro = _cargarLugares();
     _mostrarDondeEstoy(automatico: true);
   }
+
+  /// Lugares ya descargados (el chat de la guía los usa sin volver a pedirlos).
+  List<Lugar>? _cargados;
+
+  Future<List<Lugar>> _cargarLugares() async {
+    final lugares = await _servicio.obtenerLugares();
+    if (mounted) setState(() => _cargados = lugares);
+    return lugares;
+  }
+
+  void _abrirGuia(List<Lugar> lugares) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ChatGuiaScreen(lugares: lugares)),
+      );
 
   @override
   void dispose() {
@@ -166,7 +180,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
   void _recargar() {
     _limpiarBusqueda();
     setState(() {
-      _futuro = _servicio.obtenerLugares()..ignore();
+      _futuro = _cargarLugares()..ignore();
     });
   }
 
@@ -204,7 +218,18 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cargados = _cargados;
+    // Se esconde si hay una tarjeta abierta en el mapa (para no taparla).
+    final mostrarGuia = cargados != null && _seleccionado == null && _delMapaSeleccionado == null;
     return Scaffold(
+      floatingActionButton: mostrarGuia
+          ? FloatingActionButton.extended(
+              heroTag: 'guia-ia',
+              onPressed: () => _abrirGuia(cargados),
+              icon: const Icon(Icons.auto_awesome),
+              label: const Text('Pregúntale a VeraGo'),
+            )
+          : null,
       appBar: AppBar(
         title: const Text('Explorar'),
         actions: [
@@ -388,7 +413,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
 
   Widget _lista(List<Lugar> filtrados, List<Lugar> todos) {
     return ListView(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 88), // espacio para el botón de la guía
       children: [
         for (final l in filtrados)
           TarjetaLugar(lugar: l, desde: _origen, alTocar: () => _abrirFicha(l, todos)),

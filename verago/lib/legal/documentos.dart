@@ -31,7 +31,7 @@ class DocumentoLegal {
   final List<SeccionDocumento> secciones;
 
   /// Cambiar al modificar cualquier documento.
-  static const version = 'Versión 5 · 12 de noviembre de 2026';
+  static const version = 'Versión 6 · 12 de noviembre de 2026';
 }
 
 class Documentos {
@@ -65,6 +65,8 @@ class Documentos {
         '• Los datos de los negocios (horario, descripción, costo de entrada) los da cada negocio.',
         '• Los comercios y eventos marcados como "Ficticio · demostración" no son reales.',
         '• Las ubicaciones, distancias, caminos y tiempos de caminata son aproximados.',
+        '• "Pregúntale a VeraGo" usa inteligencia artificial (Google Gemini): sus respuestas pueden '
+            'equivocarse. Confirma horarios, precios y datos importantes en el lugar.',
       ]),
       SeccionDocumento('5. Rutas y recorridos', [
         'Las rutas son SUGERENCIAS. Tú decides si las sigues, por dónde caminas y a qué hora. '
@@ -167,6 +169,9 @@ class Documentos {
             'mapa" en Explorar, enviamos solo el texto que buscas.',
         '• Servicio de rutas a pie de OpenStreetMap (routing.openstreetmap.de): recibe las '
             'paradas de tu ruta y su punto de inicio para dibujar el camino.',
+        '• Google Gemini (IA): si usas "Pregúntale a VeraGo", recibe lo que escribes en el chat y la '
+            'lista pública de lugares. No recibe tu ubicación, tu correo ni tus sellos. La conversación '
+            'no se guarda en VeraGo y se borra al cerrar el chat. No escribas datos personales.',
         'No compartimos tus datos con nadie más, salvo que una autoridad lo pida conforme a la ley.',
       ]),
       SeccionDocumento('7. Lo que se guarda en tu celular', [
@@ -340,8 +345,8 @@ class Documentos {
       ]),
       SeccionDocumento('Cómo se arma tu ruta', [
         'Tu celular elige los lugares de lo que te interesa que alcanzas a visitar en tu tiempo y '
-            'que están abiertos, e incluye siempre un comercio local y un Punto VeraGo para apoyar '
-            'a los negocios del centro. El camino se dibuja por las calles.',
+            'que están abiertos, solo de las categorías que elegiste (los Puntos VeraGo también se '
+            'pueden elegir). El camino se dibuja por las calles.',
       ]),
       SeccionDocumento('Tu seguridad', [
         'Las rutas son sugerencias: camina por calles concurridas y cuida tus cosas. En una '

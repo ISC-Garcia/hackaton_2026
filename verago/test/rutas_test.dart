@@ -105,9 +105,7 @@ void main() {
     expect(ruta.paradas.map((p) => p.lugar.id), isNot(contains('a')));
   });
 
-  group('Regla del equipo: comerciantes en la ruta', () {
-    // Monumentos muy interesantes y cercanos; el comercio formal y el punto
-    // tienen menos interés y están más lejos: aun así deben entrar.
+  group('Negocios y Puntos VeraGo en la ruta', () {
     final lugares = [
       lugar('m1', interes: 5, dLat: 0.0005),
       lugar('m2', interes: 5, dLat: 0.0008),
@@ -117,10 +115,12 @@ void main() {
       lugar('guayaberas', comercio: true, puntoId: 'punto', dLat: -0.003),
     ];
 
-    test('incluye al menos 1 comercio formal y 1 Punto VeraGo', () {
-      final ids = servicio.generar(peticion(minutos: 180), lugares).paradas.map((p) => p.lugar.id);
-      expect(ids, contains('formal'));
-      expect(ids, contains('punto'));
+    test('un Punto VeraGo entra solo si se elige "Puntos VeraGo"', () {
+      final ids = servicio
+          .generar(peticion(minutos: 180, intereses: {'punto'}), lugares)
+          .paradas
+          .map((p) => p.lugar.id);
+      expect(ids, ['punto']);
     });
 
     test('un comerciante informal nunca es parada suelta (la parada es su punto)', () {
@@ -151,7 +151,7 @@ void main() {
       lugar('guayaberas', comercio: true, puntoId: 'punto', dLat: -0.003),
     ];
 
-    test('solo entran las categorías elegidas (más los comerciantes obligatorios)', () {
+    test('SOLO entran las categorías elegidas (nada de negocios a fuerza)', () {
       final ids = servicio
           .generar(peticion(minutos: 240, intereses: {'museo'}), lugares)
           .paradas
@@ -159,8 +159,9 @@ void main() {
       expect(ids, contains('museo'));
       expect(ids, isNot(contains('h1')));
       expect(ids, isNot(contains('h2')));
-      // Regla del equipo: 1 comercio formal y 1 Punto VeraGo aunque no se eligieron.
-      expect(ids, containsAll(['cafe', 'punto']));
+      // Antes se metían a fuerza un negocio formal y un Punto VeraGo; ya no.
+      expect(ids, isNot(contains('cafe')));
+      expect(ids, isNot(contains('punto')));
     });
 
     test('sin intereses no falla (usa todas las categorías)', () {
@@ -168,14 +169,20 @@ void main() {
       expect(ruta.paradas, isNotEmpty);
     });
 
-    test('los chips de Rutas no muestran Puntos, negocios de un punto ni lugares lejanos', () {
+    test('los chips de Rutas incluyen Puntos VeraGo, pero no lugares lejanos', () {
       final cats = RutasScreen.categoriasDeRuta([
         ...lugares,
         lugar('ulua', categoria: 'fuerte', aPie: false),
       ]);
       expect(cats.keys, containsAll(['historia', 'museo', 'cafeteria']));
-      expect(cats.keys, isNot(contains('punto')));
+      expect(cats.keys, contains('punto'));
       expect(cats.keys, isNot(contains('fuerte')));
+    });
+
+    test('la sugerencia del final respeta los intereses', () {
+      final s = servicio.sugerenciaCercana(Distancia.zocalo, lugares, {}, intereses: {'museo'});
+      expect(s, isNull); // el único negocio es un café: no se sugiere en una ruta de museos
+      expect(servicio.sugerenciaCercana(Distancia.zocalo, lugares, {})?.id, 'cafe');
     });
   });
 

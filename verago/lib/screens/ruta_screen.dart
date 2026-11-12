@@ -130,7 +130,8 @@ class _RutaScreenState extends State<RutaScreen> {
         : const <LatLng>[];
     final incluidos = paradas.map((p) => p.lugar.id).toSet();
     final sugerencia = _ruta.minutosLibres >= 15
-        ? _servicio.sugerenciaCercana(paradas.last.lugar.punto, widget.lugares, incluidos)
+        ? _servicio.sugerenciaCercana(paradas.last.lugar.punto, widget.lugares, incluidos,
+            intereses: _peticion.intereses)
         : null;
 
     return Scaffold(
