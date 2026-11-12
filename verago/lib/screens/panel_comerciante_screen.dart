@@ -111,7 +111,7 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
             );
           }
           if (negocio.estadoAprobacion != 'aprobado') {
-            return EstadoNegocioScreen(negocio: negocio);
+            return EstadoNegocioScreen(negocio: negocio, dentroDelPanel: true);
           }
           return _panel(negocio);
         },

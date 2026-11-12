@@ -33,8 +33,8 @@ class NegocioRegistradoScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Tu solicitud está pendiente de revisión por el equipo de VeraGo. '
-                  'Te notificaremos cuando tu establecimiento haya sido aprobado.',
+                  'Tu solicitud está pendiente. Por favor espera mientras un administrador de '
+                  'VeraGo la revisa. Te contactaremos por teléfono o correo cuando sea aprobada.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, height: 1.4),
                 ),
