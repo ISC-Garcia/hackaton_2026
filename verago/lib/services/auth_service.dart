@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'error_verago.dart';
@@ -34,22 +33,17 @@ class AuthService {
     try {
       final r = await _auth.signInWithPassword(email: correo.trim(), password: contrasena);
       if (r.session == null) {
-        throw ErrorVeraGo(_tecnico('Supabase no devolvió una sesión.', null));
+        throw const ErrorVeraGo('No pudimos iniciar sesión. Intenta de nuevo.');
       }
     } on ErrorVeraGo {
       rethrow;
     } on AuthException catch (e) {
-      throw ErrorVeraGo(_tecnico(_mensaje(e), e));
-    } catch (e) {
-      throw ErrorVeraGo(_tecnico('Revisa tu conexión a internet e intenta de nuevo.', e));
+      // Solo el mensaje amable (ej. "Correo o contraseña incorrectos.").
+      throw ErrorVeraGo(_mensaje(e));
+    } catch (_) {
+      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
     }
   }
-
-  /// En modo desarrollo (flutter run) agrega el error técnico al mensaje,
-  /// para poder diagnosticar. En la versión final (release) solo se ve el
-  /// mensaje amable: así no se revela información interna.
-  String _tecnico(String amable, Object? error) =>
-      kDebugMode && error != null ? '$amable\n\n[Detalle técnico: $error]' : amable;
 
   /// Crea la cuenta. El nombre viaja como "metadato" y el trigger
   /// `crear_perfil` (archivo 001 del SQL) lo guarda en la tabla perfiles.
@@ -64,9 +58,9 @@ class AuthService {
       );
       return r.session != null;
     } on AuthException catch (e) {
-      throw ErrorVeraGo(_tecnico(_mensaje(e), e));
-    } catch (e) {
-      throw ErrorVeraGo(_tecnico('Revisa tu conexión a internet e intenta de nuevo.', e));
+      throw ErrorVeraGo(_mensaje(e));
+    } catch (_) {
+      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
     }
   }
 
