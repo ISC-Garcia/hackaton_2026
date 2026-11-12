@@ -29,7 +29,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
     _futuro = _servicio.obtenerProximos();
   }
 
-  void _recargar() => setState(() => _futuro = _servicio.obtenerProximos());
+  void _recargar() => setState(() {
+        _futuro = _servicio.obtenerProximos()..ignore();
+      });
 
   bool _esHoy(Evento e, DateTime ahora) =>
       e.enCurso(ahora) ||
@@ -130,6 +132,11 @@ class _TarjetaEvento extends StatelessWidget {
             Text('${evento.inicia.day} ${_meses[evento.inicia.month - 1]} · '
                 '${_hora(evento.inicia)} – ${_hora(evento.termina)}'),
             if (evento.lugarNombre != null) Text(evento.lugarNombre!),
+            const SizedBox(height: 4),
+            Text(
+              'Costo: ${evento.textoCosto}${evento.esDemo && !evento.esGratuito ? ' (ficticio)' : ''}',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
             if (evento.descripcion != null) ...[
               const SizedBox(height: 12),
               Text(evento.descripcion!, style: const TextStyle(height: 1.4)),
@@ -202,8 +209,12 @@ class _TarjetaEvento extends StatelessWidget {
                           const Etiqueta('Cancelado', color: Color(0xFF9B2C2C), icono: Icons.cancel_outlined)
                         else if (evento.enCurso(ahora))
                           const Etiqueta('En curso', color: VgColores.verdePalma, icono: Icons.play_circle_outline),
-                        if (evento.esGratuito)
-                          const Etiqueta('Gratuito', color: VgColores.azulGolfo),
+                        // Siempre se indica el costo: "Gratuito", "≈ $150 MXN" o "Con costo".
+                        Etiqueta(
+                          evento.textoCosto,
+                          color: evento.esGratuito ? VgColores.azulGolfo : VgColores.terracota,
+                          icono: evento.esGratuito ? null : Icons.payments_outlined,
+                        ),
                         if (evento.esDemo) const Etiqueta.demo(),
                       ],
                     ),

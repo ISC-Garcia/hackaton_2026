@@ -11,7 +11,21 @@ class Evento {
     required this.esDemo,
     required this.lugarId,
     required this.lugarNombre,
+    this.costoAproxMxn,
   });
+
+  /// Costo aproximado en pesos (null si no se sabe). Columna costo_aprox_mxn.
+  final int? costoAproxMxn;
+
+  /// Texto del costo para mostrar en la Agenda.
+  /// - Gratuito → "Gratuito"
+  /// - Con precio → "≈ $150 MXN"
+  /// - Con costo pero sin precio cargado → "Con costo"
+  String get textoCosto {
+    if (esGratuito) return 'Gratuito';
+    final costo = costoAproxMxn;
+    return costo == null ? 'Con costo' : '≈ \$$costo MXN';
+  }
 
   final String id;
   final String titulo;
@@ -42,6 +56,8 @@ class Evento {
       esDemo: json['es_demo'] as bool,
       lugarId: json['lugar_id'] as String?,
       lugarNombre: lugar?['nombre'] as String?,
+      // Puede no existir si aún no se corre el SQL 007: entonces queda null.
+      costoAproxMxn: json['costo_aprox_mxn'] as int?,
     );
   }
 

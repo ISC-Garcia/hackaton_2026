@@ -7,7 +7,7 @@ Documentación del equipo (documentos compartidos de Claude):
 
 - **Documentación integral** (qué es VeraGo, módulos, arquitectura, base de datos, seguridad):
   https://claude.ai/artifact/Hp9CAXgVd5qvhU9xVvV5Dq
-- **Guía de estudio del código + 108 preguntas para la demo**:
+- **Guía de estudio del código + 110 preguntas para la demo**:
   https://claude.ai/artifact/GxJK58vGE6jzZZe4ckyUuE
 
 ## Tecnologías
@@ -35,7 +35,7 @@ Documentación del equipo (documentos compartidos de Claude):
 | Extra UI/UX | Pantalla de bienvenida (primera vez), botón de ojo en contraseñas, leyenda y centrar en el mapa | Implementado, con pruebas automáticas |
 | Ajustes | Engrane en el Pasaporte: mi cuenta (correo, rol, cambiar nombre), mis intereses, ver bienvenida otra vez, privacidad y cerrar sesión | Implementado, con pruebas automáticas |
 
-Verificado en esta computadora: `flutter analyze` sin problemas, **22 pruebas automáticas** pasan
+Verificado en esta computadora: `flutter analyze` sin problemas, **25 pruebas automáticas** pasan
 y la app compila para web (`flutter build web`).
 
 ### Qué NO hace la app (a propósito, MVP)
@@ -55,6 +55,7 @@ y la app compila para web (`flutter build web`).
    4. `004_datos_demo.sql` — lugares públicos (coordenadas aproximadas) y comercios/eventos **ficticios**.
    5. `005_permisos.sql` — permisos (GRANT) para que la app pueda leer las tablas. Sin este archivo la app no muestra nada.
    6. `006_perfiles_faltantes.sql` — crea el perfil de cuentas registradas antes del trigger. Se puede correr cuando sea.
+   7. `007_costo_eventos.sql` — agrega el costo aproximado de los eventos (la Agenda muestra "≈ $150 MXN").
 3. Revisar en **Table Editor** que existan las tablas y los datos.
 4. En **Authentication → Sign In / Providers → Email**:
    - Dejar activado **Email**.
@@ -174,8 +175,8 @@ lib/
 ├─ services/       → hablan con Supabase o hacen cálculos (rutas, distancias)
 ├─ models/         → clases de datos (Lugar, Evento, Sello, Perfil)
 └─ widgets/        → piezas visuales reutilizables (mapa, tarjetas, etiquetas)
-test/              → pruebas automáticas (22)
-supabase/migrations/ → SQL de la base de datos (001 a 006)
+test/              → pruebas automáticas (25)
+supabase/migrations/ → SQL de la base de datos (001 a 007)
 ```
 
 ## Bitácora de IA
@@ -217,3 +218,5 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | 17 | 2026-11-11 | "El inicio de sesión sigue sin funcionar" | Claude Code | Se volvió a leer la configuración de Auth: `mailer_autoconfirm` sigue en `false` (la confirmación de correo sigue activada en Supabase). Se dieron los pasos exactos para desactivarla | No se cambió código: la causa es la configuración del proyecto, y la app no puede saltarse la confirmación (sería un hueco de seguridad). No se crearon cuentas de prueba para no gastar el límite de correos del proyecto |
 | 18 | 2026-11-11 | Botón de ajustes en Pasaporte; el pasaporte sigue sin mostrar información | Claude Code | Pantalla **Ajustes** (engrane): mi cuenta con cambiar nombre, mis intereses, ver bienvenida otra vez, privacidad y cerrar sesión; 2 pruebas (22 en total). Diagnóstico: con "Confirm email" ya apagado (`mailer_autoconfirm: true`) se creó la cuenta de prueba `prueba.verago@verago-demo.mx` (dominio inventado, sin envío de correo) y se repitieron las consultas de la app: perfil, sellos y comercios responden bien | *Equipo* eligió las 4 opciones de Ajustes. Conclusión: la base de datos funciona; lo más probable es que sus cuentas viejas sigan sin confirmar → correr el `UPDATE` de confirmación. El botón de cerrar sesión se movió dentro de Ajustes. *Pendiente:* borrar la cuenta de prueba al terminar |
 | 19 | 2026-11-11 | "No entró ni con la cuenta de prueba" (captura en Chrome/web) | Claude Code | Se comprobó con la librería `supabase` fuera de Flutter que el login con la cuenta de prueba devuelve sesión y lee el perfil (backend OK). Un intento de prueba automática en Chrome se quedó colgado en "loading" y se detuvo; los archivos temporales de diagnóstico se borraron. El login ahora muestra el **detalle técnico del error solo en modo desarrollo** (`kDebugMode`) y avisa si Supabase no devuelve sesión | La falla está en la app al correr en web, no en Supabase. Se necesita el mensaje exacto que aparece al tocar "Entrar" para ubicarla. En la versión final no se muestran detalles técnicos |
+| 20 | 2026-11-11 | Log de la consola de Chrome: `setState() callback argument returned a Future` | Claude Code | **Causa real del Pasaporte vacío:** se escribía `setState(() => _futuro = ...)`; la flecha `=>` devuelve el Future asignado y Flutter rechaza ese setState, así que la pantalla no se actualizaba aunque el login sí funcionaba. Se corrigieron 7 lugares (Pasaporte, y el botón "Reintentar" de Explorar, Agenda y Rutas) usando llaves `{ }`, y `..ignore()` para que un error temprano de red no se reporte como "no atendido". Prueba nueva que toca "Reintentar" | El log del equipo fue clave. Las pruebas anteriores no lo detectaban porque nunca recargaban con sesión ni tocaban "Reintentar"; ahora sí |
+| 21 | 2026-11-11 | Costo aproximado en la Agenda; ¿la Agenda es para eventos o para apuntar planes / alertas? | Claude Code | Columna `costo_aprox_mxn` (SQL 007) y etiqueta en cada evento: "Gratuito", "≈ $150 MXN" o "Con costo"; también en el detalle. 3 pruebas (25 en total). Se explicó qué es la Agenda hoy | Costo solo en **eventos**; no se inventan precios de lugares reales (museos). El costo del taller ficticio también es ficticio y se marca así. El cambio de concepto de la Agenda queda a decisión del *Equipo* |

@@ -57,7 +57,9 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
     // Si alguien entra o sale, recargamos la pantalla.
     _suscripcion = _auth.cambios.listen((_) {
       if (!mounted) return;
-      setState(() => _futuro = _auth.usuario != null ? _cargar() : null);
+      setState(() {
+        _futuro = _auth.usuario != null ? (_cargar()..ignore()) : null;
+      });
     });
   }
 
@@ -94,18 +96,24 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
     if (!mounted) return;
     // Si cambió el nombre o se cerró sesión, recargamos.
     if (cambio == true || !_conSesion) {
-      setState(() => _futuro = _conSesion ? _cargar() : null);
+      setState(() {
+      _futuro = _conSesion ? (_cargar()..ignore()) : null;
+    });
     }
   }
 
-  void _recargar() => setState(() => _futuro = _cargar());
+  void _recargar() => setState(() {
+        _futuro = _cargar()..ignore();
+      });
 
   Future<void> _iniciarSesion() async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
     // Al regresar del login, volvemos a revisar la sesión y cargamos los
     // datos. No dependemos solo del aviso de Supabase (más seguro).
     if (!mounted) return;
-    setState(() => _futuro = _conSesion ? _cargar() : null);
+    setState(() {
+      _futuro = _conSesion ? (_cargar()..ignore()) : null;
+    });
   }
 
   Future<void> _escanear(DatosPasaporte d) async {

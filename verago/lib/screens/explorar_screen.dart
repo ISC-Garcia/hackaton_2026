@@ -42,7 +42,12 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
     _futuro = _servicio.obtenerLugares();
   }
 
-  void _recargar() => setState(() => _futuro = _servicio.obtenerLugares());
+  // setState con llaves { }: con "=>" devolvería el Future y Flutter lo rechaza.
+  // ..ignore(): el error (si no hay internet) ya lo muestra el FutureBuilder;
+  // así no se reporta como "error no atendido" si llega antes de dibujar.
+  void _recargar() => setState(() {
+        _futuro = _servicio.obtenerLugares()..ignore();
+      });
 
   /// Quita acentos y mayúsculas para que "cafe" encuentre "Café".
   String _normalizar(String texto) {

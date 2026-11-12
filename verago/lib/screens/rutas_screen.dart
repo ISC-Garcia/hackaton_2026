@@ -104,7 +104,9 @@ class _RutasScreenState extends State<RutasScreen> {
               titulo: 'Algo salió mal',
               mensaje: snapshot.error.toString(),
               textoBoton: 'Reintentar',
-              alPresionar: () => setState(() => _futuro = _lugaresService.obtenerLugares()),
+              alPresionar: () => setState(() {
+                _futuro = _lugaresService.obtenerLugares()..ignore();
+              }),
             );
           }
           return _formulario(snapshot.data!);
