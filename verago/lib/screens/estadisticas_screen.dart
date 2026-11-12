@@ -4,13 +4,9 @@ import '../services/estadisticas_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/estado_vacio.dart';
 
-/// ESTADÍSTICAS.
-///
-/// Dos modos (selector arriba):
-/// - DEMOSTRACIÓN (por defecto, decisión del equipo): números FICTICIOS
-///   para la demo del hackatón, porque todavía casi no hay uso real.
-///   Siempre con el aviso "DATOS FICTICIOS".
-/// - REALES (SQL 016): lo que de verdad hay en la base de datos.
+/// ESTADÍSTICAS REALES (SQL 016): lo que de verdad hay en la base de datos.
+/// (Antes había un modo de demostración con números ficticios; el equipo
+/// pidió quitarlo y dejar solo los datos reales.)
 ///
 /// - Admin (`deMiNegocio = false`): uso de toda la app.
 /// - Comerciante (`deMiNegocio = true`): sellos que dio su negocio.
@@ -31,61 +27,8 @@ class EstadisticasScreen extends StatefulWidget {
 }
 
 class _EstadisticasScreenState extends State<EstadisticasScreen> {
-  /// Datos reales: se piden solo cuando se elige "Reales".
-  Future<Estadisticas>? _futuro;
-
-  /// true = números ficticios de demostración (por defecto).
-  bool _ficticio = true;
-
-  // ---- Números FICTICIOS para la demo (los mismos de la primera versión) ----
-  static const _lugaresVistos = {
-    'Zócalo de Veracruz': 120,
-    'Malecón de Veracruz': 95,
-    'Café Brisa del Golfo': 64,
-    'Museo Naval México': 51,
-    'Cocina La Marea': 38,
-  };
-  static const _sellosPorDia = {
-    'Lun': 12,
-    'Mar': 9,
-    'Mié': 15,
-    'Jue': 11,
-    'Vie': 22,
-    'Sáb': 34,
-    'Dom': 29,
-  };
-  static const _sellosMiNegocioPorDia = {
-    'Lun': 3,
-    'Mar': 2,
-    'Mié': 4,
-    'Jue': 3,
-    'Vie': 6,
-    'Sáb': 9,
-    'Dom': 7,
-  };
-
-  List<Widget> _demostracion() => [
-        const _Aviso('DATOS FICTICIOS de demostración. Miden uso de la app, no la cantidad real de personas '
-            'en el centro.', ficticio: true),
-        const SizedBox(height: 12),
-        if (widget.deMiNegocio) ...[
-          const Row(children: [
-            _Dato('5', 'sellos hoy'),
-            _Dato('34', 'en 7 días'),
-            _Dato('87', 'en total'),
-          ]),
-          const Row(children: [_Dato('64', 'turistas distintos')]),
-          const _Grafica(titulo: 'Sellos por día', datos: _sellosMiNegocioPorDia),
-        ] else ...[
-          const Row(children: [
-            _Dato('214', 'rutas generadas'),
-            _Dato('132', 'sellos'),
-            _Dato('3.1', 'lugares por visitante'),
-          ]),
-          const _Grafica(titulo: 'Lugares más consultados (vistas de ficha)', datos: _lugaresVistos),
-          const _Grafica(titulo: 'Sellos registrados por día', datos: _sellosPorDia),
-        ],
-      ];
+  /// Datos reales de la base de datos.
+  late Future<Estadisticas> _futuro = _cargar();
 
   Future<Estadisticas> _cargar() {
     final prueba = widget.cargadorDePrueba;
@@ -105,32 +48,13 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
         title: Text(widget.deMiNegocio ? 'Mis estadísticas' : 'Estadísticas'),
         actions: [IconButton(tooltip: 'Actualizar', icon: const Icon(Icons.refresh), onPressed: _recargar)],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-            child: SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: true, icon: Icon(Icons.science_outlined), label: Text('Demostración')),
-                ButtonSegment(value: false, icon: Icon(Icons.query_stats), label: Text('Reales')),
-              ],
-              selected: {_ficticio},
-              onSelectionChanged: (s) => setState(() => _ficticio = s.first),
-            ),
-          ),
-          Expanded(
-            child: _ficticio
-                ? ListView(padding: const EdgeInsets.all(16), children: _demostracion())
-                : _reales(),
-          ),
-        ],
-      ),
+      body: _reales(),
     );
   }
 
   Widget _reales() {
     return FutureBuilder<Estadisticas>(
-        future: _futuro ??= _cargar(),
+        future: _futuro,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
@@ -208,32 +132,24 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
 }
 
 class _Aviso extends StatelessWidget {
-  const _Aviso(this.texto, {this.ficticio = false});
+  const _Aviso(this.texto);
   final String texto;
 
-  /// true = aviso naranja de datos ficticios.
-  final bool ficticio;
-
   @override
-  Widget build(BuildContext context) {
-    final color = ficticio ? VgColores.terracota : VgColores.azulGolfo;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: ficticio ? 0.12 : 0.08),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(ficticio ? Icons.warning_amber : Icons.info_outline, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(texto, style: TextStyle(fontWeight: ficticio ? FontWeight.w700 : FontWeight.w400)),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: VgColores.azulGolfo.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline, color: VgColores.azulGolfo),
+            const SizedBox(width: 8),
+            Expanded(child: Text(texto)),
+          ],
+        ),
+      );
 }
 
 class _Dato extends StatelessWidget {

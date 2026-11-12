@@ -34,24 +34,19 @@ void main() {
     expect(_reales.topNegocios['Café Brisa del Golfo'], 5);
   });
 
-  testWidgets('por defecto muestra los datos FICTICIOS de demostración', (tester) async {
+  testWidgets('muestra SOLO los datos reales (sin modo ficticio)', (tester) async {
     await tester.pumpWidget(MaterialApp(home: EstadisticasScreen(cargadorDePrueba: () async => _reales)));
-    expect(find.textContaining('DATOS FICTICIOS'), findsOneWidget);
-    expect(find.text('214'), findsOneWidget);
-    expect(find.text('132'), findsOneWidget);
-  });
-
-  testWidgets('en "Reales" muestra lo que hay en la base', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: EstadisticasScreen(cargadorDePrueba: () async => _reales)));
-    await tester.tap(find.text('Reales'));
     await tester.pumpAndSettle();
+    expect(find.text('Demostración'), findsNothing);
+    expect(find.textContaining('FICTICIOS'), findsNothing);
     expect(find.text('11'), findsOneWidget); // sellos en total
     expect(find.text('Café Brisa del Golfo'), findsOneWidget);
   });
 
-  testWidgets('el comerciante también ve sus números ficticios', (tester) async {
+  testWidgets('el comerciante ve los números reales de su negocio', (tester) async {
     await tester.pumpWidget(
         MaterialApp(home: EstadisticasScreen(deMiNegocio: true, cargadorDePrueba: () async => _reales)));
+    await tester.pumpAndSettle();
     expect(find.text('Mis estadísticas'), findsOneWidget);
     expect(find.text('turistas distintos'), findsOneWidget);
   });
