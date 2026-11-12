@@ -5,6 +5,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:verago/services/error_verago.dart';
+import 'package:verago/services/negocios_service.dart';
 import 'package:verago/screens/negocio_screen.dart';
 import 'package:verago/services/validaciones.dart';
 import 'package:verago/theme/app_theme.dart';
@@ -53,5 +55,15 @@ void main() {
     await tester.tap(find.text('Registrar mi negocio'));
     await tester.pumpAndSettle();
     expect(find.text('¡Forma parte de VeraGo!'), findsOneWidget);
+  });
+
+  test('sin sesión y sin datos del encargado, pide escribirlos (no llama a Supabase)', () async {
+    // Con sesión, la app ya no pide correo ni contraseña: usa la cuenta abierta.
+    expect(
+      () => NegociosService().registrar(
+        s: const SolicitudNegocio(formal: true, nombre: 'Demo', descripcion: 'Negocio de prueba', telefono: '2290000000'),
+      ),
+      throwsA(isA<ErrorVeraGo>()),
+    );
   });
 }

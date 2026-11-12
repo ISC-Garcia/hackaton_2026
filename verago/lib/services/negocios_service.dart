@@ -78,18 +78,25 @@ class NegociosService {
   }
 
   /// 1. Crea la cuenta del encargado (si aún no tiene sesión con ese correo).
+  ///    Si ya hay sesión (turista o admin), NO se pide cuenta nueva: se usa la
+  ///    de la sesión y no hace falta mandar nombre, correo ni contraseña.
   /// 2. Llama a `registrar_negocio`, que crea el negocio PENDIENTE, lo liga
-  ///    al encargado y le da el rol de comerciante.
+  ///    al encargado y le da el rol de comerciante (un admin conserva su rol).
   Future<void> registrar({
-    required String nombreEncargado,
-    required String correo,
-    required String contrasena,
+    String? nombreEncargado,
+    String? correo,
+    String? contrasena,
     required SolicitudNegocio s,
   }) async {
-    // Si un intento anterior ya creó la cuenta (y falló el negocio, por
-    // ejemplo por nombre repetido), no la volvemos a crear.
-    final yaConCuenta = _auth.usuario?.email?.toLowerCase() == correo.trim().toLowerCase();
+    // Con sesión y sin correo nuevo: usamos la cuenta de la sesión.
+    // También si un intento anterior ya creó la cuenta (y falló el negocio,
+    // por ejemplo por nombre repetido): no la volvemos a crear.
+    final yaConCuenta = _auth.usuario != null &&
+        (correo == null || _auth.usuario?.email?.toLowerCase() == correo.trim().toLowerCase());
     if (!yaConCuenta) {
+      if (nombreEncargado == null || correo == null || contrasena == null) {
+        throw const ErrorVeraGo('Escribe tus datos de encargado para crear tu cuenta.');
+      }
       final conSesion = await _auth.registrar(nombreEncargado, correo, contrasena);
       if (!conSesion) {
         throw const ErrorVeraGo(
@@ -125,7 +132,8 @@ class NegociosService {
       case 'GIRO_OCUPADO':
         throw const ErrorVeraGo('Ese giro ya está ocupado en este punto. Elige otro punto o giro.');
       case 'YA_TIENE_NEGOCIO':
-        throw const ErrorVeraGo('Esta cuenta ya tiene un negocio registrado. Inicia sesión para verlo.');
+        throw const ErrorVeraGo('Esta cuenta ya tiene un negocio registrado. Ábrelo desde '
+            'Pasaporte → "Soy un negocio" o inicia sesión para verlo.');
       default:
         throw const ErrorVeraGo('Revisa los datos del negocio e intenta de nuevo.');
     }

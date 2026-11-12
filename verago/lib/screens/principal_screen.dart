@@ -35,7 +35,10 @@ class _PrincipalScreenState extends State<PrincipalScreen> {
       body: IndexedStack(index: _pestana, children: _pantallas),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _pestana,
-        onDestinationSelected: (i) => setState(() => _pestana = i),
+        onDestinationSelected: (i) {
+          FocusScope.of(context).unfocus(); // cierra el teclado al cambiar de pestaña
+          setState(() => _pestana = i);
+        },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.explore_outlined),

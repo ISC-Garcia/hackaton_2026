@@ -23,9 +23,10 @@ import 'lugar_screen.dart';
 /// 2. `FutureBuilder` muestra "cargando", luego los datos o un error.
 /// 3. Búsqueda y filtros se aplican en el celular sobre la lista ya cargada
 ///    (son pocos lugares, no hace falta volver a pedirlos).
-/// 4. Las distancias se miden desde el Zócalo. Si el turista toca
-///    "Mostrar dónde estoy" en el mapa, se miden DESDE ÉL (punto azul).
-///    La ubicación se toma una sola vez y no se guarda ni se envía.
+/// 4. Al abrir, pide la ubicación UNA vez (si la persona da permiso) para
+///    el punto azul y medir distancias desde ella; si no, usa el Zócalo.
+///    El botón "Mostrar dónde estoy" la vuelve a pedir. No se guarda ni se
+///    envía a nadie.
 class ExplorarScreen extends StatefulWidget {
   const ExplorarScreen({super.key});
 
@@ -69,21 +70,27 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
   /// Radio aproximado del Centro Histórico alrededor del Zócalo.
   static const _metrosCentro = 1200;
 
-  Future<void> _mostrarDondeEstoy() async {
-    setState(() => _buscandoUbicacion = true);
+  /// automatico = true al abrir la app: si no hay permiso o GPS, no
+  /// molestamos con mensajes y seguimos desde el Zócalo.
+  Future<void> _mostrarDondeEstoy({bool automatico = false}) async {
+    if (!automatico) setState(() => _buscandoUbicacion = true);
     try {
       final yo = await UbicacionService().obtenerUbicacion();
       if (!mounted) return;
       if (Distancia.metros(Distancia.zocalo, yo) > _metrosMaximos) {
         setState(() => _miUbicacion = null);
-        _aviso('Estás lejos del Centro Histórico. Seguimos midiendo las distancias desde el Zócalo.');
+        if (!automatico) {
+          _aviso('Estás lejos del Centro Histórico. Seguimos midiendo las distancias desde el Zócalo.');
+        }
       } else {
         setState(() => _miUbicacion = yo);
       }
     } on ErrorVeraGo catch (e) {
-      _aviso(e.mensaje);
+      if (!automatico) _aviso(e.mensaje);
+    } catch (_) {
+      // Celular o navegador sin GPS: seguimos desde el Zócalo.
     } finally {
-      if (mounted) setState(() => _buscandoUbicacion = false);
+      if (mounted && !automatico) setState(() => _buscandoUbicacion = false);
     }
   }
 
@@ -91,18 +98,44 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
   }
 
+  /// Texto del buscador (para poder borrarlo con la "X" o al actualizar).
+  final _buscador = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _futuro = _servicio.obtenerLugares();
+    _mostrarDondeEstoy(automatico: true);
+  }
+
+  @override
+  void dispose() {
+    _buscador.dispose();
+    super.dispose();
+  }
+
+  /// Borra la búsqueda, el filtro y la selección, y cierra el teclado.
+  void _limpiarBusqueda() {
+    _buscador.clear();
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _busqueda = '';
+      _categoria = null;
+      _seleccionado = null;
+    });
   }
 
   // setState con llaves { }: con "=>" devolvería el Future y Flutter lo rechaza.
   // ..ignore(): el error (si no hay internet) ya lo muestra el FutureBuilder;
   // así no se reporta como "error no atendido" si llega antes de dibujar.
-  void _recargar() => setState(() {
-        _futuro = _servicio.obtenerLugares()..ignore();
-      });
+  /// "Actualizar": vuelve a pedir los lugares y empieza de cero
+  /// (antes se quedaba la última búsqueda escrita).
+  void _recargar() {
+    _limpiarBusqueda();
+    setState(() {
+      _futuro = _servicio.obtenerLugares()..ignore();
+    });
+  }
 
   /// Quita acentos y mayúsculas para que "cafe" encuentre "Café".
   String _normalizar(String texto) {
@@ -208,9 +241,20 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: TextField(
+            controller: _buscador,
+            textInputAction: TextInputAction.search,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(), // cierra el teclado
+            onTapOutside: (_) => FocusScope.of(context).unfocus(),
             decoration: InputDecoration(
               hintText: 'Busca un lugar, café, museo…',
               prefixIcon: const Icon(Icons.search),
+              suffixIcon: _busqueda.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Borrar búsqueda',
+                      icon: const Icon(Icons.close),
+                      onPressed: _limpiarBusqueda,
+                    ),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(

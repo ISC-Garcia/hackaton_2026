@@ -31,7 +31,7 @@ class DocumentoLegal {
   final List<SeccionDocumento> secciones;
 
   /// Cambiar al modificar cualquier documento.
-  static const version = 'Versión 2 · 11 de noviembre de 2026';
+  static const version = 'Versión 3 · 11 de noviembre de 2026';
 }
 
 class Documentos {
@@ -152,9 +152,10 @@ class Documentos {
         'No usamos tus datos para ningún otro fin.',
       ]),
       SeccionDocumento('5. Tu ubicación', [
-        'Solo se usa cuando tú la pides, una vez, y no te seguimos en segundo plano:',
-        '• "Mostrar dónde estoy" (Explorar): se usa dentro de tu celular para el punto azul y las '
-            'distancias. No sale de tu celular.',
+        'Se toma una vez cuando la app la necesita y no te seguimos en segundo plano:',
+        '• Al abrir Explorar (o al tocar "Mostrar dónde estoy"), la app te pide permiso. Si aceptas, '
+            'se usa dentro de tu celular para el punto azul y las distancias; no sale de tu celular. '
+            'Si no aceptas, todo se mide desde el Zócalo.',
         '• "Mi ubicación" en Rutas: el punto de inicio se envía una vez al servicio de rutas a pie '
             'de OpenStreetMap para dibujar el camino por las calles. VeraGo no lo guarda.',
         'Puedes quitar el permiso de ubicación cuando quieras en los ajustes de tu celular.',
@@ -343,8 +344,8 @@ class Documentos {
             'emergencia usa el botón rojo "911", que abre la app de llamadas de tu celular.',
       ]),
       SeccionDocumento('Tu privacidad', [
-        'Solo guardamos tu nombre, tu correo y tus sellos. Tu ubicación se usa solo cuando la pides '
-            'y no se guarda. Más detalles en el Aviso de privacidad.',
+        'Solo guardamos tu nombre, tu correo y tus sellos. Tu ubicación se usa en tu celular para '
+            'ubicarte en el mapa (si das permiso) y no se guarda. Más detalles en el Aviso de privacidad.',
       ]),
     ],
   );

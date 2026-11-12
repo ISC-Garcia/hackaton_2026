@@ -11,7 +11,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>VeraGo usa la cámara para escanear el código QR de los comercios y darte tu sello.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>VeraGo usa tu ubicación solo para empezar tu ruta desde donde estás. No la guardamos.</string>
+	<string>VeraGo usa tu ubicación para mostrarte dónde estás en el mapa y empezar tu ruta desde ahí. No la guardamos.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

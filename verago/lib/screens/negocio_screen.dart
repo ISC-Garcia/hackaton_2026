@@ -76,6 +76,33 @@ class _NegocioScreenState extends State<NegocioScreen> {
   void initState() {
     super.initState();
     _datos = _cargarDatos();
+    _abrirMiNegocioSiYaTiene();
+  }
+
+  /// Correo de la sesión abierta (turista o admin), o null si no hay sesión.
+  /// Con sesión NO pedimos otra vez nombre, correo ni contraseña.
+  String? get _correoSesion => _auth.usuario?.email;
+
+  /// Si la cuenta con sesión ya tiene negocio (por ejemplo un admin, que no
+  /// ve "Panel de mi negocio" en el Pasaporte), abrimos su panel directo.
+  Future<void> _abrirMiNegocioSiYaTiene() async {
+    if (_auth.usuario == null) return;
+    try {
+      final negocio = await _servicio.miNegocio();
+      if (negocio == null || !mounted) return;
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (_) => negocio.estadoAprobacion == 'aprobado'
+            ? const PanelComercianteScreen()
+            : EstadoNegocioScreen(negocio: negocio),
+      ));
+    } on ErrorVeraGo {
+      // Sin internet: se queda en el formulario; al registrar se revisa otra vez.
+    }
+  }
+
+  Future<void> _usarOtraCuenta() async {
+    await _auth.salir();
+    if (mounted) setState(() {});
   }
 
   Future<(List<Lugar>, List<Giro>)> _cargarDatos() async =>
@@ -136,10 +163,11 @@ class _NegocioScreenState extends State<NegocioScreen> {
 
     setState(() => _enviando = true);
     try {
+      final conSesion = _correoSesion != null;
       await _servicio.registrar(
-        nombreEncargado: _encargado.text,
-        correo: _correo.text,
-        contrasena: _contrasena.text,
+        nombreEncargado: conSesion ? null : _encargado.text,
+        correo: conSesion ? null : _correo.text,
+        contrasena: conSesion ? null : _contrasena.text,
         s: SolicitudNegocio(
           formal: _formal,
           nombre: _nombre.text,
@@ -427,19 +455,36 @@ class _NegocioScreenState extends State<NegocioScreen> {
             _campo(_telefono, 'Teléfono de contacto (10 números)', Validaciones.telefono,
                 teclado: TextInputType.phone, maxLength: 10, formateadores: Validaciones.soloDiezDigitos),
             const _Seccion('Información del encargado'),
-            _campo(_encargado, 'Nombre completo del propietario o encargado',
-                Validaciones.obligatorio('el nombre completo', minimo: 3)),
-            _campo(_correo, 'Correo electrónico', Validaciones.correo, teclado: TextInputType.emailAddress),
-            _campoContrasena(_contrasena, 'Contraseña', Validaciones.contrasenaSegura,
-                ayuda: 'Mínimo 8 caracteres, con letras y números'),
-            _campoContrasena(_confirmar, 'Confirmar contraseña',
-                (v) => v != _contrasena.text ? 'Las contraseñas no coinciden' : null),
+            if (_correoSesion case final correo?)
+              // Ya hay sesión: el negocio se liga a esta cuenta.
+              Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: const Icon(Icons.verified_user_outlined, color: VgColores.azulGolfo),
+                  title: const Text('Se registrará con tu cuenta'),
+                  subtitle: Text('$correo\nNo necesitas escribir tus datos ni tu contraseña.'),
+                  isThreeLine: true,
+                  trailing: TextButton(
+                    onPressed: _enviando ? null : _usarOtraCuenta,
+                    child: const Text('Usar otra'),
+                  ),
+                ),
+              )
+            else ...[
+              _campo(_encargado, 'Nombre completo del propietario o encargado',
+                  Validaciones.obligatorio('el nombre completo', minimo: 3)),
+              _campo(_correo, 'Correo electrónico', Validaciones.correo, teclado: TextInputType.emailAddress),
+              _campoContrasena(_contrasena, 'Contraseña', Validaciones.contrasenaSegura,
+                  ayuda: 'Mínimo 8 caracteres, con letras y números'),
+              _campoContrasena(_confirmar, 'Confirmar contraseña',
+                  (v) => v != _contrasena.text ? 'Las contraseñas no coinciden' : null),
+            ],
             const SizedBox(height: 8),
             FilledButton(
               onPressed: _enviando ? null : _registrar,
               child: _enviando ? const _Cargando() : const Text('Registrar mi negocio'),
             ),
-            ..._pieLogin(),
+            if (_correoSesion == null) ..._pieLogin(),
           ],
         );
       },
