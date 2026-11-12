@@ -19,7 +19,7 @@ void main() {
 
     expect(find.text('Mi cuenta'), findsNothing);
     expect(find.text('Mis intereses'), findsOneWidget);
-    expect(find.text('Ver la bienvenida otra vez'), findsOneWidget);
+    expect(find.text('Ver la guía de la app otra vez'), findsOneWidget);
 
     await tester.tap(find.text('Museos'));
     await tester.pumpAndSettle();

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
+import '../models/insignia.dart';
 import '../models/lugar.dart';
 import '../models/sello.dart';
 import '../services/auth_service.dart';
@@ -11,6 +12,7 @@ import '../services/pasaporte_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
 import '../widgets/estado_vacio.dart';
+import '../widgets/insignia_visual.dart';
 import 'ajustes_screen.dart';
 import 'escanear_screen.dart';
 import 'admin_screen.dart';
@@ -195,6 +197,7 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
     final sellados = d.sellos.map((s) => s.lugarId).toSet();
     final participantes = d.lugares.where((l) => l.participaPasaporte).toList();
     final logrados = participantes.where((l) => sellados.contains(l.id)).length;
+    final insignia = Insignia.calcular(logrados: logrados, total: participantes.length);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -232,6 +235,8 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          if (insignia.total > 0) TarjetaInsignia(progreso: insignia),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () => _escanear(d),
@@ -293,6 +298,74 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
                 ),
               ),
         ],
+      ),
+    );
+  }
+}
+
+/// INSIGNIA: la actual (o la primera bloqueada), cuánto falta para la
+/// siguiente y la fila de los 5 niveles. Es pública para poder probarla.
+class TarjetaInsignia extends StatelessWidget {
+  const TarjetaInsignia({super.key, required this.progreso});
+
+  final ProgresoInsignia progreso;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = progreso;
+    final actual = p.actual;
+    final siguiente = p.siguiente;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                InsigniaVisual(nivel: actual?.numero ?? 1, tamano: 64, bloqueada: actual == null),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(actual?.nombre ?? 'Sin insignia todavía',
+                          style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 2),
+                      Text(actual?.descripcion ?? 'Consigue sellos para ganar tu primera insignia.',
+                          style: TextStyle(color: Colors.black.withValues(alpha: 0.65))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (siguiente != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(value: p.avance, minHeight: 8),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Te ${p.faltan == 1 ? 'falta 1 sello' : 'faltan ${p.faltan} sellos'} para "${siguiente.nombre}"',
+                style: const TextStyle(fontSize: 13),
+              ),
+            ] else
+              const Text('¡Tienes todas las insignias!', style: TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            // Los 5 niveles: ganados a color, los demás con candado.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (final n in Insignia.niveles)
+                  Tooltip(
+                    message: '${n.nombre}: ${p.metas[n.numero - 1]} sellos',
+                    child: InsigniaVisual(nivel: n.numero, tamano: 34, bloqueada: n.numero > p.nivel),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

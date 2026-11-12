@@ -29,6 +29,23 @@ class Horario {
       '${(minutos ~/ 60).toString().padLeft(2, '0')}:${(minutos % 60).toString().padLeft(2, '0')}';
 }
 
+/// Un producto o servicio de la VITRINA de un negocio (SQL 015).
+class ProductoVitrina {
+  const ProductoVitrina({required this.nombre, this.precioMxn});
+
+  final String nombre;
+
+  /// Precio aproximado en pesos (null = sin precio).
+  final int? precioMxn;
+
+  factory ProductoVitrina.fromJson(Map<String, dynamic> json) => ProductoVitrina(
+        nombre: json['nombre'] as String,
+        precioMxn: (json['precio'] as num?)?.toInt(),
+      );
+
+  Map<String, dynamic> aJson() => {'nombre': nombre.trim(), 'precio': precioMxn};
+}
+
 /// Resultado de preguntar "¿está abierto?".
 enum EstadoApertura { abierto, cerrado, sinDatos }
 
@@ -70,7 +87,14 @@ class Lugar {
     this.cambioPuntoId,
     this.cambioSolicitadoEn,
     this.costoEntradaMxn,
+    this.productos = const [],
+    this.promocion,
   });
+
+  /// VITRINA DIGITAL (SQL 015): productos o servicios y promoción vigente.
+  final List<ProductoVitrina> productos;
+  final String? promocion;
+  bool get tieneVitrina => productos.isNotEmpty || promocion != null;
 
   /// COSTO DE ENTRADA en pesos (SQL 014): null = sin dato, 0 = gratis,
   /// > 0 = aproximado. Lo pone el negocio formal o el admin.
@@ -194,6 +218,11 @@ class Lugar {
       cambioDireccion: json['cambio_direccion'] as String?,
       cambioPuntoId: json['cambio_punto_id'] as String?,
       costoEntradaMxn: json['costo_entrada_mxn'] as int?,
+      productos: [
+        for (final p in (json['vitrina_productos'] as List? ?? const []))
+          if (p is Map<String, dynamic>) ProductoVitrina.fromJson(p),
+      ],
+      promocion: json['promocion'] as String?,
       cambioSolicitadoEn: json['cambio_solicitado_en'] == null
           ? null
           : DateTime.parse(json['cambio_solicitado_en'] as String).toLocal(),

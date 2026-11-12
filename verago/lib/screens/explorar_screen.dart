@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../models/lugar.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../models/lugar.dart';
 import '../services/distancia.dart';
 import '../services/error_verago.dart';
+import '../services/geocodificacion_service.dart';
 import '../services/lugares_service.dart';
 import '../services/ubicacion_service.dart';
 import '../theme/app_theme.dart';
@@ -23,6 +24,10 @@ import 'lugar_screen.dart';
 /// 2. `FutureBuilder` muestra "cargando", luego los datos o un error.
 /// 3. Búsqueda y filtros se aplican en el celular sobre la lista ya cargada
 ///    (son pocos lugares, no hace falta volver a pedirlos).
+/// 3b. "Buscar en el mapa": si lo que busca no es un lugar de VeraGo (ej.
+///    "Tecnológico"), se busca en OpenStreetMap (Nominatim) y se muestra con
+///    un pin morado. Solo al tocar el botón o "buscar" en el teclado (regla de
+///    Nominatim), y solo se envía el texto. No se guarda.
 /// 4. Al abrir, pide la ubicación UNA vez (si la persona da permiso) para
 ///    el punto azul y medir distancias desde ella; si no, usa el Zócalo.
 ///    El botón "Mostrar dónde estoy" la vuelve a pedir. No se guarda ni se
@@ -42,6 +47,31 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
   String? _categoria; // clave de la categoría elegida; null = todas
   bool _verMapa = true;
   Lugar? _seleccionado;
+
+  /// Resultados de OpenStreetMap para la búsqueda actual.
+  List<LugarDelMapa> _delMapa = const [];
+  LugarDelMapa? _delMapaSeleccionado;
+  bool _buscandoEnMapa = false;
+
+  Future<void> _buscarEnMapa() async {
+    final texto = _busqueda.trim();
+    if (texto.length < 3) {
+      _aviso('Escribe al menos 3 letras para buscar en el mapa.');
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() => _buscandoEnMapa = true);
+    final resultados = await GeocodificacionService().buscar(texto);
+    if (!mounted) return;
+    setState(() {
+      _buscandoEnMapa = false;
+      _delMapa = resultados;
+      _delMapaSeleccionado = resultados.isEmpty ? null : resultados.first;
+      _seleccionado = null;
+      if (resultados.isNotEmpty) _verMapa = true;
+    });
+    if (resultados.isEmpty) _aviso('No encontramos "$texto" en el mapa de Veracruz.');
+  }
 
   /// Dónde está el turista (null = no la ha pedido o está lejos del centro).
   LatLng? _miUbicacion;
@@ -122,6 +152,8 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
       _busqueda = '';
       _categoria = null;
       _seleccionado = null;
+      _delMapa = const [];
+      _delMapaSeleccionado = null;
     });
   }
 
@@ -243,7 +275,11 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
           child: TextField(
             controller: _buscador,
             textInputAction: TextInputAction.search,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(), // cierra el teclado
+            // "Buscar" en el teclado: si no hay nada en VeraGo, busca en el mapa.
+            onSubmitted: (_) {
+              FocusScope.of(context).unfocus(); // cierra el teclado
+              if (filtrados.isEmpty) _buscarEnMapa();
+            },
             onTapOutside: (_) => FocusScope.of(context).unfocus(),
             decoration: InputDecoration(
               hintText: 'Busca un lugar, café, museo…',
@@ -262,9 +298,31 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                 borderSide: BorderSide.none,
               ),
             ),
-            onChanged: (texto) => setState(() => _busqueda = texto),
+            onChanged: (texto) => setState(() {
+              _busqueda = texto;
+              // Lo encontrado antes en el mapa era de otra búsqueda.
+              _delMapa = const [];
+              _delMapaSeleccionado = null;
+            }),
           ),
         ),
+        // Buscar cualquier lugar de Veracruz, aunque no esté en VeraGo.
+        if (_busqueda.trim().length >= 3)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: TextButton.icon(
+                onPressed: _buscandoEnMapa ? null : _buscarEnMapa,
+                icon: _buscandoEnMapa
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.travel_explore),
+                label: Text(_delMapa.isEmpty
+                    ? 'Buscar "${_busqueda.trim()}" en todo el mapa'
+                    : '${_delMapa.length} en el mapa de OpenStreetMap'),
+              ),
+            ),
+          ),
         // Filtros por categoría
         SizedBox(
           height: 52,
@@ -308,11 +366,15 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
           ),
         ),
         Expanded(
-          child: filtrados.isEmpty
-              ? const EstadoVacio(
+          child: filtrados.isEmpty && _delMapa.isEmpty
+              ? EstadoVacio(
                   icono: Icons.search_off,
-                  titulo: 'Sin resultados',
-                  mensaje: 'Prueba con otra palabra o quita el filtro.',
+                  titulo: 'Sin resultados en VeraGo',
+                  mensaje: _busqueda.trim().length >= 3
+                      ? 'Puedes buscarlo en todo el mapa de Veracruz.'
+                      : 'Prueba con otra palabra o quita el filtro.',
+                  textoBoton: _busqueda.trim().length >= 3 ? 'Buscar en el mapa' : null,
+                  alPresionar: _busqueda.trim().length >= 3 ? _buscarEnMapa : null,
                 )
               : _verMapa
                   ? _mapa(filtrados, todos)
@@ -323,14 +385,30 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
   }
 
   Widget _lista(List<Lugar> filtrados, List<Lugar> todos) {
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.only(bottom: 16),
-      itemCount: filtrados.length,
-      itemBuilder: (_, i) => TarjetaLugar(
-        lugar: filtrados[i],
-        desde: _origen,
-        alTocar: () => _abrirFicha(filtrados[i], todos),
-      ),
+      children: [
+        for (final l in filtrados)
+          TarjetaLugar(lugar: l, desde: _origen, alTocar: () => _abrirFicha(l, todos)),
+        if (_delMapa.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text('En el mapa (OpenStreetMap, no son parte de VeraGo)',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+          for (final o in _delMapa)
+            ListTile(
+              leading: const Icon(Icons.location_on, color: Color(0xFF6A1B9A)),
+              title: Text(o.nombre),
+              subtitle: Text('${Distancia.texto(_origen, o.punto)}${o.direccion != null ? ' · ${o.direccion}' : ''}'),
+              onTap: () => setState(() {
+                _delMapaSeleccionado = o;
+                _seleccionado = null;
+                _verMapa = true;
+              }),
+            ),
+        ],
+      ],
     );
   }
 
@@ -344,12 +422,43 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
           lugares: filtrados.where((l) => !l.esInformal).toList(),
           centro: Distancia.zocalo,
           seleccionadoId: seleccionado?.id,
-          alTocarLugar: (l) => setState(() => _seleccionado = l),
+          alTocarLugar: (l) => setState(() {
+            _seleccionado = l;
+            _delMapaSeleccionado = null;
+          }),
+          delMapa: _delMapa,
+          enfocar: _delMapaSeleccionado?.punto,
+          alTocarDelMapa: (o) => setState(() {
+            _delMapaSeleccionado = o;
+            _seleccionado = null;
+          }),
           miUbicacion: _miUbicacion,
           alPedirUbicacion: _mostrarDondeEstoy,
           buscandoUbicacion: _buscandoUbicacion,
         ),
         // Ficha resumida del marcador tocado
+        // Tarjeta de un lugar del mapa (OpenStreetMap).
+        if (_delMapaSeleccionado case final o?)
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 12,
+            child: Card(
+              child: ListTile(
+                leading: const Icon(Icons.location_on, color: Color(0xFF6A1B9A)),
+                title: Text(o.nombre, style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text('${Distancia.texto(_origen, o.punto)}'
+                    '${o.direccion != null ? '\n${o.direccion}' : ''}'
+                    '\nLugar de OpenStreetMap: no es parte de VeraGo.'),
+                isThreeLine: true,
+                trailing: IconButton(
+                  tooltip: 'Cerrar',
+                  icon: const Icon(Icons.close),
+                  onPressed: () => setState(() => _delMapaSeleccionado = null),
+                ),
+              ),
+            ),
+          ),
         if (seleccionado != null && filtrados.contains(seleccionado))
           Positioned(
             left: 12,

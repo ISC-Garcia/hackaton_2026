@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../models/lugar.dart';
+import '../services/geocodificacion_service.dart';
 import '../theme/app_theme.dart';
 import 'categoria_estilo.dart';
 
@@ -35,7 +36,17 @@ class MapaLugares extends StatefulWidget {
     this.miUbicacion,
     this.alPedirUbicacion,
     this.buscandoUbicacion = false,
+    this.delMapa = const [],
+    this.alTocarDelMapa,
+    this.enfocar,
   });
+
+  /// Lugares encontrados en OpenStreetMap (no son de VeraGo): pin morado.
+  final List<LugarDelMapa> delMapa;
+  final void Function(LugarDelMapa)? alTocarDelMapa;
+
+  /// Si cambia, el mapa se mueve a este punto (ej. al primer resultado).
+  final LatLng? enfocar;
 
   /// Dónde está el turista (punto azul). null = no lo sabemos.
   final LatLng? miUbicacion;
@@ -78,6 +89,8 @@ class _MapaLugaresState extends State<MapaLugares> {
     super.didUpdateWidget(anterior);
     final yo = widget.miUbicacion;
     if (yo != null && yo != anterior.miUbicacion) _controlador.move(yo, widget.zoom);
+    final foco = widget.enfocar;
+    if (foco != null && foco != anterior.enfocar) _controlador.move(foco, 15);
   }
 
   @override
@@ -128,6 +141,21 @@ class _MapaLugaresState extends State<MapaLugares> {
                       lugar: lugar,
                       seleccionado: lugar.id == widget.seleccionadoId,
                       alTocar: widget.alTocarLugar == null ? null : () => widget.alTocarLugar!(lugar),
+                    ),
+                  ),
+                for (final otro in widget.delMapa)
+                  Marker(
+                    point: otro.punto,
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.topCenter, // la punta del pin en el lugar
+                    child: Semantics(
+                      label: '${otro.nombre} (lugar del mapa)',
+                      button: widget.alTocarDelMapa != null,
+                      child: GestureDetector(
+                        onTap: widget.alTocarDelMapa == null ? null : () => widget.alTocarDelMapa!(otro),
+                        child: const Icon(Icons.location_on, size: 40, color: Color(0xFF6A1B9A)),
+                      ),
                     ),
                   ),
                 // Al final, para que quede encima de los lugares.

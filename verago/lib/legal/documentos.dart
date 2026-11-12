@@ -31,7 +31,7 @@ class DocumentoLegal {
   final List<SeccionDocumento> secciones;
 
   /// Cambiar al modificar cualquier documento.
-  static const version = 'Versión 3 · 11 de noviembre de 2026';
+  static const version = 'Versión 4 · 11 de noviembre de 2026';
 }
 
 class Documentos {
@@ -163,7 +163,8 @@ class Documentos {
       SeccionDocumento('6. Con quién se comparten', [
         '• Supabase: el servicio donde se guarda la base de datos de VeraGo.',
         '• OpenStreetMap: de ahí se descargan los mapas (como al abrir una página web). Para llenar '
-            'la dirección de un negocio enviamos solo las coordenadas del negocio.',
+            'la dirección de un negocio enviamos solo las coordenadas del negocio. Si usas "Buscar en el '
+            'mapa" en Explorar, enviamos solo el texto que buscas.',
         '• Servicio de rutas a pie de OpenStreetMap (routing.openstreetmap.de): recibe las '
             'paradas de tu ruta y su punto de inicio para dibujar el camino.',
         'No compartimos tus datos con nadie más, salvo que una autoridad lo pida conforme a la ley.',
@@ -219,7 +220,8 @@ class Documentos {
       ]),
       SeccionDocumento('2. Lo que se publica', [
         'Al aprobarse, los turistas ven: nombre comercial, descripción, teléfono, dirección, '
-            'ubicación en el mapa, horario y costo de entrada. El nombre del encargado no se publica.',
+            'ubicación en el mapa, horario, costo de entrada y tu vitrina (productos, servicios y '
+            'promoción). El nombre del encargado no se publica.',
       ]),
       SeccionDocumento('3. Negocios formales (local propio)', [
         '• La ubicación marcada en el mapa debe ser la de tu local.',
@@ -242,7 +244,8 @@ class Documentos {
         '• No te des sellos a ti mismo ni a cuentas de tu negocio.',
       ]),
       SeccionDocumento('6. Contenido', [
-        'La descripción no puede ser ofensiva, engañosa ni anunciar productos ilegales.',
+        'La descripción y la vitrina no pueden ser ofensivas, engañosas ni anunciar productos ilegales. '
+            'Los precios deben ser reales y las promociones, vigentes; VeraGo puede quitar lo que no cumpla.',
       ]),
       SeccionDocumento('7. Responsabilidad del negocio', [
         '• Tu negocio es el único responsable de sus productos, servicios, precios, cobros, trato '

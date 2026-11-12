@@ -182,11 +182,11 @@ class _AjustesScreenState extends State<AjustesScreen> {
             ),
 
             // 3. Bienvenida
-            const _Titulo('Bienvenida'),
+            const _Titulo('Guía de la app'),
             OutlinedButton.icon(
               onPressed: _verBienvenida,
               icon: const Icon(Icons.replay),
-              label: const Text('Ver la bienvenida otra vez'),
+              label: const Text('Ver la guía de la app otra vez'),
             ),
 
             // 4. Privacidad

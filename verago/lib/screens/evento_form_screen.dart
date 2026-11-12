@@ -11,6 +11,9 @@ import '../widgets/estado_vacio.dart';
 
 /// FORMULARIO DE EVENTO (solo admin): crear uno nuevo o editar uno existente.
 ///
+/// Al CREAR se puede marcar "Se repite": cada N días, M veces. La hora es la
+/// de "Inicia" y "Termina" y se crea un evento por fecha.
+///
 /// Devuelve `true` al guardar, para que la Agenda se recargue.
 /// La app solo muestra esta pantalla al admin, pero la seguridad real está
 /// en la base de datos (regla RLS "admin administra eventos").
@@ -39,6 +42,11 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
   late bool _gratuito;
   bool _guardando = false;
 
+  // Repetición (solo al crear).
+  bool _repite = false;
+  final _cadaDias = TextEditingController(text: '7');
+  final _veces = TextEditingController(text: '4');
+
   bool get _esNuevo => widget.evento == null;
 
   @override
@@ -65,6 +73,8 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
     _titulo.dispose();
     _descripcion.dispose();
     _costo.dispose();
+    _cadaDias.dispose();
+    _veces.dispose();
     super.dispose();
   }
 
@@ -95,6 +105,15 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
       _mensaje(errorFechas);
       return;
     }
+    final cada = int.tryParse(_cadaDias.text.trim());
+    final veces = int.tryParse(_veces.text.trim());
+    if (_esNuevo && _repite) {
+      final error = Validaciones.repeticion(cadaDias: cada, veces: veces, duracion: _termina.difference(_inicia));
+      if (error != null) {
+        _mensaje(error);
+        return;
+      }
+    }
     final datos = DatosEvento(
       titulo: _titulo.text,
       descripcion: _descripcion.text,
@@ -107,7 +126,9 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
     );
     setState(() => _guardando = true);
     try {
-      if (_esNuevo) {
+      if (_esNuevo && _repite) {
+        await _servicio.crearVarios(DatosEvento.repetir(datos, cadaDias: cada!, veces: veces!));
+      } else if (_esNuevo) {
         await _servicio.crear(datos);
       } else {
         await _servicio.actualizar(widget.evento!.id, datos);
@@ -148,6 +169,56 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
         },
       ),
     );
+  }
+
+  static const _meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+  /// "Se repite": cada N días, M veces, con vista previa de las fechas.
+  List<Widget> _repeticion() {
+    final cada = int.tryParse(_cadaDias.text.trim());
+    final veces = int.tryParse(_veces.text.trim());
+    final error = _repite
+        ? Validaciones.repeticion(cadaDias: cada, veces: veces, duracion: _termina.difference(_inicia))
+        : null;
+    String hora(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    final fechas = _repite && error == null
+        ? [for (var i = 0; i < veces!; i++) _inicia.add(Duration(days: i * cada!))]
+        : const <DateTime>[];
+    Widget numero(TextEditingController c, String etiqueta, String sufijo) => Expanded(
+          child: TextField(
+            controller: c,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
+            decoration: InputDecoration(labelText: etiqueta, suffixText: sufijo, border: const OutlineInputBorder()),
+            onChanged: (_) => setState(() {}),
+          ),
+        );
+    return [
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Se repite'),
+        subtitle: const Text('Crea varias fechas con la misma hora de inicio y fin.'),
+        value: _repite,
+        onChanged: (v) => setState(() => _repite = v),
+      ),
+      if (_repite) ...[
+        Row(
+          children: [
+            numero(_cadaDias, 'Cada', 'días'),
+            const SizedBox(width: 12),
+            numero(_veces, 'Cuántas veces', 'veces'),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          error ??
+              'Se crearán ${fechas.length} eventos, de ${hora(_inicia)} a ${hora(_termina)}: '
+                  '${fechas.map((f) => '${f.day} ${_meses[f.month - 1]}').join(', ')}. '
+                  'Cada fecha se puede editar o cancelar por separado.',
+          style: TextStyle(fontSize: 13, color: error != null ? const Color(0xFF9B2C2C) : Colors.black.withValues(alpha: 0.7)),
+        ),
+      ],
+    ];
   }
 
   Widget _formularioEvento(List<Lugar> lugares) {
@@ -210,6 +281,7 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
               if (f != null) setState(() => _termina = f);
             },
           ),
+          if (_esNuevo) ..._repeticion(),
           const SizedBox(height: 8),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
@@ -254,7 +326,9 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
           const SizedBox(height: 24),
           FilledButton(
             onPressed: _guardando ? null : _guardar,
-            child: Text(_guardando ? 'Guardando…' : (_esNuevo ? 'Crear evento' : 'Guardar cambios')),
+            child: Text(_guardando
+                ? 'Guardando…'
+                : (_esNuevo ? (_repite ? 'Crear eventos' : 'Crear evento') : 'Guardar cambios')),
           ),
         ],
       ),

@@ -12,6 +12,7 @@ import '../widgets/estado_vacio.dart';
 import 'cambiar_ubicacion_screen.dart';
 import 'documento_screen.dart';
 import 'editar_negocio_screen.dart';
+import 'editar_vitrina_screen.dart';
 import 'estado_negocio_screen.dart';
 import 'lugar_screen.dart';
 import 'qr_comercio_screen.dart';
@@ -24,6 +25,7 @@ import 'qr_comercio_screen.dart';
 /// 2. Ver mi ficha (como la ven los turistas).
 /// 3. Editar mis datos.
 /// 4. Pedir cambio de ubicación (lo acepta el admin; SQL 013).
+/// 5. Mi vitrina: productos, servicios y promoción (SQL 015).
 class PanelComercianteScreen extends StatefulWidget {
   const PanelComercianteScreen({super.key});
 
@@ -63,6 +65,13 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
   Future<void> _editar(Lugar negocio) async {
     final cambio = await Navigator.of(context).push<bool>(MaterialPageRoute(
       builder: (_) => EditarNegocioScreen(negocio: negocio),
+    ));
+    if (cambio == true) _recargar();
+  }
+
+  Future<void> _editarVitrina(Lugar negocio) async {
+    final cambio = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => EditarVitrinaScreen(negocio: negocio),
     ));
     if (cambio == true) _recargar();
   }
@@ -174,6 +183,14 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
               style: TextStyle(fontSize: 12),
             ),
           ),
+        _Accion(
+          icono: Icons.storefront,
+          titulo: 'Mi vitrina',
+          texto: n.tieneVitrina
+              ? '${n.productos.length} productos${n.promocion != null ? ' · con promoción' : ''}. Toca para editar.'
+              : 'Agrega tus productos, servicios y una promoción para los turistas.',
+          alTocar: () => _editarVitrina(n),
+        ),
         _Accion(
           icono: Icons.visibility_outlined,
           titulo: 'Ver mi ficha',

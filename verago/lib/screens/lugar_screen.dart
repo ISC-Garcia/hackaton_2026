@@ -118,6 +118,42 @@ class LugarScreen extends StatelessWidget {
                   'Visita sugerida: ${lugar.duracionVisitaMin} min',
                   style: TextStyle(color: Colors.black.withValues(alpha: 0.65)),
                 ),
+                // VITRINA DIGITAL: promoción y productos o servicios (SQL 015).
+                if (lugar.tieneVitrina) ...[
+                  _Seccion('Vitrina'),
+                  if (lugar.promocion case final promo?)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: VgColores.terracota.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: VgColores.terracota.withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.local_offer_outlined, color: VgColores.terracota),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(promo, style: const TextStyle(fontWeight: FontWeight.w600))),
+                        ],
+                      ),
+                    ),
+                  for (final p in lugar.productos)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(p.nombre)),
+                          Text(p.precioMxn == null ? '—' : '≈ \$${p.precioMxn}',
+                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  if (lugar.productos.isNotEmpty)
+                    Text('Precios aproximados que da el negocio.',
+                        style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.55))),
+                ],
                 // Comerciante informal: en qué Punto VeraGo vende y su giro.
                 if (miPunto != null) ...[
                   const SizedBox(height: 16),

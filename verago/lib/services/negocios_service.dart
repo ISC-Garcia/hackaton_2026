@@ -212,6 +212,21 @@ class NegociosService {
     if (r['estado'] != 'OK') throw const ErrorVeraGo('No pudimos guardar el costo de entrada.');
   }
 
+  /// VITRINA: guarda la lista de productos o servicios y la promoción.
+  /// La revisa la función protegida `guardar_mi_vitrina` (SQL 015).
+  Future<void> guardarVitrina(List<ProductoVitrina> productos, String promocion) async {
+    final r = await _rpc('guardar_mi_vitrina', {
+      'p_productos': [for (final p in productos) p.aJson()],
+      'p_promocion': promocion,
+    });
+    if (r['estado'] == 'OK') return;
+    if (r['estado'] == 'DATOS_INVALIDOS') {
+      throw const ErrorVeraGo('Revisa tu vitrina: nombres de 2 a 60 letras, precios en pesos y '
+          'promoción de 3 a 140 letras.');
+    }
+    throw const ErrorVeraGo('No pudimos guardar tu vitrina. Intenta de nuevo.');
+  }
+
   /// Retira la solicitud de cambio de ubicación pendiente.
   Future<void> cancelarCambioUbicacion() async {
     final r = await _rpc('cancelar_cambio_ubicacion', {});

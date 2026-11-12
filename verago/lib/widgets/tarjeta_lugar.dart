@@ -70,6 +70,8 @@ class TarjetaLugar extends StatelessWidget {
                         if ((lugar.costoEntradaMxn ?? 0) > 0)
                           Etiqueta('Entrada ≈ \$${lugar.costoEntradaMxn}',
                               color: const Color(0xFF6B4E16), icono: Icons.confirmation_number_outlined),
+                        if (lugar.promocion != null)
+                          const Etiqueta('Promoción', color: Color(0xFFB8492F), icono: Icons.local_offer_outlined),
                         if (lugar.participaPasaporte)
                           const Etiqueta('Da sello', color: Color(0xFF0B3C5D), icono: Icons.approval),
                         if (lugar.esDemo) const Etiqueta.demo(),

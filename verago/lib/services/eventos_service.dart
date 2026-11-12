@@ -26,6 +26,24 @@ class DatosEvento {
   final bool esGratuito;
   final int? costoAproxMxn;
 
+  /// Copia del evento movida `dias` días (misma hora de inicio y fin).
+  DatosEvento movido(int dias) => DatosEvento(
+        titulo: titulo,
+        descripcion: descripcion,
+        lugarId: lugarId,
+        inicia: inicia.add(Duration(days: dias)),
+        termina: termina.add(Duration(days: dias)),
+        estado: estado,
+        esGratuito: esGratuito,
+        costoAproxMxn: costoAproxMxn,
+      );
+
+  /// EVENTO QUE SE REPITE: "cada [cadaDias] días, [veces] veces".
+  /// Devuelve un evento por fecha (el primero es el original). Así cada
+  /// fecha se puede editar o cancelar por separado (ej. si llueve un día).
+  static List<DatosEvento> repetir(DatosEvento base, {required int cadaDias, required int veces}) =>
+      [for (var i = 0; i < veces; i++) base.movido(i * cadaDias)];
+
   /// Columnas de la tabla `eventos`. Las fechas viajan en UTC.
   Map<String, dynamic> aFila() => {
         'titulo': titulo.trim(),
@@ -67,6 +85,11 @@ class EventosService {
   }
 
   Future<void> crear(DatosEvento d) => _escribir(() => _db.from('eventos').insert(d.aFila()));
+
+  /// Crea varias fechas de un evento que se repite, en UNA sola petición
+  /// (si una falla, no se crea ninguna).
+  Future<void> crearVarios(List<DatosEvento> eventos) =>
+      _escribir(() => _db.from('eventos').insert([for (final e in eventos) e.aFila()]));
 
   Future<void> actualizar(String id, DatosEvento d) =>
       _escribir(() => _db.from('eventos').update(d.aFila()).eq('id', id));

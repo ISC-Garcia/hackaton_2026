@@ -45,6 +45,17 @@ class Validaciones {
     return null;
   }
 
+  /// Evento que se repite: cada 1–60 días, de 2 a 30 veces, y que una fecha
+  /// no se encime con la siguiente.
+  static String? repeticion({required int? cadaDias, required int? veces, required Duration duracion}) {
+    if (cadaDias == null || cadaDias < 1 || cadaDias > 60) return 'Repite cada 1 a 60 días.';
+    if (veces == null || veces < 2 || veces > 30) return 'Elige de 2 a 30 veces.';
+    if (duracion > Duration(days: cadaDias)) {
+      return 'El evento dura más que el tiempo entre repeticiones: se enciman las fechas.';
+    }
+    return null;
+  }
+
   /// Costo aproximado en pesos: solo números (puede quedar vacío = "Con costo").
   static String? costo(String? v) {
     final t = (v ?? '').trim();
