@@ -54,6 +54,14 @@ class _RutasScreenState extends State<RutasScreen> {
     super.initState();
     _futuro = _lugaresService.obtenerLugares();
     _cargarPreferencias();
+    // Si cambian los intereses en Ajustes, los volvemos a leer.
+    PreferenciasService.interesesCambiaron.addListener(_cargarPreferencias);
+  }
+
+  @override
+  void dispose() {
+    PreferenciasService.interesesCambiaron.removeListener(_cargarPreferencias);
+    super.dispose();
   }
 
   void _recargar() => setState(() {

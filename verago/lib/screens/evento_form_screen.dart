@@ -70,11 +70,17 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
 
   /// Elegir fecha y luego hora (dos ventanas del sistema).
   Future<DateTime?> _elegirFechaHora(DateTime actual) async {
+    // La primera fecha permitida no puede ser posterior a la del evento: si
+    // se edita uno que ya empezó (ej. exposición de varios días), Flutter
+    // cerraría la app con un error.
+    final ayer = DateTime.now().subtract(const Duration(days: 1));
+    final primera = actual.isBefore(ayer) ? actual : ayer;
+    final ultima = DateTime.now().add(const Duration(days: 365));
     final fecha = await showDatePicker(
       context: context,
-      initialDate: actual,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: actual.isAfter(ultima) ? ultima : actual,
+      firstDate: primera,
+      lastDate: ultima,
     );
     if (fecha == null || !mounted) return null;
     final hora = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(actual));

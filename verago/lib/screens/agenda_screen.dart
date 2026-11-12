@@ -84,7 +84,13 @@ class _AgendaScreenState extends State<AgendaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Agenda')),
+      appBar: AppBar(
+        title: const Text('Agenda'),
+        actions: [
+          // Sin eventos no hay lista que jalar para recargar: por eso el botón.
+          IconButton(tooltip: 'Actualizar', icon: const Icon(Icons.refresh), onPressed: _recargar),
+        ],
+      ),
       floatingActionButton: _esAdmin
           ? FloatingActionButton.extended(
               onPressed: () => _abrirFormulario(),

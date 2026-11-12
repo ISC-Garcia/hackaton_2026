@@ -79,6 +79,9 @@ class _NegocioScreenState extends State<NegocioScreen> {
     _abrirMiNegocioSiYaTiene();
   }
 
+  /// Nombre del negocio que le rechazaron antes (para avisarle), o null.
+  String? _anteriorRechazado;
+
   /// Correo de la sesión abierta (turista o admin), o null si no hay sesión.
   /// Con sesión NO pedimos otra vez nombre, correo ni contraseña.
   String? get _correoSesion => _auth.usuario?.email;
@@ -90,6 +93,12 @@ class _NegocioScreenState extends State<NegocioScreen> {
     try {
       final negocio = await _servicio.miNegocio();
       if (negocio == null || !mounted) return;
+      // Rechazado: la base de datos deja registrar otro, así que se queda en
+      // el formulario con un aviso (antes no lo dejaba volver a intentar).
+      if (negocio.estadoAprobacion == 'rechazado') {
+        setState(() => _anteriorRechazado = negocio.nombre);
+        return;
+      }
       Navigator.of(context).pushReplacement(MaterialPageRoute(
         builder: (_) => negocio.estadoAprobacion == 'aprobado'
             ? const PanelComercianteScreen()
@@ -359,6 +368,17 @@ class _NegocioScreenState extends State<NegocioScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
           children: [
             ...encabezado,
+            if (_anteriorRechazado case final anterior?)
+              Card(
+                margin: const EdgeInsets.only(top: 16),
+                color: VgColores.terracota.withValues(alpha: 0.08),
+                child: ListTile(
+                  leading: const Icon(Icons.info_outline, color: VgColores.terracota),
+                  title: Text('Tu solicitud de "$anterior" no fue aprobada'),
+                  subtitle: const Text('Puedes registrar tu negocio otra vez. Si quieres saber el motivo, '
+                      'escríbenos.'),
+                ),
+              ),
             const _Seccion('Información del establecimiento'),
             SegmentedButton<bool>(
               segments: const [

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Recuerda en el celular datos pequeños, aunque el visitante no tenga cuenta:
@@ -10,6 +11,11 @@ class PreferenciasService {
   static const _claveIntereses = 'intereses';
   static const _claveMinutos = 'minutos';
   static const _claveBienvenida = 'bienvenida_vista';
+
+  /// Aviso de "cambiaron los intereses" (ej. desde Ajustes). La pestaña Rutas
+  /// lo escucha para actualizar sus chips sin reiniciar la app.
+  /// `ValueNotifier` = una cajita con un valor que avisa cuando cambia.
+  static final interesesCambiaron = ValueNotifier<int>(0);
 
   Future<bool> bienvenidaVista() async {
     final prefs = await SharedPreferences.getInstance();
@@ -29,6 +35,7 @@ class PreferenciasService {
   Future<void> guardarIntereses(Set<String> intereses) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(_claveIntereses, intereses.toList());
+    interesesCambiaron.value++;
   }
 
   Future<int?> leerMinutos() async {
