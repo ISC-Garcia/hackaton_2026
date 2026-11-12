@@ -6,6 +6,7 @@ import '../services/distancia.dart';
 import '../services/rutas_service.dart';
 import '../services/trazo_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/boton_emergencia.dart';
 import '../widgets/categoria_estilo.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/etiqueta.dart';
@@ -18,8 +19,11 @@ import 'lugar_screen.dart';
 /// La ruta se puede modificar: "Quitar" saca una parada y vuelve a generar
 /// el recorrido sin ella.
 ///
-/// El camino se dibuja POR LAS CALLES (`TrazoService`). Mientras llega, o si
-/// no hay internet, se dibuja en línea recta punteada. Al final, si sobra tiempo, sugiere un comercio
+/// El camino se dibuja POR LAS CALLES (`TrazoService`), desde el inicio
+/// (Zócalo o la ubicación del turista) hasta la última parada. Mientras
+/// llega, o si no hay internet, se dibuja en línea recta punteada.
+///
+/// Botón rojo "911": abre la app de llamadas por si algo pasa en el camino. Al final, si sobra tiempo, sugiere un comercio
 /// cercano para seguir explorando.
 class RutaScreen extends StatefulWidget {
   const RutaScreen({super.key, required this.peticion, required this.lugares});
@@ -48,16 +52,20 @@ class _RutaScreenState extends State<RutaScreen> {
     _pedirCalles();
   }
 
-  /// Pide el trazo por las calles de las paradas actuales.
-  /// Solo se envían las coordenadas de los LUGARES, no la del turista.
+  /// Pide el trazo por las calles: del INICIO a la última parada.
+  /// Si el inicio es "Mi ubicación", ese punto se envía al servicio de rutas
+  /// (decisión del equipo; lo dice el Aviso de privacidad). No se guarda.
   Future<void> _pedirCalles() async {
     final ruta = _ruta;
-    final puntos = ruta.paradas.map((p) => p.lugar.punto).toList();
+    final puntos = [_peticion.inicio, ...ruta.paradas.map((p) => p.lugar.punto)];
     // Sin setState aquí: se llama desde initState (donde no se permite) y
     // justo después de un setState en _quitar, que ya redibuja.
     _calles = null;
     _buscandoCalles = puntos.length > 1;
-    if (puntos.length < 2) return;
+    if (ruta.paradas.isEmpty) {
+      _buscandoCalles = false;
+      return;
+    }
     final camino = await TrazoService().caminoPorCalles(puntos);
     // Si mientras tanto quitaron una parada, esta respuesta ya no sirve.
     if (!mounted || ruta != _ruta) return;
@@ -114,12 +122,12 @@ class _RutaScreenState extends State<RutaScreen> {
       );
     }
 
-    // Con trazo por las calles: línea continua entre paradas y punteada solo
-    // del inicio a la primera parada. Sin trazo: todo punteado (línea recta).
+    // Con trazo: todo el camino por las calles (línea continua).
+    // Sin trazo (cargando o sin internet): línea recta punteada.
     final calles = _calles;
     final lineaRecta = calles == null
         ? <LatLng>[_peticion.inicio, ...paradas.map((p) => p.lugar.punto)]
-        : <LatLng>[_peticion.inicio, paradas.first.lugar.punto];
+        : const <LatLng>[];
     final incluidos = paradas.map((p) => p.lugar.id).toSet();
     final sugerencia = _ruta.minutosLibres >= 15
         ? _servicio.sugerenciaCercana(paradas.last.lugar.punto, widget.lugares, incluidos)
@@ -127,8 +135,9 @@ class _RutaScreenState extends State<RutaScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(_titulo())),
+      floatingActionButton: BotonEmergencia.flotante(context),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 32),
+        padding: const EdgeInsets.only(bottom: 96), // espacio para el botón 911
         children: [
           SizedBox(
             height: 260,
@@ -148,7 +157,7 @@ class _RutaScreenState extends State<RutaScreen> {
               _buscandoCalles
                   ? 'Trazando el camino por las calles…'
                   : calles != null
-                      ? 'Camino por las calles (OpenStreetMap). La línea punteada es el tramo desde tu inicio.'
+                      ? 'Camino a pie por las calles (OpenStreetMap). Es aproximado: sigue las señales y cruza con cuidado.'
                       : 'Sin conexión para trazar las calles: la línea es recta y aproximada.',
               style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6)),
             ),

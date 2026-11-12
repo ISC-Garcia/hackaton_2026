@@ -10,6 +10,7 @@ import 'package:verago/screens/ajustes_screen.dart';
 import 'package:verago/screens/documento_screen.dart';
 import 'package:verago/screens/login_screen.dart';
 import 'package:verago/services/pasaporte_service.dart';
+import 'package:verago/widgets/boton_emergencia.dart';
 import 'package:verago/widgets/reportar_problema.dart';
 
 Map<String, dynamic> fila({Map<String, dynamic> extra = const {}}) => {
@@ -59,7 +60,7 @@ void main() {
     expect(find.text('Legal y confianza'), findsOneWidget);
     await tester.tap(find.text('Términos para negocios'));
     await tester.pumpAndSettle();
-    expect(find.text('Registro y revisión'), findsOneWidget);
+    expect(find.text('1. Registro y revisión'), findsOneWidget);
   });
 
   testWidgets('Crear cuenta muestra los enlaces a Términos y Aviso de privacidad', (tester) async {
@@ -116,5 +117,22 @@ void main() {
     const r = ResultadoEscaneo(estado: 'ES_TU_NEGOCIO');
     expect(r.exito, isFalse);
     expect(r.mensaje, contains('propio negocio'));
+  });
+
+  test('los Términos de uso dicen que no nos hacemos responsables de accidentes ni robos', () {
+    final texto = Documentos.terminosUso.secciones.expand((s) => s.parrafos).join(' ');
+    expect(texto, contains('Accidentes'));
+    expect(texto, contains('Asaltos, robos'));
+    expect(texto, contains('911'));
+  });
+
+  test('el Aviso de privacidad explica la ubicación y qué hacer si te roban el celular', () {
+    final titulos = Documentos.avisoPrivacidad.secciones.map((s) => s.titulo).toList();
+    expect(titulos, contains('5. Tu ubicación'));
+    expect(titulos, contains('9. Si pierdes tu celular o te lo roban'));
+  });
+
+  test('el botón de emergencia abre la app de llamadas con el 911', () {
+    expect(BotonEmergencia.numero.toString(), 'tel:911');
   });
 }

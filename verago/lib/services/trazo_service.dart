@@ -14,8 +14,10 @@ import 'package:latlong2/latlong.dart';
 /// Solo cambia el DIBUJO: el armado de la ruta y sus tiempos siguen siendo
 /// los de `RutasService` (que funciona sin internet).
 ///
-/// Privacidad (decisión del equipo): solo se envían coordenadas de LUGARES
-/// (las paradas), nunca la ubicación del turista.
+/// Privacidad (decisión del equipo): se envían las paradas y el punto de
+/// INICIO de la ruta. Si el turista eligió "Mi ubicación", ese punto es su
+/// ubicación: se envía una vez por ruta y VeraGo no la guarda (lo explica
+/// el Aviso de privacidad).
 ///
 /// Reglas de uso del servidor que respetamos: pocas peticiones (una por
 /// ruta, y se guardan en memoria para no repetirlas).

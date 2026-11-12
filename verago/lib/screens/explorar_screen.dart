@@ -8,6 +8,7 @@ import '../services/error_verago.dart';
 import '../services/lugares_service.dart';
 import '../services/ubicacion_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/boton_emergencia.dart';
 import '../widgets/categoria_estilo.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/etiqueta.dart';
@@ -51,6 +52,22 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
 
   /// Desde dónde se miden las distancias.
   LatLng get _origen => _miUbicacion ?? Distancia.zocalo;
+
+  /// Texto de arriba. Antes decía siempre "Centro Histórico" aunque la
+  /// persona estuviera en otro lado (ej. en el Tecnológico).
+  /// Con su ubicación, decimos a cuánto está del Centro Histórico (se
+  /// calcula en el celular; no se envía a nadie).
+  String get _textoZona {
+    final yo = _miUbicacion;
+    if (yo == null) return 'Mostrando el Centro Histórico · distancias desde el Zócalo';
+    final metros = Distancia.metros(Distancia.zocalo, yo);
+    if (metros <= _metrosCentro) return 'Estás en el Centro Histórico · distancias desde donde estás';
+    return 'Estás a ${(metros / 1000).toStringAsFixed(1)} km del Centro Histórico · '
+        'distancias desde donde estás';
+  }
+
+  /// Radio aproximado del Centro Histórico alrededor del Zócalo.
+  static const _metrosCentro = 1200;
 
   Future<void> _mostrarDondeEstoy() async {
     setState(() => _buscandoUbicacion = true);
@@ -125,6 +142,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
       appBar: AppBar(
         title: const Text('Explorar'),
         actions: [
+          BotonEmergencia.icono(context),
           // La pestaña queda abierta en memoria; con esto se ven los
           // negocios recién aprobados sin cerrar la app.
           IconButton(tooltip: 'Actualizar', icon: const Icon(Icons.refresh), onPressed: _recargar),
@@ -179,9 +197,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  _miUbicacion == null
-                      ? 'Centro Histórico · distancias desde el Zócalo'
-                      : 'Centro Histórico · distancias desde donde estás',
+                  _textoZona,
                   style: TextStyle(color: Colors.black.withValues(alpha: 0.65)),
                 ),
               ),
