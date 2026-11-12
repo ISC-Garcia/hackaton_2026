@@ -4,6 +4,7 @@ import '../models/lugar.dart';
 import '../services/error_verago.dart';
 import '../services/negocios_service.dart';
 import '../services/validaciones.dart';
+import '../widgets/editor_costo_entrada.dart';
 import '../widgets/editor_horario.dart';
 
 /// EDITAR MIS DATOS (comerciante).
@@ -33,6 +34,9 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
 
   bool _guardando = false;
 
+  /// Costo de entrada (solo formal). null = no cobro entrada.
+  late int? _costo = widget.negocio.costoEntradaMxn;
+
   @override
   void dispose() {
     _descripcion.dispose();
@@ -54,7 +58,11 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
         telefono: _telefono.text,
         direccionActual: widget.negocio.direccion ?? '',
       );
-      if (widget.negocio.esFormal) await _servicio.guardarHorario(_horario.whereType<Horario>().toList());
+      if (widget.negocio.esFormal) {
+        await _servicio.guardarHorario(_horario.whereType<Horario>().toList());
+        // Solo si cambió (así no falla si aún no se corre el SQL 014).
+        if (_costo != widget.negocio.costoEntradaMxn) await _servicio.guardarCostoEntrada(_costo);
+      }
       if (mounted) Navigator.of(context).pop(true);
     } on ErrorVeraGo catch (e) {
       _mensaje(e.mensaje);
@@ -105,6 +113,12 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
                 title: Text(widget.negocio.direccion ?? '—'),
                 subtitle: const Text('Para cambiar tu ubicación o dirección usa "Cambiar ubicación" '
                     'en tu panel (VeraGo la revisa).'),
+              ),
+              const SizedBox(height: 12),
+              EditorCostoEntrada(
+                inicial: widget.negocio.costoEntradaMxn,
+                paraNegocio: true,
+                alCambiar: (v) => _costo = v,
               ),
               const SizedBox(height: 20),
               Text('Horario', style: Theme.of(context).textTheme.titleLarge),

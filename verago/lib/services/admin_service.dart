@@ -17,7 +17,11 @@ class DatosLugar {
     required this.esPunto,
     required this.enRecorridoAPie,
     required this.publicado,
+    this.costoEntradaMxn,
   });
+
+  /// null = sin confirmar, 0 = gratis, > 0 = pesos (SQL 014).
+  final int? costoEntradaMxn;
 
   final String nombre;
   final String descripcion;
@@ -44,6 +48,8 @@ class DatosLugar {
         'es_punto': esPunto,
         'en_recorrido_a_pie': enRecorridoAPie,
         'publicado': publicado,
+        // Un Punto VeraGo no cobra entrada (regla del SQL 014).
+        'costo_entrada_mxn': esPunto ? null : costoEntradaMxn,
       };
 }
 
@@ -90,6 +96,10 @@ class AdminService {
           'participa_pasaporte': aprobado && formal,
         }).eq('id', id));
   }
+
+  /// El admin pone o corrige el costo de entrada de un negocio formal.
+  Future<void> guardarCostoEntrada(String id, int? costo) =>
+      _escribir(() => _db.from('lugares').update({'costo_entrada_mxn': costo}).eq('id', id));
 
   /// Acepta (true) o rechaza (false) el cambio de ubicación que pidió un
   /// negocio. Lo hace una función protegida (SQL 013) que solo deja al admin.

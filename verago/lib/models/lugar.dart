@@ -69,7 +69,26 @@ class Lugar {
     this.cambioDireccion,
     this.cambioPuntoId,
     this.cambioSolicitadoEn,
+    this.costoEntradaMxn,
   });
+
+  /// COSTO DE ENTRADA en pesos (SQL 014): null = sin dato, 0 = gratis,
+  /// > 0 = aproximado. Lo pone el negocio formal o el admin.
+  final int? costoEntradaMxn;
+
+  /// Los no formales y los Puntos VeraGo no llevan costo de entrada.
+  bool get admiteCostoEntrada => !esPunto && !esInformal;
+
+  /// Texto para la ficha, o null si no hay nada que decir.
+  /// - Público sin dato: lo avisamos (no inventamos precios).
+  /// - Negocio sin dato: no cobra entrada, no se muestra nada.
+  String? get textoEntrada {
+    if (!admiteCostoEntrada) return null;
+    final c = costoEntradaMxn;
+    if (c == null) return esComercio ? null : 'Costo de entrada no disponible: confírmalo en el lugar.';
+    if (c == 0) return 'Entrada gratis';
+    return 'Entrada aprox. \$$c MXN';
+  }
 
   /// CAMBIO DE UBICACIÓN PENDIENTE (SQL 013): lo que pidió el comerciante y
   /// aún no acepta el admin. Mientras tanto, el negocio sigue en `punto`.
@@ -174,6 +193,7 @@ class Lugar {
       cambioLongitud: (json['cambio_longitud'] as num?)?.toDouble(),
       cambioDireccion: json['cambio_direccion'] as String?,
       cambioPuntoId: json['cambio_punto_id'] as String?,
+      costoEntradaMxn: json['costo_entrada_mxn'] as int?,
       cambioSolicitadoEn: json['cambio_solicitado_en'] == null
           ? null
           : DateTime.parse(json['cambio_solicitado_en'] as String).toLocal(),

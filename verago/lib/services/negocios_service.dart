@@ -197,6 +197,13 @@ class NegociosService {
     }
   }
 
+  /// Costo de entrada del negocio FORMAL (null = no cobro entrada).
+  /// Se publica directo, sin aprobación (decisión del equipo; SQL 014).
+  Future<void> guardarCostoEntrada(int? costo) async {
+    final r = await _rpc('guardar_mi_costo_entrada', {'p_costo': costo});
+    if (r['estado'] != 'OK') throw const ErrorVeraGo('No pudimos guardar el costo de entrada.');
+  }
+
   /// Retira la solicitud de cambio de ubicación pendiente.
   Future<void> cancelarCambioUbicacion() async {
     final r = await _rpc('cancelar_cambio_ubicacion', {});

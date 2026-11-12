@@ -66,6 +66,10 @@ class TarjetaLugar extends StatelessWidget {
                       children: [
                         Etiqueta.apertura(lugar.estadoEn(DateTime.now())),
                         ?Etiqueta.tipoNegocio(lugar),
+                        // Solo si cobra entrada (gratis o sin dato no ocupan espacio).
+                        if ((lugar.costoEntradaMxn ?? 0) > 0)
+                          Etiqueta('Entrada ≈ \$${lugar.costoEntradaMxn}',
+                              color: const Color(0xFF6B4E16), icono: Icons.confirmation_number_outlined),
                         if (lugar.participaPasaporte)
                           const Etiqueta('Da sello', color: Color(0xFF0B3C5D), icono: Icons.approval),
                         if (lugar.esDemo) const Etiqueta.demo(),

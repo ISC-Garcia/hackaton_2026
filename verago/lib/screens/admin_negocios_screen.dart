@@ -5,6 +5,7 @@ import '../services/admin_service.dart';
 import '../services/error_verago.dart';
 import '../services/geocodificacion_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/editor_costo_entrada.dart';
 import '../widgets/editor_horario.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/mapa_lugares.dart';
@@ -177,6 +178,8 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
   late final Future<String?> _direccionNueva;
   late final List<Horario?> _horario = EditorHorario.desde(widget.negocio);
   bool _trabajando = false;
+  late int? _costo = widget.negocio.costoEntradaMxn;
+  final _formCosto = GlobalKey<FormState>();
 
   Lugar get n => widget.negocio;
 
@@ -202,6 +205,11 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
     } finally {
       if (mounted) setState(() => _trabajando = false);
     }
+  }
+
+  Future<void> _guardarCosto() async {
+    if (!_formCosto.currentState!.validate()) return;
+    await _ejecutar(() => _servicio.guardarCostoEntrada(n.id, _costo), 'Costo de entrada guardado.');
   }
 
   Future<void> _resolverCambio({required bool aceptar}) => _ejecutar(
@@ -310,6 +318,17 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
                 padding: EdgeInsets.only(top: 6),
                 child: Text('Al aceptar, el negocio toma el horario del punto nuevo.', style: TextStyle(fontSize: 12)),
               ),
+          ],
+          if (n.esFormal) ...[
+            const Divider(height: 28),
+            Form(
+              key: _formCosto,
+              child: EditorCostoEntrada(inicial: _costo, paraNegocio: true, alCambiar: (v) => _costo = v),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(onPressed: _trabajando ? null : _guardarCosto, child: const Text('Guardar costo')),
+            ),
           ],
           const Divider(height: 28),
           Text('Horario', style: Theme.of(context).textTheme.titleLarge),

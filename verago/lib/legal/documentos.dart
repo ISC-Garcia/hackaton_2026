@@ -149,7 +149,9 @@ class Documentos {
       ]),
       SeccionDocumento('Negocios formales (local propio)', [
         '• La ubicación marcada en el mapa debe ser la de tu local.',
-        '• Puedes editar descripción, teléfono y horario. Un cambio de ubicación o dirección '
+        '• Puedes editar descripción, teléfono, horario y costo de entrada (si cobras). El costo debe '
+            'ser el real y aproximado por persona; VeraGo puede corregirlo.',
+        '• Un cambio de ubicación o dirección '
             'necesita la aprobación de VeraGo; mientras tanto, tu negocio sigue en su ubicación actual.',
         '• Puedes mostrar tu QR para que los turistas ganen su sello.',
       ]),
@@ -206,7 +208,10 @@ class Documentos {
             'espacio. Se avisa al negocio y puede reactivarse al corregir el problema.',
       ]),
       SeccionDocumento('5. Lugares públicos y eventos', [
-        '• Los lugares públicos usan su nombre real; no inventamos horarios ni precios.',
+        '• Los lugares públicos usan su nombre real; no inventamos horarios ni precios. Su costo de '
+            'entrada solo lo pone VeraGo si está confirmado; si no, la app dice "no disponible".',
+        '• Los negocios formales ponen su propio costo de entrada (se publica al instante) y '
+            'VeraGo puede corregirlo si es incorrecto.',
         '• Los eventos los publica el equipo de VeraGo; el costo que se muestra es aproximado.',
       ]),
       SeccionDocumento('6. Reportes', [

@@ -6,6 +6,7 @@ import '../services/admin_service.dart';
 import '../services/error_verago.dart';
 import '../services/geocodificacion_service.dart';
 import '../services/validaciones.dart';
+import '../widgets/editor_costo_entrada.dart';
 import '../widgets/editor_horario.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/selector_ubicacion.dart';
@@ -40,6 +41,7 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
   late int _duracion = widget.lugar?.duracionVisitaMin ?? 30;
   late bool _aPie = widget.lugar?.enRecorridoAPie ?? true;
   late bool _publicado = widget.lugar?.publicado ?? true;
+  late int? _costo = widget.lugar?.costoEntradaMxn;
   bool _faltaUbicacion = false;
   bool _guardando = false;
 
@@ -96,6 +98,7 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
           esPunto: _esPunto,
           enRecorridoAPie: _aPie,
           publicado: _publicado,
+          costoEntradaMxn: _costo,
         ),
         horario: _horario.whereType<Horario>().toList(),
       );
@@ -204,6 +207,10 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
             items: [for (final m in _duraciones) DropdownMenuItem(value: m, child: Text('$m min'))],
             onChanged: (v) => setState(() => _duracion = v ?? 30),
           ),
+          if (!_esPunto) ...[
+            const SizedBox(height: 12),
+            EditorCostoEntrada(inicial: _costo, paraNegocio: false, alCambiar: (v) => _costo = v),
+          ],
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Se llega caminando desde el centro'),

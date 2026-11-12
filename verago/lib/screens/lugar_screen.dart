@@ -103,6 +103,16 @@ class LugarScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(lugar.descripcion!, style: const TextStyle(fontSize: 16, height: 1.4)),
                 ],
+                if (lugar.textoEntrada case final entrada?) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.confirmation_number_outlined, size: 20, color: VgColores.azulGolfo),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(entrada, style: const TextStyle(fontWeight: FontWeight.w600))),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(
                   'Visita sugerida: ${lugar.duracionVisitaMin} min',
