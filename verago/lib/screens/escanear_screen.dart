@@ -6,6 +6,7 @@ import '../services/distancia.dart';
 import '../services/error_verago.dart';
 import '../services/pasaporte_service.dart';
 import '../services/rutas_service.dart';
+import '../services/validaciones.dart';
 import '../theme/app_theme.dart';
 import 'lugar_screen.dart';
 
@@ -213,10 +214,21 @@ class _EscanearScreenState extends State<EscanearScreen> {
               border: OutlineInputBorder(),
             ),
             autocorrect: false,
+            inputFormatters: Validaciones.codigoQrFormato, // solo letras, números y guion
           ),
           const SizedBox(height: 12),
           FilledButton(
-            onPressed: _procesando ? null : () => _procesar(_manual.text),
+            onPressed: _procesando
+                ? null
+                : () {
+                    // Código escrito a mano: revisamos el formato antes de enviarlo.
+                    final error = Validaciones.codigoQr(_manual.text);
+                    if (error != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+                      return;
+                    }
+                    _procesar(_manual.text);
+                  },
             child: const Text('Validar código'),
           ),
         ],

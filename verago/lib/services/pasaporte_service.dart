@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/sello.dart';
+import 'validaciones.dart';
 import 'error_verago.dart';
 
 /// Resultado de escanear un QR (lo que responde `registrar_visita`).
@@ -127,7 +128,7 @@ class PasaporteService {
   /// Envía el código escaneado a la función `registrar_visita`.
   Future<ResultadoEscaneo> registrarVisita(String codigo) async {
     try {
-      final r = await _db.rpc('registrar_visita', params: {'p_codigo': codigo.trim()})
+      final r = await _db.rpc('registrar_visita', params: {'p_codigo': Validaciones.normalizarCodigo(codigo)})
           as Map<String, dynamic>;
       return ResultadoEscaneo(
         estado: r['estado'] as String,

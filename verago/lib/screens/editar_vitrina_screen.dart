@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../models/lugar.dart';
 import '../services/error_verago.dart';
 import '../services/negocios_service.dart';
+import '../services/validaciones.dart';
 
 /// MI VITRINA (comerciante): productos o servicios y una promoción.
 ///
@@ -95,10 +95,7 @@ class _EditarVitrinaScreenState extends State<EditarVitrinaScreen> {
                 hintText: 'Ej. 2x1 en café de 4 a 6 pm',
                 border: OutlineInputBorder(),
               ),
-              validator: (v) {
-                final t = (v ?? '').trim();
-                return t.isNotEmpty && t.length < 3 ? 'Escribe al menos 3 letras o déjala vacía' : null;
-              },
+              validator: Validaciones.textoConLetras('la promoción', minimo: 3, opcional: true),
             ),
             const SizedBox(height: 8),
             Text('Productos o servicios', style: Theme.of(context).textTheme.titleMedium),
@@ -116,8 +113,9 @@ class _EditarVitrinaScreenState extends State<EditarVitrinaScreen> {
                       child: TextFormField(
                         controller: _filas[i].nombre,
                         maxLength: 60,
+                        inputFormatters: Validaciones.nombreNegocioFormato(),
                         decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder(), counterText: ''),
-                        validator: (v) => (v ?? '').trim().length < 2 ? 'Escribe el nombre' : null,
+                        validator: Validaciones.nombreNegocio('el nombre'),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -126,7 +124,8 @@ class _EditarVitrinaScreenState extends State<EditarVitrinaScreen> {
                       child: TextFormField(
                         controller: _filas[i].precio,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+                        inputFormatters: Validaciones.soloNumeros(6),
+                        validator: Validaciones.precio(),
                         decoration: const InputDecoration(
                           labelText: 'Precio',
                           prefixText: '\$ ',

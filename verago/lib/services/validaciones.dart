@@ -66,4 +66,122 @@ class Validaciones {
   /// Texto obligatorio con un mínimo de letras.
   static String? Function(String?) obligatorio(String campo, {int minimo = 2}) =>
       (v) => (v ?? '').trim().length < minimo ? 'Escribe $campo' : null;
+
+  // ==================================================================
+  // RESTRICCIONES POR TIPO DE CAMPO
+  // Dos piezas por campo:
+  //  - FORMATEADOR (`TextInputFormatter`): no deja ESCRIBIR lo que no va
+  //    (ej. números en un nombre de persona).
+  //  - VALIDADOR: al guardar, revisa lo que quedó (largo, que tenga letras).
+  // ==================================================================
+
+  /// Letras del español (y otras con acento: À-ÿ), sin números.
+  static const _letras = r'A-Za-zÀ-ÿ';
+  static final _tieneLetra = RegExp('[$_letras]');
+
+  /// NOMBRE DE PERSONA: solo letras, espacios, apóstrofo, guion y punto
+  /// (ej. "María José O'Neil", "Juan Pérez-Gil"). Sin números. Máx. 60.
+  static final nombrePersonaFormato = <TextInputFormatter>[
+    // El guion va al final de los corchetes para que sea un guion y no un rango.
+    FilteringTextInputFormatter.allow(RegExp('[$_letras' " '.-]")),
+    LengthLimitingTextInputFormatter(60),
+  ];
+
+  /// `completo` = pide nombre y apellido (al menos 2 palabras).
+  static String? Function(String?) nombrePersona({bool completo = false}) => (v) {
+        final t = (v ?? '').trim();
+        if (RegExp(r'\d').hasMatch(t)) return 'El nombre no lleva números';
+        final letras = RegExp('[$_letras]').allMatches(t).length;
+        if (letras < 2) return completo ? 'Escribe tu nombre completo' : 'Escribe tu nombre';
+        if (!RegExp('^[$_letras]').hasMatch(t)) return 'El nombre debe empezar con una letra';
+        if (completo && t.split(RegExp(r'\s+')).where((p) => p.length >= 2).length < 2) {
+          return 'Escribe nombre y apellido';
+        }
+        return null;
+      };
+
+  /// NOMBRE DE NEGOCIO, LUGAR, PRODUCTO O EVENTO: letras, NÚMEROS y signos
+  /// comunes (ej. "Café 2 Hermanos", "La Parroquia #3", "Taco & Co.").
+  static List<TextInputFormatter> nombreNegocioFormato({int maximo = 60}) => [
+        FilteringTextInputFormatter.allow(RegExp('[$_letras' r"""0-9 &'.,#°!¡?¿()/+:"-]""")),
+        LengthLimitingTextInputFormatter(maximo),
+      ];
+
+  /// Debe tener al menos 2 letras (no solo números o signos).
+  static String? Function(String?) nombreNegocio(String campo, {int maximo = 60}) => (v) {
+        final t = (v ?? '').trim();
+        if (t.length < 2) return 'Escribe $campo';
+        if (t.length > maximo) return 'Máximo $maximo caracteres';
+        if (RegExp('[$_letras]').allMatches(t).length < 2) return '$campo debe llevar letras';
+        return null;
+      };
+
+  /// DIRECCIÓN: letras, números y signos de direcciones (#, °, /, -, comas).
+  static final direccionFormato = <TextInputFormatter>[
+    FilteringTextInputFormatter.allow(RegExp('[$_letras' r'0-9 .,#°/()-]')),
+    LengthLimitingTextInputFormatter(150),
+  ];
+
+  /// Al menos 5 caracteres y con letras. Es flexible porque la dirección
+  /// también se llena sola desde el mapa (Nominatim).
+  static String? Function(String?) direccion({bool opcional = false}) => (v) {
+        final t = (v ?? '').trim();
+        if (t.isEmpty && opcional) return null;
+        if (t.length < 5) return 'Escribe la dirección';
+        if (!_tieneLetra.hasMatch(t)) return 'La dirección debe llevar el nombre de la calle';
+        return null;
+      };
+
+  /// TEXTO LIBRE (descripción, promoción): cualquier carácter, pero con un
+  /// mínimo de letras para que no sea solo números o signos.
+  static String? Function(String?) textoConLetras(String campo, {int minimo = 10, bool opcional = false}) => (v) {
+        final t = (v ?? '').trim();
+        if (t.isEmpty && opcional) return null;
+        if (t.length < minimo) return 'Escribe $campo (al menos $minimo caracteres)';
+        if (RegExp('[$_letras]').allMatches(t).length < 3) return '$campo debe llevar palabras';
+        return null;
+      };
+
+  /// SOLO NÚMEROS (precios, costos, días): no deja escribir letras.
+  static List<TextInputFormatter> soloNumeros(int maxDigitos) => [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(maxDigitos),
+      ];
+
+  /// Precio en pesos de 0 a `maximo` (igual que la base de datos: 100 000).
+  static String? Function(String?) precio({bool opcional = true, int maximo = 100000}) => (v) {
+        final t = (v ?? '').trim();
+        if (t.isEmpty) return opcional ? null : 'Escribe el precio';
+        final n = int.tryParse(t);
+        if (n == null) return 'Escribe solo números (pesos)';
+        if (n > maximo) return 'Máximo \$$maximo';
+        return null;
+      };
+
+  /// CORREO: sin espacios y máximo 254 caracteres (límite de los correos).
+  static final correoFormato = <TextInputFormatter>[
+    FilteringTextInputFormatter.deny(RegExp(r'\s')),
+    LengthLimitingTextInputFormatter(254),
+  ];
+
+  /// CONTRASEÑA: máximo 72 caracteres (límite del sistema que la cifra).
+  static final contrasenaFormato = <TextInputFormatter>[LengthLimitingTextInputFormatter(72)];
+
+  /// CÓDIGO DEL QR escrito a mano: "VG-" + 32 letras/números (a-f, 0-9).
+  static final codigoQrFormato = <TextInputFormatter>[
+    FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9\-]')),
+    LengthLimitingTextInputFormatter(35),
+  ];
+
+  static String? codigoQr(String? v) {
+    final t = normalizarCodigo(v ?? '');
+    return RegExp(r'^VG-[0-9a-f]{32}$').hasMatch(t) ? null : 'El código empieza con VG- y tiene 32 letras y números';
+  }
+
+  /// "vg-ABC…" → "VG-abc…" (así lo guarda la base de datos).
+  static String normalizarCodigo(String codigo) {
+    final t = codigo.trim();
+    if (t.length > 3 && t.substring(0, 3).toUpperCase() == 'VG-') return 'VG-${t.substring(3).toLowerCase()}';
+    return t;
+  }
 }

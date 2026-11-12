@@ -93,7 +93,7 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
               maxLength: 160,
               maxLines: 2,
               decoration: const InputDecoration(labelText: 'Descripción breve', border: OutlineInputBorder()),
-              validator: Validaciones.obligatorio('una descripción', minimo: 10),
+              validator: Validaciones.textoConLetras('una descripción'),
             ),
             const SizedBox(height: 8),
             TextFormField(

@@ -166,7 +166,8 @@ class _CambiarUbicacionScreenState extends State<CambiarUbicacionScreen> {
         const SizedBox(height: 8),
         TextFormField(
           controller: _direccion,
-          validator: Validaciones.obligatorio('la nueva dirección', minimo: 5),
+          inputFormatters: Validaciones.direccionFormato,
+          validator: Validaciones.direccion(),
           decoration: InputDecoration(
             labelText: 'Nueva dirección',
             helperText: _buscandoDireccion ? 'Buscando la dirección del punto…' : 'Se llena sola al tocar el mapa.',

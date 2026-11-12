@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/error_verago.dart';
 import '../services/pasaporte_service.dart';
 import '../services/preferencias_service.dart';
+import '../services/validaciones.dart';
 import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
 import 'bienvenida_screen.dart';
@@ -62,8 +63,9 @@ class _AjustesScreenState extends State<AjustesScreen> {
 
   Future<void> _guardarNombre() async {
     final nombre = _nombre.text.trim();
-    if (nombre.length < 2) {
-      _mensaje('El nombre debe tener al menos 2 letras.');
+    final error = Validaciones.nombrePersona()(nombre);
+    if (error != null) {
+      _mensaje(error);
       return;
     }
     setState(() => _guardandoNombre = true);
@@ -172,6 +174,7 @@ class _AjustesScreenState extends State<AjustesScreen> {
                       TextField(
                         controller: _nombre,
                         textCapitalization: TextCapitalization.words,
+                        inputFormatters: Validaciones.nombrePersonaFormato, // sin números
                         decoration: const InputDecoration(
                           labelText: 'Mi nombre',
                           border: OutlineInputBorder(),

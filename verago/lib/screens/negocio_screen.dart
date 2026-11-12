@@ -396,7 +396,9 @@ class _NegocioScreenState extends State<NegocioScreen> {
               style: TextStyle(fontSize: 13, color: Colors.black.withValues(alpha: 0.65)),
             ),
             const SizedBox(height: 16),
-            _campo(_nombre, 'Nombre comercial', Validaciones.obligatorio('el nombre comercial')),
+            // Nombre comercial: SÍ permite números (ej. "Café 2 Hermanos").
+            _campo(_nombre, 'Nombre comercial', Validaciones.nombreNegocio('el nombre comercial'),
+                formateadores: Validaciones.nombreNegocioFormato()),
             if (_formal)
               DropdownButtonFormField<int>(
                 initialValue: _categoriaId,
@@ -436,7 +438,7 @@ class _NegocioScreenState extends State<NegocioScreen> {
               ),
             ],
             const SizedBox(height: 12),
-            _campo(_descripcion, 'Descripción breve', Validaciones.obligatorio('una descripción', minimo: 10),
+            _campo(_descripcion, 'Descripción breve', Validaciones.textoConLetras('una descripción'),
                 maxLength: 160, lineas: 2),
             if (_formal) ...[
               // Primero el mapa: la dirección se llena sola a partir del punto,
@@ -459,7 +461,8 @@ class _NegocioScreenState extends State<NegocioScreen> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: TextFormField(
                   controller: _direccion,
-                  validator: Validaciones.obligatorio('la dirección', minimo: 5),
+                  inputFormatters: Validaciones.direccionFormato,
+                  validator: Validaciones.direccion(),
                   decoration: _decoracion(
                     'Dirección',
                     ayuda: _buscandoDireccion
@@ -491,9 +494,11 @@ class _NegocioScreenState extends State<NegocioScreen> {
                 ),
               )
             else ...[
+              // Nombre de PERSONA: sin números; nombre y apellido.
               _campo(_encargado, 'Nombre completo del propietario o encargado',
-                  Validaciones.obligatorio('el nombre completo', minimo: 3)),
-              _campo(_correo, 'Correo electrónico', Validaciones.correo, teclado: TextInputType.emailAddress),
+                  Validaciones.nombrePersona(completo: true), formateadores: Validaciones.nombrePersonaFormato),
+              _campo(_correo, 'Correo electrónico', Validaciones.correo,
+                teclado: TextInputType.emailAddress, formateadores: Validaciones.correoFormato),
               _campoContrasena(_contrasena, 'Contraseña', Validaciones.contrasenaSegura,
                   ayuda: 'Mínimo 8 caracteres, con letras y números'),
               _campoContrasena(_confirmar, 'Confirmar contraseña',
@@ -532,7 +537,8 @@ class _NegocioScreenState extends State<NegocioScreen> {
         const Text('Consulta el estado de tu solicitud o administra tu negocio.',
             style: TextStyle(fontSize: 16, height: 1.4)),
         const SizedBox(height: 20),
-        _campo(_correo, 'Correo electrónico', Validaciones.correo, teclado: TextInputType.emailAddress),
+        _campo(_correo, 'Correo electrónico', Validaciones.correo,
+                teclado: TextInputType.emailAddress, formateadores: Validaciones.correoFormato),
         _campoContrasena(_contrasena, 'Contraseña',
             (v) => (v ?? '').isEmpty ? 'Escribe tu contraseña' : null),
         Align(
@@ -597,6 +603,7 @@ class _NegocioScreenState extends State<NegocioScreen> {
         child: TextFormField(
           controller: c,
           obscureText: _ocultar,
+          inputFormatters: Validaciones.contrasenaFormato,
           validator: validador,
           decoration: _decoracion(
             etiqueta,

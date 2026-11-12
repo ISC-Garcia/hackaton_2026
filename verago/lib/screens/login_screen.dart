@@ -110,7 +110,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _nombre,
                 decoration: const InputDecoration(labelText: 'Tu nombre', border: OutlineInputBorder()),
                 textCapitalization: TextCapitalization.words,
-                validator: (v) => (v == null || v.trim().length < 2) ? 'Escribe tu nombre' : null,
+                inputFormatters: Validaciones.nombrePersonaFormato, // sin números
+                validator: Validaciones.nombrePersona(),
               ),
               const SizedBox(height: 12),
             ],
@@ -119,6 +120,8 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: const InputDecoration(labelText: 'Correo', border: OutlineInputBorder()),
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
+              autocorrect: false,
+              inputFormatters: Validaciones.correoFormato, // sin espacios
               validator: Validaciones.correo,
             ),
             const SizedBox(height: 12),
@@ -130,6 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 suffixIcon: _botonOjo,
               ),
               obscureText: _ocultar,
+              inputFormatters: Validaciones.contrasenaFormato,
               // Al crear cuenta: misma regla que los negocios (8+, letras y números).
               validator: _crearCuenta
                   ? Validaciones.contrasenaSegura

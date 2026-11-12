@@ -232,7 +232,8 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
           TextFormField(
             controller: _titulo,
             decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder()),
-            validator: Validaciones.obligatorio('el título', minimo: 3),
+            inputFormatters: Validaciones.nombreNegocioFormato(maximo: 80),
+            validator: Validaciones.nombreNegocio('el título', maximo: 80),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -240,6 +241,7 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
             maxLines: 3,
             maxLength: 400,
             decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+            validator: Validaciones.textoConLetras('la descripción', opcional: true),
           ),
           const SizedBox(height: 4),
           DropdownButtonFormField<String>(
@@ -293,14 +295,14 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
             TextFormField(
               controller: _costo,
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: Validaciones.soloNumeros(6),
               decoration: const InputDecoration(
                 labelText: 'Costo aproximado (pesos)',
                 helperText: 'Si lo dejas vacío, la agenda dirá "Con costo".',
                 prefixText: '\$ ',
                 border: OutlineInputBorder(),
               ),
-              validator: Validaciones.costo,
+              validator: Validaciones.precio(),
             ),
           const SizedBox(height: 16),
           const Text('Estado', style: TextStyle(fontWeight: FontWeight.w700)),

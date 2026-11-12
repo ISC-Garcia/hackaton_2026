@@ -154,7 +154,8 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
           TextFormField(
             controller: _nombre,
             decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
-            validator: Validaciones.obligatorio('el nombre'),
+            inputFormatters: Validaciones.nombreNegocioFormato(maximo: 80),
+            validator: Validaciones.nombreNegocio('el nombre', maximo: 80),
           ),
           const SizedBox(height: 12),
           if (!_esPunto) ...[
@@ -174,6 +175,7 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
             maxLines: 3,
             maxLength: 300,
             decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+            validator: Validaciones.textoConLetras('la descripción', opcional: true),
           ),
           const Text('Ubicación (toca el mapa):', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
@@ -186,6 +188,8 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
           const SizedBox(height: 12),
           TextFormField(
             controller: _direccion,
+            inputFormatters: Validaciones.direccionFormato,
+            validator: Validaciones.direccion(opcional: true),
             decoration: const InputDecoration(
               labelText: 'Dirección',
               helperText: 'Se llena sola al tocar el mapa; puedes ajustarla.',

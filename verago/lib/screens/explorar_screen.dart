@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LengthLimitingTextInputFormatter;
 
 import 'package:latlong2/latlong.dart';
 
@@ -275,6 +276,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
           child: TextField(
             controller: _buscador,
             textInputAction: TextInputAction.search,
+            inputFormatters: [LengthLimitingTextInputFormatter(80)],
             // "Buscar" en el teclado: si no hay nada en VeraGo, busca en el mapa.
             onSubmitted: (_) {
               FocusScope.of(context).unfocus(); // cierra el teclado

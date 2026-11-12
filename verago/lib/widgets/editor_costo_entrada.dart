@@ -82,6 +82,7 @@ class _EditorCostoEntradaState extends State<EditorCostoEntrada> {
           TextFormField(
             controller: _monto,
             keyboardType: TextInputType.number,
+            inputFormatters: Validaciones.soloNumeros(6), // no deja escribir letras
             decoration: const InputDecoration(
               labelText: 'Costo aproximado por persona (pesos)',
               prefixText: '\$ ',
@@ -91,7 +92,7 @@ class _EditorCostoEntradaState extends State<EditorCostoEntrada> {
             validator: (v) {
               final t = (v ?? '').trim();
               if (t.isEmpty || t == '0') return 'Escribe el costo (o elige otra opción)';
-              return Validaciones.costo(t);
+              return Validaciones.precio()(t);
             },
           ),
         ],
