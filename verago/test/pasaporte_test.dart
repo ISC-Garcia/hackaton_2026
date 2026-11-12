@@ -8,7 +8,7 @@ import 'package:verago/models/sello.dart';
 import 'package:verago/screens/pasaporte_screen.dart';
 import 'package:verago/theme/app_theme.dart';
 
-Lugar comercio(String id, String nombre) => Lugar(
+Lugar comercio(String id, String nombre, {String? foto}) => Lugar(
       id: id,
       nombre: nombre,
       descripcion: null,
@@ -24,6 +24,7 @@ Lugar comercio(String id, String nombre) => Lugar(
       esDemo: true,
       participaPasaporte: true,
       horarios: const [],
+      fotoUrl: foto,
     );
 
 void main() {
@@ -58,5 +59,23 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('0 de 0'), findsOneWidget);
     expect(find.text('Panel de mi negocio'), findsOneWidget);
+  });
+
+  testWidgets('el sello ganado muestra la foto del negocio; el que falta, candado', (tester) async {
+    await dibujar(
+      tester,
+      DatosPasaporte(
+        const Perfil(nombre: 'Ana', rol: 'usuario'),
+        [Sello(lugarId: 'a', lugarNombre: 'Café Brisa del Golfo', categoriaClave: 'cafeteria', fecha: DateTime(2026, 11, 11, 10))],
+        [
+          comercio('a', 'Café Brisa del Golfo', foto: 'https://x/cafe.jpg'),
+          comercio('b', 'Cocina La Marea', foto: 'https://x/cocina.jpg'),
+        ],
+      ),
+    );
+    await tester.scrollUntilVisible(find.text('Cocina La Marea'), 200, scrollable: find.byType(Scrollable).first);
+    // Solo el sello ganado usa la foto (con su distintivo); el otro sigue gris.
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.byIcon(Icons.approval), findsOneWidget);
   });
 }

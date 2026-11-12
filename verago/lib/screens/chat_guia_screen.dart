@@ -197,10 +197,11 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    'Respuestas generadas con IA (Google Gemini): pueden equivocarse; confirma horarios y precios. '
-                    'Para personalizar se envían tus intereses y los lugares que ya sellaste, sin tu nombre ni '
-                    'correo. No escribas datos personales.',
-                    style: TextStyle(fontSize: 11, color: Colors.black.withValues(alpha: 0.55)),
+                    // Texto pedido por el equipo. Los detalles de privacidad (qué se
+                    // envía a Gemini) están en el Aviso de privacidad.
+                    'Estás hablando con una IA. Puede cometer errores.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6)),
                   ),
                 ),
                 SafeArea(

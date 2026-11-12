@@ -390,15 +390,43 @@ class _SelloVisual extends StatelessWidget {
       label: '${lugar.nombre}: ${obtenido ? 'sello obtenido' : 'sello pendiente'}',
       child: Column(
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: obtenido ? estilo.color.withValues(alpha: 0.14) : Colors.transparent,
-              border: Border.all(color: color, width: 2.5),
-            ),
-            child: Icon(obtenido ? estilo.icono : Icons.lock_outline, color: color, size: 32),
+          // Sello ganado con foto: la foto del negocio dentro del círculo y un
+          // distintivo de "sellado". Sin foto (o si no carga): el ícono.
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: obtenido ? estilo.color.withValues(alpha: 0.14) : Colors.transparent,
+                  border: Border.all(color: color, width: 2.5),
+                ),
+                child: obtenido && lugar.fotoUrl != null
+                    ? Image.network(
+                        lugar.fotoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Icon(estilo.icono, color: color, size: 32),
+                      )
+                    : Icon(obtenido ? estilo.icono : Icons.lock_outline, color: color, size: 32),
+              ),
+              if (obtenido && lugar.fotoUrl != null)
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: estilo.color,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(Icons.approval, size: 14, color: Colors.white),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 6),
           Text(
