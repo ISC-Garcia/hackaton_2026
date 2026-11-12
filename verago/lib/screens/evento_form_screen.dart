@@ -1,0 +1,257 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../models/evento.dart';
+import '../models/lugar.dart';
+import '../services/error_verago.dart';
+import '../services/eventos_service.dart';
+import '../services/lugares_service.dart';
+import '../services/validaciones.dart';
+import '../widgets/estado_vacio.dart';
+
+/// FORMULARIO DE EVENTO (solo admin): crear uno nuevo o editar uno existente.
+///
+/// Devuelve `true` al guardar, para que la Agenda se recargue.
+/// La app solo muestra esta pantalla al admin, pero la seguridad real está
+/// en la base de datos (regla RLS "admin administra eventos").
+class EventoFormScreen extends StatefulWidget {
+  const EventoFormScreen({super.key, this.evento});
+
+  /// null = evento nuevo.
+  final Evento? evento;
+
+  @override
+  State<EventoFormScreen> createState() => _EventoFormScreenState();
+}
+
+class _EventoFormScreenState extends State<EventoFormScreen> {
+  final _servicio = EventosService();
+  final _formulario = GlobalKey<FormState>();
+  late final _titulo = TextEditingController(text: widget.evento?.titulo ?? '');
+  late final _descripcion = TextEditingController(text: widget.evento?.descripcion ?? '');
+  late final _costo = TextEditingController(text: widget.evento?.costoAproxMxn?.toString() ?? '');
+
+  late Future<List<Lugar>> _lugares;
+  String? _lugarId;
+  late DateTime _inicia;
+  late DateTime _termina;
+  late String _estado;
+  late bool _gratuito;
+  bool _guardando = false;
+
+  bool get _esNuevo => widget.evento == null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.evento;
+    // Nuevo: empieza en la siguiente hora en punto y dura 2 horas.
+    final ahora = DateTime.now();
+    final siguienteHora = DateTime(ahora.year, ahora.month, ahora.day, ahora.hour + 1);
+    _inicia = e?.inicia ?? siguienteHora;
+    _termina = e?.termina ?? siguienteHora.add(const Duration(hours: 2));
+    _lugarId = e?.lugarId;
+    _estado = e?.estado ?? 'publicado';
+    _gratuito = e?.esGratuito ?? true;
+    // Lugares donde puede ocurrir un evento (sin los comerciantes que están
+    // dentro de un Punto VeraGo: el evento se ubica en el punto).
+    _lugares = LugaresService()
+        .obtenerLugares()
+        .then((ls) => ls.where((l) => !l.esInformal).toList());
+  }
+
+  @override
+  void dispose() {
+    _titulo.dispose();
+    _descripcion.dispose();
+    _costo.dispose();
+    super.dispose();
+  }
+
+  /// Elegir fecha y luego hora (dos ventanas del sistema).
+  Future<DateTime?> _elegirFechaHora(DateTime actual) async {
+    final fecha = await showDatePicker(
+      context: context,
+      initialDate: actual,
+      firstDate: DateTime.now().subtract(const Duration(days: 1)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (fecha == null || !mounted) return null;
+    final hora = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(actual));
+    if (hora == null) return null;
+    return DateTime(fecha.year, fecha.month, fecha.day, hora.hour, hora.minute);
+  }
+
+  Future<void> _guardar() async {
+    if (!_formulario.currentState!.validate()) return;
+    final errorFechas = Validaciones.fechasEvento(_inicia, _termina);
+    if (errorFechas != null) {
+      _mensaje(errorFechas);
+      return;
+    }
+    final datos = DatosEvento(
+      titulo: _titulo.text,
+      descripcion: _descripcion.text,
+      lugarId: _lugarId!,
+      inicia: _inicia,
+      termina: _termina,
+      estado: _estado,
+      esGratuito: _gratuito,
+      costoAproxMxn: int.tryParse(_costo.text.trim()),
+    );
+    setState(() => _guardando = true);
+    try {
+      if (_esNuevo) {
+        await _servicio.crear(datos);
+      } else {
+        await _servicio.actualizar(widget.evento!.id, datos);
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } on ErrorVeraGo catch (e) {
+      _mensaje(e.mensaje);
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
+  }
+
+  void _mensaje(String texto) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
+
+  String _formato(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year} · '
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(_esNuevo ? 'Nuevo evento' : 'Editar evento')),
+      body: FutureBuilder<List<Lugar>>(
+        future: _lugares,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return EstadoVacio(
+              icono: Icons.wifi_off,
+              titulo: 'Algo salió mal',
+              mensaje: snapshot.error.toString(),
+            );
+          }
+          return _formularioEvento(snapshot.data!);
+        },
+      ),
+    );
+  }
+
+  Widget _formularioEvento(List<Lugar> lugares) {
+    // Si el lugar guardado ya no existe en la lista, se pide elegir otro.
+    if (_lugarId != null && !lugares.any((l) => l.id == _lugarId)) _lugarId = null;
+    return Form(
+      key: _formulario,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+        children: [
+          TextFormField(
+            controller: _titulo,
+            decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder()),
+            validator: Validaciones.obligatorio('el título', minimo: 3),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _descripcion,
+            maxLines: 3,
+            maxLength: 400,
+            decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 4),
+          DropdownButtonFormField<String>(
+            initialValue: _lugarId,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Lugar', border: OutlineInputBorder()),
+            items: [
+              for (final l in lugares) DropdownMenuItem(value: l.id, child: Text(l.nombre)),
+            ],
+            onChanged: (v) => setState(() => _lugarId = v),
+            validator: (v) => v == null ? 'Elige el lugar del evento' : null,
+          ),
+          const SizedBox(height: 16),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.play_arrow_outlined),
+            title: const Text('Inicia'),
+            subtitle: Text(_formato(_inicia)),
+            trailing: const Icon(Icons.edit_calendar_outlined),
+            onTap: () async {
+              final f = await _elegirFechaHora(_inicia);
+              if (f == null) return;
+              setState(() {
+                // Si el fin quedaba antes del nuevo inicio, se mueve igual.
+                final duracion = _termina.difference(_inicia);
+                _inicia = f;
+                if (!_termina.isAfter(_inicia)) _termina = _inicia.add(duracion);
+              });
+            },
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.stop_outlined),
+            title: const Text('Termina'),
+            subtitle: Text(_formato(_termina)),
+            trailing: const Icon(Icons.edit_calendar_outlined),
+            onTap: () async {
+              final f = await _elegirFechaHora(_termina);
+              if (f != null) setState(() => _termina = f);
+            },
+          ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Gratuito'),
+            value: _gratuito,
+            onChanged: (v) => setState(() => _gratuito = v),
+          ),
+          if (!_gratuito)
+            TextFormField(
+              controller: _costo,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                labelText: 'Costo aproximado (pesos)',
+                helperText: 'Si lo dejas vacío, la agenda dirá "Con costo".',
+                prefixText: '\$ ',
+                border: OutlineInputBorder(),
+              ),
+              validator: Validaciones.costo,
+            ),
+          const SizedBox(height: 16),
+          const Text('Estado', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'publicado', label: Text('Publicado')),
+              ButtonSegment(value: 'pendiente', label: Text('Borrador')),
+              ButtonSegment(value: 'cancelado', label: Text('Cancelado')),
+            ],
+            selected: {_estado},
+            onSelectionChanged: (s) => setState(() => _estado = s.first),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            switch (_estado) {
+              'publicado' => 'Todos lo ven en la agenda.',
+              'pendiente' => 'Solo lo ven los administradores.',
+              _ => 'Se muestra tachado para avisar que se canceló.',
+            },
+            style: TextStyle(fontSize: 13, color: Colors.black.withValues(alpha: 0.65)),
+          ),
+          const SizedBox(height: 24),
+          FilledButton(
+            onPressed: _guardando ? null : _guardar,
+            child: Text(_guardando ? 'Guardando…' : (_esNuevo ? 'Crear evento' : 'Guardar cambios')),
+          ),
+        ],
+      ),
+    );
+  }
+}

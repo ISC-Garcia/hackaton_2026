@@ -60,7 +60,19 @@ class Lugar {
     this.puntoId,
     this.giroNombre,
     this.estadoAprobacion = 'aprobado',
+    this.publicado = true,
+    this.categoriaId,
+    this.duenoNombre,
   });
+
+  /// Si se ve en la app (el admin también ve los no publicados).
+  final bool publicado;
+
+  /// Id de la categoría (lo usa el formulario del admin).
+  final int? categoriaId;
+
+  /// Nombre del encargado del negocio (solo lo ve el admin).
+  final String? duenoNombre;
 
   /// true = es un Punto VeraGo (espacio donde VeraGo renta mesas a
   /// comerciantes informales, ej. Parque Zamora).
@@ -131,6 +143,9 @@ class Lugar {
       puntoId: json['punto_id'] as String?,
       giroNombre: (json['giros'] as Map<String, dynamic>?)?['nombre'] as String?,
       estadoAprobacion: json['estado_aprobacion'] as String? ?? 'aprobado',
+      publicado: json['publicado'] as bool? ?? true,
+      categoriaId: json['categoria_id'] as int?,
+      duenoNombre: (json['perfiles'] as Map<String, dynamic>?)?['nombre'] as String?,
     );
   }
 

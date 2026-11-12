@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:latlong2/latlong.dart';
 
 import '../config.dart';
 import '../models/lugar.dart';
 import '../services/auth_service.dart';
 import '../services/error_verago.dart';
+import '../services/geocodificacion_service.dart';
 import '../services/negocios_service.dart';
 import '../services/validaciones.dart';
 import '../theme/app_theme.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/selector_ubicacion.dart';
+import '../widgets/vg_logo.dart';
 import 'estado_negocio_screen.dart';
 import 'negocio_registrado_screen.dart';
 import 'panel_comerciante_screen.dart';
@@ -49,6 +52,7 @@ class _NegocioScreenState extends State<NegocioScreen> {
   bool _ocultar = true;
   bool _enviando = false;
   bool _faltaUbicacion = false;
+  bool _buscandoDireccion = false;
 
   int? _categoriaId;
   LatLng? _ubicacion;
@@ -98,6 +102,26 @@ class _NegocioScreenState extends State<NegocioScreen> {
       if (mounted) setState(() => _ocupados = ocupados);
     } on ErrorVeraGo catch (e) {
       _aviso('Aviso', e.mensaje);
+    }
+  }
+
+  /// Al tocar el mapa: guarda el punto y pide su dirección a OpenStreetMap.
+  Future<void> _alTocarMapa(LatLng punto) async {
+    setState(() {
+      _ubicacion = punto;
+      _faltaUbicacion = false;
+      _buscandoDireccion = true;
+    });
+    final direccion = await GeocodificacionService().direccionDe(punto);
+    if (!mounted || _ubicacion != punto) return; // tocó otro punto mientras tanto
+    setState(() {
+      _buscandoDireccion = false;
+      if (direccion != null) _direccion.text = direccion;
+    });
+    if (direccion == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('No pudimos obtener la dirección del mapa. Escríbela tú.'),
+      ));
     }
   }
 
@@ -223,6 +247,8 @@ class _NegocioScreenState extends State<NegocioScreen> {
       future: _datos,
       builder: (context, snapshot) {
         final encabezado = [
+          const Center(child: VgLogo(altura: 110)),
+          const SizedBox(height: 12),
           Text('¡Forma parte de VeraGo!', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 6),
           const Text(
@@ -318,17 +344,12 @@ class _NegocioScreenState extends State<NegocioScreen> {
             _campo(_descripcion, 'Descripción breve', Validaciones.obligatorio('una descripción', minimo: 10),
                 maxLength: 160, lineas: 2),
             if (_formal) ...[
-              _campo(_direccion, 'Dirección', Validaciones.obligatorio('la dirección', minimo: 5)),
-              const Text('Toca el mapa para marcar dónde está tu local:',
+              // Primero el mapa: la dirección se llena sola a partir del punto,
+              // así siempre coinciden.
+              const Text('1. Toca el mapa para marcar dónde está tu local:',
                   style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              SelectorUbicacion(
-                valor: _ubicacion,
-                alCambiar: (p) => setState(() {
-                  _ubicacion = p;
-                  _faltaUbicacion = false;
-                }),
-              ),
+              SelectorUbicacion(valor: _ubicacion, alCambiar: _alTocarMapa),
               if (_faltaUbicacion)
                 const Padding(
                   padding: EdgeInsets.only(top: 6),
@@ -336,8 +357,28 @@ class _NegocioScreenState extends State<NegocioScreen> {
                       style: TextStyle(color: Color(0xFF9B2C2C))),
                 ),
               const SizedBox(height: 12),
+              const Text('2. Revisa la dirección (se llena sola con el mapa):',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: TextFormField(
+                  controller: _direccion,
+                  validator: Validaciones.obligatorio('la dirección', minimo: 5),
+                  decoration: _decoracion(
+                    'Dirección',
+                    ayuda: _buscandoDireccion
+                        ? 'Buscando la dirección del punto…'
+                        : 'Puedes ajustarla: número, referencias…',
+                    sufijo: _buscandoDireccion
+                        ? const Padding(padding: EdgeInsets.all(14), child: _Cargando(oscuro: true))
+                        : null,
+                  ),
+                ),
+              ),
             ],
-            _campo(_telefono, 'Teléfono de contacto', Validaciones.telefono, teclado: TextInputType.phone),
+            _campo(_telefono, 'Teléfono de contacto (10 números)', Validaciones.telefono,
+                teclado: TextInputType.phone, maxLength: 10, formateadores: Validaciones.soloDiezDigitos),
             const _Seccion('Información del encargado'),
             _campo(_encargado, 'Nombre completo del propietario o encargado',
                 Validaciones.obligatorio('el nombre completo', minimo: 3)),
@@ -418,6 +459,7 @@ class _NegocioScreenState extends State<NegocioScreen> {
     TextInputType? teclado,
     int? maxLength,
     int lineas = 1,
+    List<TextInputFormatter>? formateadores,
   }) =>
       Padding(
         padding: const EdgeInsets.only(bottom: 12),
@@ -426,6 +468,7 @@ class _NegocioScreenState extends State<NegocioScreen> {
           decoration: _decoracion(etiqueta),
           validator: validador,
           keyboardType: teclado,
+          inputFormatters: formateadores,
           maxLength: maxLength,
           maxLines: lineas,
         ),
@@ -468,12 +511,18 @@ class _Seccion extends StatelessWidget {
 }
 
 class _Cargando extends StatelessWidget {
-  const _Cargando();
+  const _Cargando({this.oscuro = false});
+
+  /// true = sobre fondo claro (dentro de un campo).
+  final bool oscuro;
 
   @override
-  Widget build(BuildContext context) => const SizedBox(
+  Widget build(BuildContext context) => SizedBox(
         width: 20,
         height: 20,
-        child: CircularProgressIndicator(strokeWidth: 2, color: VgColores.arena),
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: oscuro ? VgColores.azulGolfo : VgColores.arena,
+        ),
       );
 }

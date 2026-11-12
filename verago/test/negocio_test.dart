@@ -22,10 +22,11 @@ void main() {
       expect(Validaciones.contrasenaSegura('12345678'), 'Incluye al menos una letra');
       expect(Validaciones.contrasenaSegura('veracruzz'), 'Incluye al menos un número');
     });
-    test('teléfono de 10 dígitos', () {
-      expect(Validaciones.telefono('229 123 4567'), isNull);
-      expect(Validaciones.telefono('229-123-4567'), isNull);
-      expect(Validaciones.telefono('12345'), isNotNull);
+    test('teléfono: exactamente 10 números', () {
+      expect(Validaciones.telefono('2291234567'), isNull);
+      expect(Validaciones.telefono('229 123 4567'), 'Escribe solo números');
+      expect(Validaciones.telefono('12345'), 'El teléfono debe tener 10 números (llevas 5)');
+      expect(Validaciones.telefono('22912345678'), isNotNull); // 11 números
     });
   });
 
@@ -38,12 +39,17 @@ void main() {
     expect(find.text('¡Forma parte de VeraGo!'), findsOneWidget);
     expect(find.text('¿Tu negocio ya está registrado?'), findsOneWidget);
 
+    // El logo empuja el enlace hacia abajo: nos desplazamos hasta él.
+    await tester.ensureVisible(find.text('Iniciar sesión'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Iniciar sesión'));
     await tester.pumpAndSettle();
     expect(find.text('Entra a tu comercio'), findsOneWidget);
     expect(find.text('Entrar a mi comercio'), findsOneWidget);
     expect(find.text('¿Olvidaste tu contraseña?'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Registrar mi negocio'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Registrar mi negocio'));
     await tester.pumpAndSettle();
     expect(find.text('¡Forma parte de VeraGo!'), findsOneWidget);

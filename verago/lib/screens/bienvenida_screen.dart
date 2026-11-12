@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/preferencias_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
+import '../widgets/vg_logo.dart';
 import 'negocio_screen.dart';
 import 'principal_screen.dart';
 
@@ -72,6 +73,7 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
                   const _Pagina(
                     icono: Icons.explore,
                     color: VgColores.azulGolfo,
+                    logo: true, // primera página: logo de VeraGo
                     titulo: 'Descubre el Centro Histórico',
                     texto: 'Lugares, cafés, museos y comercios locales de Veracruz, '
                         'a pocos minutos caminando.',
@@ -159,8 +161,11 @@ class _Pagina extends StatelessWidget {
     required this.titulo,
     required this.texto,
     this.extra,
+    this.logo = false,
   });
 
+  /// true = muestra el logo de VeraGo en lugar del círculo con ícono.
+  final bool logo;
   final IconData icono;
   final Color color;
   final String titulo;
@@ -173,12 +178,16 @@ class _Pagina extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
       child: Column(
         children: [
-          Container(
-            width: 140,
-            height: 140,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.14), shape: BoxShape.circle),
-            child: Icon(icono, size: 72, color: color),
-          ),
+          if (logo)
+            // Image.asset carga una imagen incluida en la app (pubspec.yaml → assets).
+            const VgLogo(altura: 170)
+          else
+            Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.14), shape: BoxShape.circle),
+              child: Icon(icono, size: 72, color: color),
+            ),
           const SizedBox(height: 28),
           Text(titulo, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),

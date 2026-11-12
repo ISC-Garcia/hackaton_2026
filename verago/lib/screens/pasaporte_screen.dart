@@ -13,8 +13,9 @@ import '../widgets/categoria_estilo.dart';
 import '../widgets/estado_vacio.dart';
 import 'ajustes_screen.dart';
 import 'escanear_screen.dart';
-import 'estadisticas_screen.dart';
+import 'admin_screen.dart';
 import 'login_screen.dart';
+import 'negocio_screen.dart';
 import 'panel_comerciante_screen.dart';
 
 /// Datos que necesita la pantalla del pasaporte, cargados juntos.
@@ -116,6 +117,14 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
     });
   }
 
+  /// "Soy un negocio": abre directo el registro de negocios.
+  Widget _botonSoyNegocio() => OutlinedButton.icon(
+        onPressed: () => Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const NegocioScreen())),
+        icon: const Icon(Icons.storefront_outlined),
+        label: const Text('Soy un negocio'),
+      );
+
   Future<void> _escanear(DatosPasaporte d) async {
     final hubo = await Navigator.of(context).push<bool>(MaterialPageRoute(
       builder: (_) => EscanearScreen(
@@ -144,13 +153,22 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
         ],
       ),
       body: !conSesion
-          ? EstadoVacio(
-              icono: Icons.approval_outlined,
-              titulo: 'Tu pasaporte VeraGo',
-              mensaje: 'Escanea el QR de los comercios participantes y colecciona sus sellos. '
-                  'Necesitas una cuenta para guardarlos.',
-              textoBoton: 'Iniciar sesión',
-              alPresionar: _iniciarSesion,
+          ? Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    EstadoVacio(
+                      icono: Icons.approval_outlined,
+                      titulo: 'Tu pasaporte VeraGo',
+                      mensaje: 'Escanea el QR de los comercios participantes y colecciona sus sellos. '
+                          'Necesitas una cuenta para guardarlos.',
+                      textoBoton: 'Iniciar sesión',
+                      alPresionar: _iniciarSesion,
+                    ),
+                    _botonSoyNegocio(),
+                  ],
+                ),
+              ),
             )
           : FutureBuilder<DatosPasaporte>(
               future: _futuro,
@@ -228,14 +246,17 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
               icon: const Icon(Icons.storefront_outlined),
               label: const Text('Panel de mi negocio'),
             ),
+          ] else ...[
+            const SizedBox(height: 8),
+            _botonSoyNegocio(),
           ],
           if (d.perfil.esAdmin) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const EstadisticasScreen())),
-              icon: const Icon(Icons.bar_chart),
-              label: const Text('Estadísticas (datos simulados)'),
+                  .push(MaterialPageRoute(builder: (_) => const AdminScreen())),
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              label: const Text('Panel de administración'),
             ),
           ],
           const SizedBox(height: 24),

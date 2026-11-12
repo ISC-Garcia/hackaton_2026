@@ -1,11 +1,11 @@
 {
-    "name": "verago",
-    "short_name": "verago",
+    "name": "VeraGo",
+    "short_name": "VeraGo",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F7F2EA",
+    "theme_color": "#0B3C5D",
+    "description": "Turismo inteligente en el Centro Histórico de Veracruz.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

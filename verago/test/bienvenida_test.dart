@@ -16,6 +16,8 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: BienvenidaScreen()));
     expect(find.text('Descubre el Centro Histórico'), findsOneWidget);
+    // El logo de VeraGo aparece en la primera página.
+    expect(find.image(const AssetImage('assets/logo.png')), findsOneWidget);
 
     await tester.tap(find.text('Siguiente'));
     await tester.pumpAndSettle();

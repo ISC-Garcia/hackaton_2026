@@ -49,6 +49,8 @@ void main() {
     expect(find.text('1 de 2'), findsOneWidget);
     expect(find.text('Escanear QR'), findsOneWidget);
     expect(find.text('Tu colección'), findsOneWidget);
+    // Un usuario normal ve "Soy un negocio"; un comerciante ve su panel.
+    expect(find.text('Soy un negocio'), findsOneWidget);
   });
 
   testWidgets('Pasaporte vacío (sin sellos ni comercios)', (tester) async {

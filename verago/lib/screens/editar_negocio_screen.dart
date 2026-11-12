@@ -4,6 +4,7 @@ import '../models/lugar.dart';
 import '../services/error_verago.dart';
 import '../services/negocios_service.dart';
 import '../services/validaciones.dart';
+import '../widgets/editor_horario.dart';
 
 /// EDITAR MIS DATOS (comerciante).
 ///
@@ -28,11 +29,9 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
   late final _direccion = TextEditingController(text: widget.negocio.direccion ?? '');
 
   /// Horario editable: un valor por día (0 = domingo); null = cerrado.
-  late final List<Horario?> _horario = [for (var d = 0; d < 7; d++) widget.negocio.horarioDel(d)];
+  late final List<Horario?> _horario = EditorHorario.desde(widget.negocio);
 
   bool _guardando = false;
-
-  static const _dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
   @override
   void dispose() {
@@ -42,29 +41,11 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
     super.dispose();
   }
 
-  Future<void> _elegirHora(int dia, {required bool apertura}) async {
-    final actual = _horario[dia] ?? Horario(diaSemana: dia, abre: 9 * 60, cierra: 18 * 60);
-    final minutos = apertura ? actual.abre : actual.cierra;
-    final elegida = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: minutos ~/ 60, minute: minutos % 60),
-    );
-    if (elegida == null) return;
-    final m = elegida.hour * 60 + elegida.minute;
-    setState(() {
-      _horario[dia] = Horario(
-        diaSemana: dia,
-        abre: apertura ? m : actual.abre,
-        cierra: apertura ? actual.cierra : m,
-      );
-    });
-  }
-
   Future<void> _guardar() async {
     if (!_formulario.currentState!.validate()) return;
-    final dias = _horario.whereType<Horario>().toList();
-    if (dias.any((h) => h.cierra <= h.abre)) {
-      _mensaje('En cada día, la hora de cierre debe ser después de la de apertura.');
+    final errorHorario = EditorHorario.validar(_horario);
+    if (errorHorario != null) {
+      _mensaje(errorHorario);
       return;
     }
     setState(() => _guardando = true);
@@ -74,7 +55,7 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
         telefono: _telefono.text,
         direccion: _direccion.text,
       );
-      if (widget.negocio.esFormal) await _servicio.guardarHorario(dias);
+      if (widget.negocio.esFormal) await _servicio.guardarHorario(_horario.whereType<Horario>().toList());
       if (mounted) Navigator.of(context).pop(true);
     } on ErrorVeraGo catch (e) {
       _mensaje(e.mensaje);
@@ -111,7 +92,10 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
             TextFormField(
               controller: _telefono,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Teléfono de contacto', border: OutlineInputBorder()),
+              maxLength: 10,
+              inputFormatters: Validaciones.soloDiezDigitos,
+              decoration: const InputDecoration(
+                  labelText: 'Teléfono de contacto (10 números)', border: OutlineInputBorder()),
               validator: Validaciones.telefono,
             ),
             if (formal) ...[
@@ -123,7 +107,7 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
               ),
               const SizedBox(height: 20),
               Text('Horario', style: Theme.of(context).textTheme.titleLarge),
-              for (var d = 0; d < 7; d++) _filaDia(d),
+              EditorHorario(horario: _horario, alCambiar: () => setState(() {})),
             ] else
               const Padding(
                 padding: EdgeInsets.only(top: 16),
@@ -137,34 +121,6 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _filaDia(int d) {
-    final h = _horario[d];
-    return Row(
-      children: [
-        SizedBox(width: 92, child: Text(_dias[d])),
-        Switch(
-          value: h != null,
-          onChanged: (abierto) => setState(() {
-            _horario[d] = abierto ? Horario(diaSemana: d, abre: 9 * 60, cierra: 18 * 60) : null;
-          }),
-        ),
-        if (h == null)
-          const Text('Cerrado')
-        else ...[
-          TextButton(
-            onPressed: () => _elegirHora(d, apertura: true),
-            child: Text(Horario.formato(h.abre)),
-          ),
-          const Text('a'),
-          TextButton(
-            onPressed: () => _elegirHora(d, apertura: false),
-            child: Text(Horario.formato(h.cierra)),
-          ),
-        ],
-      ],
     );
   }
 }

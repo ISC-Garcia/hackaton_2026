@@ -22,6 +22,7 @@ Documentación del equipo (documentos compartidos de Claude):
 | `geolocator` | GPS, solo si el usuario elige "Mi ubicación" en Rutas |
 | `mobile_scanner` / `qr_flutter` | Leer y dibujar códigos QR |
 | `shared_preferences` | Guardar en el celular: bienvenida vista, intereses y tiempo de la ruta |
+| `http` + Nominatim (OpenStreetMap) | Convertir el punto tocado en el mapa en una dirección escrita (registro de negocios y lugares del admin). Solo se envían las coordenadas del negocio o lugar |
 
 ## Estado
 
@@ -35,15 +36,20 @@ Documentación del equipo (documentos compartidos de Claude):
 | Extra UI/UX | Pantalla de bienvenida (primera vez), botón de ojo en contraseñas, leyenda y centrar en el mapa | Implementado, con pruebas automáticas |
 | Ajustes | Engrane en el Pasaporte: mi cuenta (correo, rol, cambiar nombre), mis intereses, ver bienvenida otra vez, privacidad y cerrar sesión | Implementado, con pruebas automáticas |
 | Comerciantes | "Soy un negocio" (bienvenida y Ajustes): registro de negocio formal (local en mapa) o informal (giro en un **Punto VeraGo**), inicio de sesión, estado de la solicitud y panel (QR, ficha, editar datos). Rutas con al menos 1 comercio formal y 1 Punto VeraGo | Implementado, con pruebas automáticas. **Falta correr SQL 008 y 009** y probar con Supabase |
+| Admin en la app | El rol **admin** crea, edita, publica, pasa a borrador, cancela y elimina eventos de la Agenda desde la app | Implementado, con pruebas automáticas. **Falta correr SQL 010** |
+| Logo | Logo de VeraGo como ícono de la app (Android, iPhone, web) y en la bienvenida y el registro de negocios | Implementado |
+| Panel de administración | Pasaporte → "Panel de administración" (solo admin): **solicitudes de negocios** (aprobar, rechazar, suspender, reactivar, horario; compara la dirección escrita con la del mapa) y **lugares y Puntos VeraGo** (crear, editar, ocultar, horario) | Implementado, con pruebas automáticas. **Falta correr SQL 011** |
+| Dirección automática | Al tocar el mapa, la dirección se llena sola (registro de negocio y lugares del admin) | Implementado. Necesita internet |
 
-Verificado en esta computadora: `flutter analyze` sin problemas, **33 pruebas automáticas** pasan
+Verificado en esta computadora: `flutter analyze` sin problemas, **45 pruebas automáticas** pasan
 y la app compila para web (`flutter build web`).
 
 ### Qué NO hace la app (a propósito, MVP)
 
 - No hay premios ni canjes: el pasaporte **solo junta sellos**.
-- Eventos, lugares y roles se administran desde el **panel de Supabase**, no desde la app.
-  Los comerciantes **se registran** desde la app, pero el admin **aprueba** en Supabase.
+- **Solo los desarrolladores entran a Supabase.** El admin de VeraGo maneja desde la app la
+  **Agenda**, las **solicitudes de negocios** y los **lugares y Puntos VeraGo**.
+  Todavía se hace en Supabase (por un desarrollador): **cambiar roles** (por ejemplo, nombrar a un admin).
 - Los pagos de los comerciantes por su espacio se acuerdan **fuera de la app**.
 - Los comercios y eventos son **ficticios**; los lugares públicos no tienen horarios inventados.
 - Las estadísticas son **simuladas**.
@@ -63,6 +69,10 @@ y la app compila para web (`flutter build web`).
       2 comerciantes **ficticios**) y estado de aprobación.
    9. `009_roles_enum.sql` — el rol pasa a ser una **lista cerrada**: en Table Editor aparece un menú
       con `usuario`, `comerciante` y `admin` (no se puede escribir otro).
+   10. `010_admin_eventos.sql` — permite que el **admin** cree, edite y borre eventos **desde la app**
+       (la regla RLS sigue impidiéndolo a cualquier otro rol).
+   11. `011_admin_app.sql` — permite que el **admin** apruebe negocios y cree o edite lugares,
+       Puntos VeraGo y horarios **desde la app** (tampoco se pueden borrar lugares: se ocultan).
 3. Revisar en **Table Editor** que existan las tablas y los datos.
 4. En **Authentication → Sign In / Providers → Email**:
    - Dejar activado **Email**.
@@ -110,8 +120,13 @@ where nombre = 'Café Brisa del Golfo';
 
 ### Revisar y aprobar negocios ("Soy un negocio")
 
-Las solicitudes nuevas quedan con `estado_aprobacion = 'pendiente'` y **no** se ven en la app.
-Para verlas: Table Editor → `lugares` → filtrar `estado_aprobacion` = `pendiente`.
+**Desde la app (lo normal):** cuenta admin → Pasaporte → **Panel de administración** →
+**Solicitudes de negocios**. Ahí se ve cada solicitud con su ubicación en el mapa, la dirección
+que escribió el comerciante y la dirección que da el mapa (para revisar que coincidan), y los
+botones **Aprobar / Rechazar / Suspender / Reactivar** y **Guardar horario**.
+
+Las solicitudes nuevas quedan con `estado_aprobacion = 'pendiente'` y **no** se ven en la app
+hasta aprobarlas. El SQL de abajo es solo de respaldo para los desarrolladores.
 
 ```sql
 -- APROBAR (después de que el comerciante pagó su espacio): aparece en la app y da sellos.
@@ -144,16 +159,16 @@ El comerciante también puede ver su estado entrando en "Soy un negocio → Inic
 **Correo para "¿Olvidaste tu contraseña?":** agregar `"SOPORTE_CORREO": "correo@del-equipo.com"`
 a `env.json`. Si se deja vacío, la app dice "Contacta al equipo de VeraGo".
 
-### Crear un evento (quién agenda)
+### Administrar la Agenda (desde la app)
 
-Solo el administrador agenda eventos, desde Supabase: Table Editor → `eventos` → **Insert row**.
-Llenar `titulo`, `lugar_id` (id del lugar), `inicia`, `termina` y `estado`:
+Una cuenta con rol `admin` (asignado por un desarrollador) entra a la app y en **Agenda** ve:
 
-- `publicado` → se ve en la app.
-- `pendiente` → oculto (borrador).
-- `cancelado` → se ve tachado para avisar.
+- **"Nuevo evento"** (botón abajo a la derecha): título, descripción, lugar, inicio, fin,
+  gratuito o costo aproximado, y estado.
+- Al tocar un evento: **Editar**, **Publicar**, **Borrador**, **Cancelar** y **Eliminar**.
 
-Marcar `es_demo = true` si el evento es ficticio.
+Estados: `publicado` (todos lo ven), **borrador** (`pendiente`, solo lo ven los admins) y
+`cancelado` (se ve tachado para avisar). Requiere correr `010_admin_eventos.sql`.
 
 ### Si los eventos ya pasaron
 
@@ -216,12 +231,13 @@ lib/
 ├─ theme/          → colores y letras de VeraGo
 ├─ screens/        → pantallas (bienvenida, principal, explorar, lugar, rutas, ruta,
 │                    agenda, pasaporte, ajustes, login, escanear, qr_comercio, estadisticas,
-│                    negocio, negocio_registrado, estado_negocio, panel_comerciante, editar_negocio)
+│                    negocio, negocio_registrado, estado_negocio, panel_comerciante, editar_negocio,
+│                    evento_form, admin, admin_negocios, admin_lugares, admin_lugar_form)
 ├─ services/       → hablan con Supabase o hacen cálculos (rutas, distancias)
 ├─ models/         → clases de datos (Lugar, Evento, Sello, Perfil)
 └─ widgets/        → piezas visuales reutilizables (mapa, tarjetas, etiquetas)
-test/              → pruebas automáticas (33)
-supabase/migrations/ → SQL de la base de datos (001 a 009)
+test/              → pruebas automáticas (45)
+supabase/migrations/ → SQL de la base de datos (001 a 011)
 ```
 
 ## Bitácora de IA
@@ -267,3 +283,8 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | 21 | 2026-11-11 | Costo aproximado en la Agenda; ¿la Agenda es para eventos o para apuntar planes / alertas? | Claude Code | Columna `costo_aprox_mxn` (SQL 007) y etiqueta en cada evento: "Gratuito", "≈ $150 MXN" o "Con costo"; también en el detalle. 3 pruebas (25 en total). Se explicó qué es la Agenda hoy | Costo solo en **eventos**; no se inventan precios de lugares reales (museos). El costo del taller ficticio también es ficticio y se marca así. El cambio de concepto de la Agenda queda a decisión del *Equipo* |
 | 22 | 2026-11-11 | Módulo de comerciantes "Soy un negocio" (registro por defecto, inicio de sesión, confirmación, estados, validaciones) | Claude Code | SQL 008: tabla `giros`, columnas `estado_aprobacion`, `es_punto`, `punto_id`, `giro_id`; reglas UNIQUE (un giro por punto, nombre comercial único); funciones protegidas `registrar_negocio`, `giros_ocupados`, `actualizar_mi_negocio`, `guardar_mi_horario`; Punto VeraGo Parque Zamora (demo) con 2 comerciantes ficticios. App: pantalla única con registro (predeterminado) e inicio de sesión, selector de ubicación en mapa, confirmación, estado de solicitud, panel (QR, ficha, editar datos y horario). Rutas: al menos 1 comercio formal y 1 Punto VeraGo. 8 pruebas nuevas (33 en total) | *Equipo* definió el modelo: **Puntos VeraGo** rentados a informales, **un negocio por giro en cada punto**, formales marcan su local en el mapa, giros fijos y horario asignado por el admin, rutas con al menos 1 formal + 1 punto, recuperar contraseña = contacto con el equipo, panel = QR + ficha + editar, acceso en bienvenida y Ajustes. La IA propuso hacer el registro con una función protegida (nadie se da el rol a sí mismo) y dejar los pagos fuera de la app |
 | 23 | 2026-11-11 | "En Supabase solo se permitan los roles que hay" | Claude Code | SQL 009: `rol` pasa de texto con CHECK a **ENUM** `rol_usuario` (`usuario`, `comerciante`, `admin`). En Table Editor aparece un menú desplegable | Antes ya se rechazaban valores inválidos (CHECK), pero se escribían a mano; con ENUM no se puede escribir otro valor |
+| 24 | 2026-11-11 | "En perfiles no se guarda el correo, ¿cómo se inicia sesión?" | Claude Code | Explicación: correo y contraseña (cifrada) viven en `auth.users` (Supabase Auth); `perfiles` comparte el mismo `id` y guarda nombre y rol. Se dio una consulta SQL de solo lectura para ver correo + rol juntos | Sin cambios de código. Se ofreció agregar una columna `correo` a `perfiles`; queda a decisión del *Equipo* |
+| 25 | 2026-11-11 | Poner el logo de VeraGo en la app | Claude Code | Con un script de Python (Pillow) se recortó la imagen del equipo y se generaron: `assets/logo.png` (fondo transparente) y todos los íconos de Android, iPhone y web (logo centrado en cuadrado blanco). Logo en la bienvenida y en el registro de negocios (widget `VgLogo`). Nombre "VeraGo" en la versión web | *Equipo* eligió: ícono de la app + bienvenida + registro de negocios. Sin paquetes nuevos (se evitó `flutter_launcher_icons`) |
+| 26 | 2026-11-11 | Dejar de editar la documentación; botón "Soy un negocio" en Pasaporte; teléfono de 10 números; dirección vs. ubicación del mapa; admin edita la Agenda desde la app (solo desarrolladores en Supabase) | Claude Code | Botón "Soy un negocio" en Pasaporte (invitado y usuario; el comerciante ve su panel). Teléfono: el campo solo acepta números, máximo 10, con contador. SQL 010 + formulario de evento + opciones de admin en la Agenda (editar, publicar, borrador, cancelar, eliminar). 6 pruebas nuevas (39 en total). Se propusieron soluciones para validar la dirección contra el mapa | *Equipo*: la guía de estudio y el documento integral ya **no se editan**; solo el README. La seguridad de la Agenda la da la regla RLS (solo admin), no la app. Aprobar negocios y cambiar roles sigue en Supabase hasta que el *Equipo* decida pasarlo a la app. La validación de dirección queda en espera de decisión del *Equipo* |
+| 27 | 2026-11-11 | Implementar la validación de dirección (A + C) y pasar a la app: aprobar negocios y lugares/Puntos VeraGo | Claude Code | **A:** al tocar el mapa la dirección se llena sola con Nominatim (OpenStreetMap) vía el paquete `http`. **C:** el detalle de cada solicitud muestra la dirección escrita junto a la del mapa. SQL 011 (GRANT de escritura en `lugares` y `horarios`; RLS solo admin). Panel de administración (reemplaza el botón de estadísticas del admin): solicitudes de negocios (aprobar, rechazar, suspender, reactivar, horario) y lugares/Puntos VeraGo (crear, editar, ocultar, horario). Widget `EditorHorario` reutilizable. 6 pruebas nuevas (45 en total); compila para web | *Equipo* eligió A + C, aprobar negocios y lugares/Puntos en la app; **cambiar roles sigue en Supabase**. Los lugares no se borran (tienen sellos y eventos): se ocultan. A Nominatim solo se envían coordenadas del negocio/lugar, nunca la ubicación del usuario |
+| 28 | 2026-11-11 | "¿Ya añadiste todo a la guía de estudio?" | Claude Code | Se respondió que no: la guía quedó hasta las preguntas 111–116 (comerciantes y roles). Se listó lo que falta (logo, botón en Pasaporte, teléfono, Agenda del admin, dirección automática, panel de administración) | Sin cambios: el *Equipo* pidió no editar la documentación. Se ofreció actualizar la guía solo si lo confirman |

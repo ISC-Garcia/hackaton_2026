@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 /// Validaciones de formularios. Cada función devuelve null si el valor es
 /// correcto, o el mensaje de error en español.
 ///
@@ -20,10 +22,34 @@ class Validaciones {
     return null;
   }
 
-  /// Teléfono de 10 dígitos (se ignoran espacios y guiones).
+  /// Teléfono: exactamente 10 números, sin espacios ni guiones.
+  /// (El campo además solo deja escribir números, máximo 10: ver
+  /// [soloDiezDigitos]).
   static String? telefono(String? v) {
-    final digitos = (v ?? '').replaceAll(RegExp(r'[\s-]'), '');
-    return RegExp(r'^\d{10}$').hasMatch(digitos) ? null : 'Escribe un teléfono de 10 dígitos';
+    final t = (v ?? '').trim();
+    if (!RegExp(r'^\d+$').hasMatch(t)) return 'Escribe solo números';
+    return t.length == 10 ? null : 'El teléfono debe tener 10 números (llevas ${t.length})';
+  }
+
+  /// Formateadores para el campo de teléfono: solo dígitos y máximo 10.
+  /// Un "formateador" filtra lo que el usuario teclea antes de mostrarlo.
+  static final soloDiezDigitos = <TextInputFormatter>[
+    FilteringTextInputFormatter.digitsOnly,
+    LengthLimitingTextInputFormatter(10),
+  ];
+
+  /// Fechas de un evento: debe terminar después de iniciar y durar máximo 30 días.
+  static String? fechasEvento(DateTime inicia, DateTime termina) {
+    if (!termina.isAfter(inicia)) return 'El evento debe terminar después de iniciar.';
+    if (termina.difference(inicia).inDays > 30) return 'Un evento no puede durar más de 30 días.';
+    return null;
+  }
+
+  /// Costo aproximado en pesos: solo números (puede quedar vacío = "Con costo").
+  static String? costo(String? v) {
+    final t = (v ?? '').trim();
+    if (t.isEmpty) return null;
+    return RegExp(r'^\d{1,6}$').hasMatch(t) ? null : 'Escribe solo números (pesos)';
   }
 
   /// Texto obligatorio con un mínimo de letras.

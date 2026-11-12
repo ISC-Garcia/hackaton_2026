@@ -42,6 +42,9 @@ class Evento {
 
   bool get cancelado => estado == 'cancelado';
 
+  /// Borrador: estado 'pendiente'. Solo el admin lo ve (regla RLS).
+  bool get borrador => estado == 'pendiente';
+
   factory Evento.fromJson(Map<String, dynamic> json) {
     final lugar = json['lugares'] as Map<String, dynamic>?;
     return Evento(
