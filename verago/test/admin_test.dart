@@ -47,6 +47,25 @@ void main() {
       expect(datos(punto: true).aFila()['categoria_id'], 8);
       expect(datos(punto: false).aFila()['categoria_id'], 6);
     });
+    test('solo envía el costo de entrada si cambió (funciona aunque falte el SQL 014)', () {
+      expect(datos(punto: false).aFila().containsKey('costo_entrada_mxn'), isFalse);
+      const conCosto = DatosLugar(
+        nombre: 'Museo',
+        descripcion: '',
+        categoriaId: 2,
+        latitud: 19.19,
+        longitud: -96.13,
+        direccion: '',
+        interes: 4,
+        duracionVisitaMin: 30,
+        esPunto: false,
+        enRecorridoAPie: true,
+        publicado: true,
+        costoEntradaMxn: 50,
+        incluirCosto: true,
+      );
+      expect(conCosto.aFila()['costo_entrada_mxn'], 50);
+    });
     test('limpia textos y deja vacíos en null', () {
       final fila = datos(punto: false).aFila();
       expect(fila['nombre'], 'Parque Demo');

@@ -99,6 +99,7 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
           enRecorridoAPie: _aPie,
           publicado: _publicado,
           costoEntradaMxn: _costo,
+          incluirCosto: _costo != widget.lugar?.costoEntradaMxn,
         ),
         horario: _horario.whereType<Horario>().toList(),
       );

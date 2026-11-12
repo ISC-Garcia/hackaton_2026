@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../models/lugar.dart';
+import 'package:latlong2/latlong.dart';
+
 import '../services/distancia.dart';
+import '../services/error_verago.dart';
 import '../services/lugares_service.dart';
+import '../services/ubicacion_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
 import '../widgets/estado_vacio.dart';
@@ -18,8 +22,9 @@ import 'lugar_screen.dart';
 /// 2. `FutureBuilder` muestra "cargando", luego los datos o un error.
 /// 3. Búsqueda y filtros se aplican en el celular sobre la lista ya cargada
 ///    (son pocos lugares, no hace falta volver a pedirlos).
-/// 4. Las distancias se miden desde el Zócalo, así no pedimos permiso de
-///    ubicación solo para explorar.
+/// 4. Las distancias se miden desde el Zócalo. Si el turista toca
+///    "Mostrar dónde estoy" en el mapa, se miden DESDE ÉL (punto azul).
+///    La ubicación se toma una sola vez y no se guarda ni se envía.
 class ExplorarScreen extends StatefulWidget {
   const ExplorarScreen({super.key});
 
@@ -35,6 +40,39 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
   String? _categoria; // clave de la categoría elegida; null = todas
   bool _verMapa = true;
   Lugar? _seleccionado;
+
+  /// Dónde está el turista (null = no la ha pedido o está lejos del centro).
+  LatLng? _miUbicacion;
+  bool _buscandoUbicacion = false;
+
+  /// Si está a más de esto del Zócalo, no está en el centro: seguimos
+  /// midiendo desde el Zócalo (si no, todo diría "a 300 km").
+  static const _metrosMaximos = 15000;
+
+  /// Desde dónde se miden las distancias.
+  LatLng get _origen => _miUbicacion ?? Distancia.zocalo;
+
+  Future<void> _mostrarDondeEstoy() async {
+    setState(() => _buscandoUbicacion = true);
+    try {
+      final yo = await UbicacionService().obtenerUbicacion();
+      if (!mounted) return;
+      if (Distancia.metros(Distancia.zocalo, yo) > _metrosMaximos) {
+        setState(() => _miUbicacion = null);
+        _aviso('Estás lejos del Centro Histórico. Seguimos midiendo las distancias desde el Zócalo.');
+      } else {
+        setState(() => _miUbicacion = yo);
+      }
+    } on ErrorVeraGo catch (e) {
+      _aviso(e.mensaje);
+    } finally {
+      if (mounted) setState(() => _buscandoUbicacion = false);
+    }
+  }
+
+  void _aviso(String texto) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
+  }
 
   @override
   void initState() {
@@ -70,8 +108,8 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
       return coincideCategoria && coincideTexto;
     }).toList();
     // Los más cercanos primero.
-    resultado.sort((a, b) => Distancia.metros(Distancia.zocalo, a.punto)
-        .compareTo(Distancia.metros(Distancia.zocalo, b.punto)));
+    resultado.sort((a, b) => Distancia.metros(_origen, a.punto)
+        .compareTo(Distancia.metros(_origen, b.punto)));
     return resultado;
   }
 
@@ -141,7 +179,9 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  'Centro Histórico · distancias desde el Zócalo',
+                  _miUbicacion == null
+                      ? 'Centro Histórico · distancias desde el Zócalo'
+                      : 'Centro Histórico · distancias desde donde estás',
                   style: TextStyle(color: Colors.black.withValues(alpha: 0.65)),
                 ),
               ),
@@ -228,7 +268,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
       itemCount: filtrados.length,
       itemBuilder: (_, i) => TarjetaLugar(
         lugar: filtrados[i],
-        desde: Distancia.zocalo,
+        desde: _origen,
         alTocar: () => _abrirFicha(filtrados[i], todos),
       ),
     );
@@ -245,6 +285,9 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
           centro: Distancia.zocalo,
           seleccionadoId: seleccionado?.id,
           alTocarLugar: (l) => setState(() => _seleccionado = l),
+          miUbicacion: _miUbicacion,
+          alPedirUbicacion: _mostrarDondeEstoy,
+          buscandoUbicacion: _buscandoUbicacion,
         ),
         // Ficha resumida del marcador tocado
         if (seleccionado != null && filtrados.contains(seleccionado))
@@ -276,7 +319,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                     ),
                     Text(
                       '${seleccionado.categoriaNombre} · '
-                      '${Distancia.texto(Distancia.zocalo, seleccionado.punto)}',
+                      '${Distancia.texto(_origen, seleccionado.punto)}',
                     ),
                     const SizedBox(height: 8),
                     Wrap(

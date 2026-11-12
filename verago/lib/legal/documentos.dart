@@ -73,6 +73,8 @@ class Documentos {
         '• OpenStreetMap: de ahí se descargan los mapas, como al abrir cualquier página web. '
             'Para llenar la dirección de un negocio, solo enviamos las coordenadas del negocio, '
             'nunca la ubicación del turista.',
+        '• Servicio de rutas a pie de OpenStreetMap (routing.openstreetmap.de): para dibujar tu '
+            'ruta por las calles enviamos solo las coordenadas de las paradas (lugares), nunca tu ubicación.',
         'No compartimos tus datos con nadie más, salvo que una autoridad lo pida conforme a la ley.',
       ]),
       SeccionDocumento('Tus derechos (ARCO)', [

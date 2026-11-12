@@ -14,9 +14,11 @@ import 'categoria_estilo.dart';
 ///   identificar la app (userAgentPackageName) y mostrar el crédito
 ///   "© OpenStreetMap", por eso aparece abajo a la derecha.
 ///
-/// Si es interactivo, muestra dos botones:
-/// - Leyenda: qué significa cada color de marcador.
+/// Si es interactivo, muestra botones:
+/// - Dónde estoy (solo si la pantalla lo pide): pone el punto azul
+///   "Estás aquí". La ubicación se toma UNA vez, al tocar; no te sigue.
 /// - Centrar: regresa el mapa al punto inicial (el Zócalo en Explorar).
+/// - Leyenda: qué significa cada color de marcador.
 ///
 /// Se usa en Explorar, en la ficha del lugar y en la ruta.
 class MapaLugares extends StatefulWidget {
@@ -29,7 +31,20 @@ class MapaLugares extends StatefulWidget {
     this.seleccionadoId,
     this.interactivo = true,
     this.linea = const [],
+    this.lineaPorCalles = const [],
+    this.miUbicacion,
+    this.alPedirUbicacion,
+    this.buscandoUbicacion = false,
   });
+
+  /// Dónde está el turista (punto azul). null = no lo sabemos.
+  final LatLng? miUbicacion;
+
+  /// Si no es null, aparece el botón "Mostrar dónde estoy".
+  final VoidCallback? alPedirUbicacion;
+
+  /// true mientras el celular busca la ubicación (el botón gira).
+  final bool buscandoUbicacion;
 
   final List<Lugar> lugares;
   final LatLng centro;
@@ -40,8 +55,11 @@ class MapaLugares extends StatefulWidget {
   /// false = mapa fijo (para el mapa pequeño de la ficha).
   final bool interactivo;
 
-  /// Puntos de una línea a dibujar (la ruta). Vacío = sin línea.
+  /// Línea PUNTEADA (tramo aproximado, en línea recta). Vacío = sin línea.
   final List<LatLng> linea;
+
+  /// Línea CONTINUA por las calles (camino real de la ruta). Vacío = sin línea.
+  final List<LatLng> lineaPorCalles;
 
   @override
   State<MapaLugares> createState() => _MapaLugaresState();
@@ -53,6 +71,14 @@ class _MapaLugaresState extends State<MapaLugares> {
   bool _verLeyenda = false;
 
   void _centrar() => _controlador.move(widget.centro, widget.zoom);
+
+  /// Al llegar la ubicación del turista, movemos el mapa hacia ella.
+  @override
+  void didUpdateWidget(MapaLugares anterior) {
+    super.didUpdateWidget(anterior);
+    final yo = widget.miUbicacion;
+    if (yo != null && yo != anterior.miUbicacion) _controlador.move(yo, widget.zoom);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,15 +103,18 @@ class _MapaLugaresState extends State<MapaLugares> {
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.verago',
             ),
-            if (widget.linea.length > 1)
+            if (widget.linea.length > 1 || widget.lineaPorCalles.length > 1)
               PolylineLayer(
                 polylines: [
-                  Polyline(
-                    points: widget.linea,
-                    strokeWidth: 4,
-                    color: VgColores.terracota,
-                    pattern: StrokePattern.dashed(segments: const [10, 6]),
-                  ),
+                  if (widget.lineaPorCalles.length > 1)
+                    Polyline(points: widget.lineaPorCalles, strokeWidth: 5, color: VgColores.terracota),
+                  if (widget.linea.length > 1)
+                    Polyline(
+                      points: widget.linea,
+                      strokeWidth: 4,
+                      color: VgColores.terracota,
+                      pattern: StrokePattern.dashed(segments: const [10, 6]),
+                    ),
                 ],
               ),
             MarkerLayer(
@@ -101,6 +130,9 @@ class _MapaLugaresState extends State<MapaLugares> {
                       alTocar: widget.alTocarLugar == null ? null : () => widget.alTocarLugar!(lugar),
                     ),
                   ),
+                // Al final, para que quede encima de los lugares.
+                if (widget.miUbicacion case final yo?)
+                  Marker(point: yo, width: 26, height: 26, child: const _EstasAqui()),
               ],
             ),
             const RichAttributionWidget(
@@ -115,9 +147,20 @@ class _MapaLugaresState extends State<MapaLugares> {
             right: 12,
             child: Column(
               children: [
+                if (widget.alPedirUbicacion != null) ...[
+                  _BotonMapa(
+                    icono: Icons.my_location,
+                    descripcion: 'Mostrar dónde estoy',
+                    alPresionar: widget.buscandoUbicacion ? null : widget.alPedirUbicacion,
+                    cargando: widget.buscandoUbicacion,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                // Antes este botón usaba el ícono de "mi ubicación" y confundía:
+                // solo regresa el mapa al punto inicial.
                 _BotonMapa(
-                  icono: Icons.my_location,
-                  descripcion: 'Centrar el mapa',
+                  icono: Icons.center_focus_strong_outlined,
+                  descripcion: 'Volver a centrar el mapa',
                   alPresionar: _centrar,
                 ),
                 const SizedBox(height: 8),
@@ -171,11 +214,17 @@ class _MapaLugaresState extends State<MapaLugares> {
 
 /// Botón redondo blanco sobre el mapa.
 class _BotonMapa extends StatelessWidget {
-  const _BotonMapa({required this.icono, required this.descripcion, required this.alPresionar});
+  const _BotonMapa({
+    required this.icono,
+    required this.descripcion,
+    required this.alPresionar,
+    this.cargando = false,
+  });
 
   final IconData icono;
   final String descripcion;
-  final VoidCallback alPresionar;
+  final VoidCallback? alPresionar;
+  final bool cargando;
 
   @override
   Widget build(BuildContext context) {
@@ -185,11 +234,31 @@ class _BotonMapa extends StatelessWidget {
       elevation: 3,
       child: IconButton(
         tooltip: descripcion, // también lo lee el lector de pantalla
-        icon: Icon(icono, color: VgColores.azulGolfo),
+        icon: cargando
+            ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
+            : Icon(icono, color: VgColores.azulGolfo),
         onPressed: alPresionar,
       ),
     );
   }
+}
+
+/// Punto azul "Estás aquí".
+class _EstasAqui extends StatelessWidget {
+  const _EstasAqui();
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        label: 'Estás aquí',
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E88E5),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: const [BoxShadow(color: Color(0x661E88E5), blurRadius: 10, spreadRadius: 4)],
+          ),
+        ),
+      );
 }
 
 /// Marcador redondo con el ícono y color de la categoría.

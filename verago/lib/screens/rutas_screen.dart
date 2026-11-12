@@ -79,8 +79,19 @@ class _RutasScreenState extends State<RutasScreen> {
     if (_desdeMiUbicacion) {
       setState(() => _buscandoUbicacion = true);
       try {
-        inicio = await UbicacionService().obtenerUbicacion();
-        nombreInicio = 'tu ubicación';
+        final yo = await UbicacionService().obtenerUbicacion();
+        // Lejos del Centro Histórico no cabría ningún lugar en la ruta:
+        // empezamos desde el Zócalo y lo avisamos.
+        if (Distancia.metros(Distancia.zocalo, yo) > 15000) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Estás lejos del Centro Histórico. Armamos tu ruta desde el Zócalo.'),
+            ));
+          }
+        } else {
+          inicio = yo;
+          nombreInicio = 'tu ubicación';
+        }
       } on ErrorVeraGo catch (e) {
         if (!mounted) return;
         setState(() => _buscandoUbicacion = false);

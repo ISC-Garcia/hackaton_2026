@@ -18,10 +18,15 @@ class DatosLugar {
     required this.enRecorridoAPie,
     required this.publicado,
     this.costoEntradaMxn,
+    this.incluirCosto = false,
   });
 
   /// null = sin confirmar, 0 = gratis, > 0 = pesos (SQL 014).
   final int? costoEntradaMxn;
+
+  /// true solo si el admin CAMBIÓ el costo. Así, si aún no se corre el
+  /// SQL 014 (la columna no existe), guardar lo demás sigue funcionando.
+  final bool incluirCosto;
 
   final String nombre;
   final String descripcion;
@@ -49,7 +54,7 @@ class DatosLugar {
         'en_recorrido_a_pie': enRecorridoAPie,
         'publicado': publicado,
         // Un Punto VeraGo no cobra entrada (regla del SQL 014).
-        'costo_entrada_mxn': esPunto ? null : costoEntradaMxn,
+        if (incluirCosto) 'costo_entrada_mxn': esPunto ? null : costoEntradaMxn,
       };
 }
 
@@ -108,6 +113,14 @@ class AdminService {
     try {
       r = await _db.rpc('resolver_cambio_ubicacion', params: {'p_lugar': id, 'p_aceptar': aceptar})
           as Map<String, dynamic>;
+    } on PostgrestException catch (e) {
+      // PGRST202 = la función no existe; 42703 = la columna no existe:
+      // falta correr un SQL nuevo en Supabase.
+      if (e.code == 'PGRST202' || e.code == '42703' || e.code == 'PGRST204') {
+        throw const ErrorVeraGo('Falta actualizar la base de datos (correr el SQL más reciente en '
+            'Supabase). Avisa a los desarrolladores.');
+      }
+      throw const ErrorVeraGo('No pudimos completar la operación. Intenta de nuevo.');
     } catch (_) {
       throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
     }
@@ -167,6 +180,11 @@ class AdminService {
     } on PostgrestException catch (e) {
       if (e.code == '42501') {
         throw const ErrorVeraGo('Solo un administrador puede hacer este cambio.');
+      }
+      // 42703 / PGRST204 = "esa columna no existe": falta correr un SQL nuevo.
+      if (e.code == '42703' || e.code == 'PGRST204' || e.code == 'PGRST202') {
+        throw const ErrorVeraGo('Falta actualizar la base de datos (correr el SQL más reciente en '
+            'Supabase). Avisa a los desarrolladores.');
       }
       if (e.code == '23505') {
         throw const ErrorVeraGo('Ese giro ya está ocupado en el punto o el nombre ya existe.');

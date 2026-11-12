@@ -226,6 +226,14 @@ class NegociosService {
   Future<Map<String, dynamic>> _rpc(String funcion, Map<String, dynamic> params) async {
     try {
       return await _db.rpc(funcion, params: params) as Map<String, dynamic>;
+    } on PostgrestException catch (e) {
+      // PGRST202 = la función no existe; 42703 = la columna no existe:
+      // falta correr un SQL nuevo en Supabase.
+      if (e.code == 'PGRST202' || e.code == '42703' || e.code == 'PGRST204') {
+        throw const ErrorVeraGo('Falta actualizar la base de datos (correr el SQL más reciente en '
+            'Supabase). Avisa a los desarrolladores.');
+      }
+      throw const ErrorVeraGo('No pudimos completar la operación. Intenta de nuevo.');
     } catch (_) {
       throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
     }
