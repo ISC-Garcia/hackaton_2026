@@ -6,6 +6,7 @@ import '../services/negocios_service.dart';
 import '../services/validaciones.dart';
 import '../widgets/editor_costo_entrada.dart';
 import '../widgets/editor_horario.dart';
+import '../widgets/foto_lugar.dart';
 
 /// EDITAR MIS DATOS (comerciante).
 ///
@@ -88,6 +89,9 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
             const Text('El nombre comercial solo lo cambia el equipo de VeraGo.',
                 style: TextStyle(fontSize: 12)),
             const SizedBox(height: 16),
+            // La foto se guarda en cuanto se elige (no espera a "Guardar cambios").
+            EditorFoto(lugar: widget.negocio, alGuardar: _servicio.guardarMiFoto),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _descripcion,
               maxLength: 160,

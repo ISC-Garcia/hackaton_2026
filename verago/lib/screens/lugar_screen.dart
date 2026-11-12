@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/lugar.dart';
 import '../services/distancia.dart';
 import '../theme/app_theme.dart';
-import '../widgets/categoria_estilo.dart';
 import '../widgets/etiqueta.dart';
+import '../widgets/foto_lugar.dart';
 import '../widgets/mapa_lugares.dart';
 import '../widgets/reportar_problema.dart';
 import '../widgets/tarjeta_lugar.dart';
@@ -55,7 +55,6 @@ class LugarScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final estilo = CategoriaEstilo.de(lugar.categoriaClave);
     final cercanos = _comerciosCercanos();
     final delPunto = lugar.esPunto ? _comerciantesDelPunto() : <Lugar>[];
     final miPunto = lugar.esInformal ? _miPunto : null;
@@ -66,15 +65,11 @@ class LugarScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
-          // Encabezado: en lugar de foto, bloque de color de la categoría.
-          Container(
-            height: 140,
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: estilo.color.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(estilo.icono, size: 64, color: estilo.color),
+          // Encabezado: la foto del lugar (SQL 018); sin foto, bloque de color
+          // con el ícono de la categoría.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: FotoLugar(lugar: lugar, ancho: double.infinity, alto: lugar.fotoUrl == null ? 140 : 200, radio: 20),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),

@@ -89,7 +89,12 @@ class Lugar {
     this.costoEntradaMxn,
     this.productos = const [],
     this.promocion,
+    this.fotoUrl,
   });
+
+  /// FOTO PRINCIPAL (SQL 018): URL pública en Supabase Storage, o null
+  /// (sin foto se muestra el color y el ícono de la categoría).
+  final String? fotoUrl;
 
   /// VITRINA DIGITAL (SQL 015): productos o servicios y promoción vigente.
   final List<ProductoVitrina> productos;
@@ -223,6 +228,7 @@ class Lugar {
           if (p is Map<String, dynamic>) ProductoVitrina.fromJson(p),
       ],
       promocion: json['promocion'] as String?,
+      fotoUrl: json['foto_url'] as String?,
       cambioSolicitadoEn: json['cambio_solicitado_en'] == null
           ? null
           : DateTime.parse(json['cambio_solicitado_en'] as String).toLocal(),

@@ -8,6 +8,7 @@ import '../theme/app_theme.dart';
 import '../widgets/editor_costo_entrada.dart';
 import '../widgets/editor_horario.dart';
 import '../widgets/estado_vacio.dart';
+import '../widgets/foto_lugar.dart';
 import '../widgets/mapa_lugares.dart';
 import '../widgets/selector_ubicacion.dart';
 
@@ -247,6 +248,9 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
               : 'Formal · Local propio · ${n.categoriaNombre} (da sellos)'),
           Text('Estado: $estado', style: const TextStyle(fontWeight: FontWeight.w600)),
           const Divider(height: 28),
+          // El admin puede poner, cambiar o quitar la foto (ej. si no corresponde).
+          EditorFoto(lugar: n, alGuardar: (url) => _servicio.guardarFoto(n.id, url)),
+          const SizedBox(height: 16),
           _Dato('Encargado', n.duenoNombre ?? '—'),
           _Dato('Teléfono', n.telefono ?? '—'),
           _Dato('Descripción', n.descripcion ?? '—'),

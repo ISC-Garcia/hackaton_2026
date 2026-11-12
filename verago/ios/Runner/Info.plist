@@ -9,7 +9,9 @@
 	<key>CFBundleDisplayName</key>
 	<string>VeraGo</string>
 	<key>NSCameraUsageDescription</key>
-	<string>VeraGo usa la cámara para escanear el código QR de los comercios y darte tu sello.</string>
+	<string>VeraGo usa la cámara para escanear el QR de los negocios y, si eres comerciante o administrador, para tomar la foto de un lugar.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>VeraGo usa tu galería solo si eliges una foto para un lugar (comerciantes y administradores).</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>VeraGo usa tu ubicación para mostrarte dónde estás en el mapa y empezar tu ruta desde ahí. No la guardamos.</string>
 	<key>CFBundleExecutable</key>

@@ -102,6 +102,10 @@ class AdminService {
         }).eq('id', id));
   }
 
+  /// El admin pone, cambia o quita (null) la foto de cualquier lugar.
+  Future<void> guardarFoto(String id, String? url) =>
+      _escribir(() => _db.from('lugares').update({'foto_url': url}).eq('id', id));
+
   /// El admin pone o corrige el costo de entrada de un negocio formal.
   Future<void> guardarCostoEntrada(String id, int? costo) =>
       _escribir(() => _db.from('lugares').update({'costo_entrada_mxn': costo}).eq('id', id));

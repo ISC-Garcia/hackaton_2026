@@ -226,7 +226,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
           ? FloatingActionButton.extended(
               heroTag: 'guia-ia',
               onPressed: () => _abrirGuia(cargados),
-              icon: const Icon(Icons.auto_awesome),
+              icon: const Icon(Icons.support_agent),
               label: const Text('Pregúntale a VeraGo'),
             )
           : null,

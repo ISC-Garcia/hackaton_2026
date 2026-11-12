@@ -202,8 +202,8 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
           icono: Icons.edit_outlined,
           titulo: 'Editar mis datos',
           texto: n.esFormal
-              ? 'Descripción, teléfono y horario.'
-              : 'Descripción y teléfono. Tu horario lo asigna VeraGo en tu punto.',
+              ? 'Foto, descripción, teléfono, horario y costo de entrada.'
+              : 'Foto, descripción y teléfono. Tu horario lo asigna VeraGo en tu punto.',
           alTocar: () => _editar(n),
         ),
         if (n.tieneCambioPendiente)

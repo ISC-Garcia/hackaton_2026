@@ -3,8 +3,8 @@ import 'package:latlong2/latlong.dart';
 
 import '../models/lugar.dart';
 import '../services/distancia.dart';
-import 'categoria_estilo.dart';
 import 'etiqueta.dart';
+import 'foto_lugar.dart';
 
 /// Tarjeta de un lugar para listas: ícono de categoría, nombre,
 /// distancia caminando y etiquetas (abierto, pasaporte, ficticio).
@@ -24,7 +24,6 @@ class TarjetaLugar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final estilo = CategoriaEstilo.de(lugar.categoriaClave);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       clipBehavior: Clip.antiAlias,
@@ -35,16 +34,8 @@ class TarjetaLugar extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // En lugar de foto: bloque de color con el ícono de la categoría.
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: estilo.color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(estilo.icono, color: estilo.color, size: 28),
-              ),
+              // Foto del lugar; si no tiene, bloque de color con su ícono.
+              FotoLugar(lugar: lugar, ancho: 56, alto: 56),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

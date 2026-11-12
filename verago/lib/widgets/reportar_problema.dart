@@ -15,6 +15,7 @@ class ReportarProblema {
     'La ubicación está mal',
     'El horario está mal o está cerrado',
     'La información es falsa o engañosa',
+    'La foto no corresponde o es inapropiada',
     'El QR no funciona',
     'Otro',
   ];

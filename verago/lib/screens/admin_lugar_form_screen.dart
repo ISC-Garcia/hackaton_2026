@@ -9,6 +9,7 @@ import '../services/validaciones.dart';
 import '../widgets/editor_costo_entrada.dart';
 import '../widgets/editor_horario.dart';
 import '../widgets/estado_vacio.dart';
+import '../widgets/foto_lugar.dart';
 import '../widgets/selector_ubicacion.dart';
 
 /// FORMULARIO DE LUGAR o PUNTO VERAGO (admin): crear o editar.
@@ -143,6 +144,15 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
         children: [
+          // Foto: necesita el id del lugar (su carpeta), así que solo al editar.
+          if (widget.lugar case final l?) ...[
+            EditorFoto(lugar: l, alGuardar: (url) => _servicio.guardarFoto(l.id, url)),
+            const SizedBox(height: 16),
+          ] else
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text('Guarda el lugar primero; después podrás ponerle foto.', style: TextStyle(fontSize: 12)),
+            ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Es un Punto VeraGo'),

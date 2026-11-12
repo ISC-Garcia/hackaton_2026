@@ -111,7 +111,7 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
       appBar: AppBar(title: const Text('Pregúntale a VeraGo')),
       body: !Config.chatConfigurado && widget.servicio == null
           ? const EstadoVacio(
-              icono: Icons.auto_awesome,
+              icono: Icons.support_agent,
               titulo: 'Falta configurar la guía',
               mensaje: 'Los desarrolladores deben agregar GEMINI_API_KEY en env.json y volver a correr la app.',
             )

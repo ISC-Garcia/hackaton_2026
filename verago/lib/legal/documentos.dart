@@ -31,7 +31,7 @@ class DocumentoLegal {
   final List<SeccionDocumento> secciones;
 
   /// Cambiar al modificar cualquier documento.
-  static const version = 'Versión 6 · 12 de noviembre de 2026';
+  static const version = 'Versión 7 · 12 de noviembre de 2026';
 }
 
 class Documentos {
@@ -137,7 +137,7 @@ class Documentos {
         '• Tus sellos: qué negocio visitaste y la fecha y hora en que escaneaste su QR.',
         'Negocios:',
         '• Del negocio: nombre comercial, descripción, teléfono, dirección, ubicación en el mapa, '
-            'categoría o giro, horario y costo de entrada. Estos datos SÍ se muestran a los turistas.',
+            'categoría o giro, horario, costo de entrada y foto. Estos datos SÍ se muestran a los turistas.',
         '• Del encargado: nombre completo y correo. El nombre solo lo ve el equipo de VeraGo.',
       ]),
       SeccionDocumento('3. Datos que NO pedimos ni guardamos', [
@@ -250,7 +250,8 @@ class Documentos {
         '• No te des sellos a ti mismo ni a cuentas de tu negocio.',
       ]),
       SeccionDocumento('6. Contenido', [
-        'La descripción y la vitrina no pueden ser ofensivas, engañosas ni anunciar productos ilegales. '
+        'La foto debe ser propia y del negocio, sin personas reconocibles sin su permiso. '
+            'La descripción, la foto y la vitrina no pueden ser ofensivas, engañosas ni anunciar productos ilegales. '
             'Los precios deben ser reales y las promociones, vigentes; VeraGo puede quitar lo que no cumpla.',
       ]),
       SeccionDocumento('7. Responsabilidad del negocio', [

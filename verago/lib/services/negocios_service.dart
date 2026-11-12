@@ -227,6 +227,13 @@ class NegociosService {
     throw const ErrorVeraGo('No pudimos guardar tu vitrina. Intenta de nuevo.');
   }
 
+  /// FOTO de mi negocio (SQL 018): guarda la URL que subió `FotosService`,
+  /// o null para quitarla. La función solo acepta fotos de MI carpeta.
+  Future<void> guardarMiFoto(String? url) async {
+    final r = await _rpc('guardar_mi_foto', {'p_url': url});
+    if (r['estado'] != 'OK') throw const ErrorVeraGo('No pudimos guardar la foto de tu negocio.');
+  }
+
   /// Retira la solicitud de cambio de ubicación pendiente.
   Future<void> cancelarCambioUbicacion() async {
     final r = await _rpc('cancelar_cambio_ubicacion', {});
