@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
+
 /// Logo de VeraGo (archivo assets/logo.png, registrado en pubspec.yaml).
 ///
 /// Se usa en la bienvenida y en el registro de negocios. `semanticLabel`
@@ -15,7 +17,7 @@ class VgLogo extends StatelessWidget {
       'assets/logo.png',
       height: altura,
       fit: BoxFit.contain,
-      semanticLabel: 'Logo de VeraGo',
+      semanticLabel: tr('Logo de VeraGo'),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/error_verago.dart';
 import '../services/fotos_service.dart';
@@ -37,7 +38,7 @@ class FotoLugar extends StatelessWidget {
         width: ancho,
         height: alto,
         fit: BoxFit.cover, // llena el espacio recortando los bordes
-        semanticLabel: 'Foto de ${lugar.nombre}',
+        semanticLabel: tr('Foto de {nombre}', {'nombre': lugar.nombre}),
         loadingBuilder: (_, hijo, progreso) => progreso == null ? hijo : respaldo,
         errorBuilder: (_, _, _) => respaldo,
       ),
@@ -74,7 +75,7 @@ class _EditorFotoState extends State<EditorFoto> {
       final anterior = _url;
       if (mounted) setState(() => _url = nueva);
       await _fotos.borrarArchivo(anterior); // no dejar fotos viejas guardadas
-      _aviso('Foto guardada.');
+      _aviso(tr('Foto guardada.'));
     } on ErrorVeraGo catch (e) {
       _aviso(e.mensaje);
     } finally {
@@ -89,7 +90,7 @@ class _EditorFotoState extends State<EditorFoto> {
       final anterior = _url;
       if (mounted) setState(() => _url = null);
       await _fotos.borrarArchivo(anterior);
-      _aviso('Foto quitada.');
+      _aviso(tr('Foto quitada.'));
     } on ErrorVeraGo catch (e) {
       _aviso(e.mensaje);
     } finally {
@@ -124,7 +125,7 @@ class _EditorFotoState extends State<EditorFoto> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Foto', style: Theme.of(context).textTheme.titleMedium),
+        Text(tr('Foto'), style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         Stack(
           alignment: Alignment.center,
@@ -141,24 +142,24 @@ class _EditorFotoState extends State<EditorFoto> {
             OutlinedButton.icon(
               onPressed: _trabajando ? null : () => _cambiar(camara: false),
               icon: const Icon(Icons.photo_library_outlined),
-              label: Text(_url == null ? 'Elegir foto' : 'Cambiar foto'),
+              label: Text(_url == null ? tr('Elegir foto') : tr('Cambiar foto')),
             ),
             OutlinedButton.icon(
               onPressed: _trabajando ? null : () => _cambiar(camara: true),
               icon: const Icon(Icons.photo_camera_outlined),
-              label: const Text('Tomar foto'),
+              label: Text(tr('Tomar foto')),
             ),
             if (_url != null)
               TextButton.icon(
                 onPressed: _trabajando ? null : _quitar,
                 style: TextButton.styleFrom(foregroundColor: const Color(0xFF9B2C2C)),
                 icon: const Icon(Icons.delete_outline),
-                label: const Text('Quitar'),
+                label: Text(tr('Quitar')),
               ),
           ],
         ),
         const SizedBox(height: 4),
-        const Text('Usa una foto propia del lugar (sin personas reconocibles). Se ve en la app al instante.',
+        Text(tr('Usa una foto propia del lugar (sin personas reconocibles). Se ve en la app al instante.'),
             style: TextStyle(fontSize: 12)),
       ],
     );

@@ -257,7 +257,7 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
                 if (mounted) _recargar();
               },
               icon: const Icon(Icons.storefront_outlined),
-              label: const Text('Panel de mi negocio'),
+              label: Text(tr('Panel de mi negocio')),
             ),
           ] else ...[
             const SizedBox(height: 8),
@@ -269,7 +269,7 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
               onPressed: () => Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => const AdminScreen())),
               icon: const Icon(Icons.admin_panel_settings_outlined),
-              label: const Text('Panel de administración'),
+              label: Text(tr('Panel de administración')),
             ),
           ],
           const SizedBox(height: 24),

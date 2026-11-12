@@ -1,3 +1,4 @@
+import '../i18n/idioma.dart';
 import 'dart:math';
 
 import 'package:latlong2/latlong.dart';
@@ -36,7 +37,7 @@ class Distancia {
   /// Texto corto para mostrar, por ejemplo "A 5 min a pie".
   static String texto(LatLng a, LatLng b) {
     final min = minutosCaminando(a, b);
-    return min <= 1 ? 'A 1 min a pie' : 'A $min min a pie';
+    return min <= 1 ? tr('A 1 min a pie') : tr('A {min} min a pie', {'min': min});
   }
 
   static double _rad(double grados) => grados * pi / 180;

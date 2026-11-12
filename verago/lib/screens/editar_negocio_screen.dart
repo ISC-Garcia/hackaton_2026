@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/error_verago.dart';
 import '../services/negocios_service.dart';
@@ -47,7 +48,7 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
 
   Future<void> _guardar() async {
     if (!_formulario.currentState!.validate()) {
-      _mensaje('Faltan datos importantes: revisa lo marcado en rojo.');
+      _mensaje(tr('Faltan datos importantes: revisa lo marcado en rojo.'));
       return;
     }
     final errorHorario = EditorHorario.validar(_horario);
@@ -82,14 +83,14 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
   Widget build(BuildContext context) {
     final formal = widget.negocio.esFormal;
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar mis datos')),
+      appBar: AppBar(title: Text(tr('Editar mis datos'))),
       body: Form(
         key: _formulario,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
           children: [
             Text(widget.negocio.nombre, style: Theme.of(context).textTheme.titleLarge),
-            const Text('El nombre comercial solo lo cambia el equipo de VeraGo.',
+            Text(tr('El nombre comercial solo lo cambia el equipo de VeraGo.'),
                 style: TextStyle(fontSize: 12)),
             const SizedBox(height: 16),
             // La foto se guarda en cuanto se elige (no espera a "Guardar cambios").
@@ -99,8 +100,8 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
               controller: _descripcion,
               maxLength: 160,
               maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Descripción breve', border: OutlineInputBorder()),
-              validator: Validaciones.textoConLetras('una descripción'),
+              decoration: InputDecoration(labelText: tr('Descripción breve'), border: OutlineInputBorder()),
+              validator: Validaciones.textoConLetras(tr('una descripción')),
             ),
             const SizedBox(height: 8),
             TextFormField(
@@ -108,8 +109,8 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
               keyboardType: TextInputType.phone,
               maxLength: 10,
               inputFormatters: Validaciones.soloDiezDigitos,
-              decoration: const InputDecoration(
-                  labelText: 'Teléfono de contacto (10 números)', border: OutlineInputBorder()),
+              decoration: InputDecoration(
+                  labelText: tr('Teléfono de contacto (10 números)'), border: OutlineInputBorder()),
               validator: Validaciones.telefono,
             ),
             if (formal) ...[
@@ -118,8 +119,7 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.place_outlined),
                 title: Text(widget.negocio.direccion ?? '—'),
-                subtitle: const Text('Para cambiar tu ubicación o dirección usa "Cambiar ubicación" '
-                    'en tu panel (VeraGo la revisa).'),
+                subtitle: Text(tr('Para cambiar tu ubicación o dirección usa "Cambiar ubicación" en tu panel (VeraGo la revisa).')),
               ),
               const SizedBox(height: 12),
               EditorCostoEntrada(
@@ -128,17 +128,17 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
                 alCambiar: (v) => _costo = v,
               ),
               const SizedBox(height: 20),
-              Text('Horario', style: Theme.of(context).textTheme.titleLarge),
+              Text(tr('Horario'), style: Theme.of(context).textTheme.titleLarge),
               EditorHorario(horario: _horario, alCambiar: () => setState(() {})),
             ] else
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 16),
-                child: Text('Tu horario lo asigna el equipo de VeraGo en tu Punto VeraGo.'),
+                child: Text(tr('Tu horario lo asigna el equipo de VeraGo en tu Punto VeraGo.')),
               ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _guardando ? null : _guardar,
-              child: Text(_guardando ? 'Guardando…' : 'Guardar cambios'),
+              child: Text(_guardando ? tr('Guardando…') : tr('Guardar cambios')),
             ),
           ],
         ),

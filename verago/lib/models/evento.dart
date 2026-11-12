@@ -1,3 +1,5 @@
+import '../i18n/idioma.dart';
+
 /// MODELO: un evento de la agenda cultural (tabla `eventos`).
 class Evento {
   const Evento({
@@ -22,9 +24,9 @@ class Evento {
   /// - Con precio → "≈ $150 MXN"
   /// - Con costo pero sin precio cargado → "Con costo"
   String get textoCosto {
-    if (esGratuito) return 'Gratuito';
+    if (esGratuito) return tr('Gratuito');
     final costo = costoAproxMxn;
-    return costo == null ? 'Con costo' : '≈ \$$costo MXN';
+    return costo == null ? tr('Con costo') : tr('≈ \${costo} MXN', {'costo': costo});
   }
 
   final String id;

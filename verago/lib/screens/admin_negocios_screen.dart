@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/admin_service.dart';
 import '../services/error_verago.dart';
@@ -58,7 +59,7 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Negocios')),
+      appBar: AppBar(title: Text(tr('Negocios'))),
       body: FutureBuilder<List<Lugar>>(
         future: _futuro,
         builder: (context, snapshot) {
@@ -68,9 +69,9 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
           if (snapshot.hasError) {
             return EstadoVacio(
               icono: Icons.wifi_off,
-              titulo: 'Algo salió mal',
+              titulo: tr('Algo salió mal'),
               mensaje: snapshot.error.toString(),
-              textoBoton: 'Reintentar',
+              textoBoton: tr('Reintentar'),
               alPresionar: _recargar,
             );
           }
@@ -89,10 +90,10 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
                   runSpacing: 4,
                   children: [
                     for (final f in {
-                      'pendiente': 'Pendientes ($pendientes)',
-                      'cambio': 'Cambios de ubicación ($cambios)',
-                      'aprobado': 'Aprobados',
-                      'otros': 'Rechazados y suspendidos',
+                      'pendiente': tr('Pendientes ({pendientes})', {'pendientes': pendientes}),
+                      'cambio': tr('Cambios de ubicación ({cambios})', {'cambios': cambios}),
+                      'aprobado': tr('Aprobados'),
+                      'otros': tr('Rechazados y suspendidos'),
                     }.entries)
                       ChoiceChip(
                         label: Text(f.value),
@@ -107,10 +108,10 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
                 child: Wrap(
                   spacing: 8,
                   children: [
-                    for (final t in const {
-                      'todos': 'Todos',
-                      'formal': 'Formales',
-                      'informal': 'No formales',
+                    for (final t in {
+                      'todos': tr('Todos'),
+                      'formal': tr('Formales'),
+                      'informal': tr('No formales'),
                     }.entries)
                       ChoiceChip(
                         label: Text(t.value),
@@ -122,10 +123,10 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
               ),
               Expanded(
                 child: visibles.isEmpty
-                    ? const EstadoVacio(
+                    ? EstadoVacio(
                         icono: Icons.inbox_outlined,
-                        titulo: 'Nada por aquí',
-                        mensaje: 'No hay negocios en esta lista.',
+                        titulo: tr('Nada por aquí'),
+                        mensaje: tr('No hay negocios en esta lista.'),
                       )
                     : ListView(
                         padding: const EdgeInsets.only(bottom: 16),
@@ -136,9 +137,9 @@ class _AdminNegociosScreenState extends State<AdminNegociosScreen> {
                               child: ListTile(
                                 title: Text(n.nombre, style: const TextStyle(fontWeight: FontWeight.w700)),
                                 subtitle: Text(
-                                  '${n.esInformal ? 'No formal · Punto VeraGo · ${n.giroNombre ?? ''}' : 'Formal · Local propio · ${n.categoriaNombre}'}'
-                                  '\nEstado: ${n.estadoAprobacion}'
-                                  '${n.tieneCambioPendiente ? ' · cambio de ubicación pendiente' : ''}',
+                                  '${n.esInformal ? tr('No formal · Punto VeraGo · {giro}', {'giro': tr(n.giroNombre ?? '')}) : tr('Formal · Local propio · {categoria}', {'categoria': tr(n.categoriaNombre)})}'
+                                  '\n${tr('Estado: {estado}', {'estado': tr(n.estadoAprobacion)})}'
+                                  '${n.tieneCambioPendiente ? tr(' · cambio de ubicación pendiente') : ''}',
                                 ),
                                 isThreeLine: true,
                                 trailing: const Icon(Icons.chevron_right),
@@ -211,12 +212,12 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
 
   Future<void> _guardarCosto() async {
     if (!_formCosto.currentState!.validate()) return;
-    await _ejecutar(() => _servicio.guardarCostoEntrada(n.id, _costo), 'Costo de entrada guardado.');
+    await _ejecutar(() => _servicio.guardarCostoEntrada(n.id, _costo), tr('Costo de entrada guardado.'));
   }
 
   Future<void> _resolverCambio({required bool aceptar}) => _ejecutar(
         () => _servicio.resolverCambioUbicacion(n.id, aceptar: aceptar),
-        aceptar ? 'Cambio de ubicación aceptado.' : 'Cambio de ubicación rechazado.',
+        aceptar ? tr('Cambio de ubicación aceptado.') : tr('Cambio de ubicación rechazado.'),
       );
 
   Future<void> _cambiarEstado(String estado, String hecho) =>
@@ -230,7 +231,7 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
     }
     await _ejecutar(
       () => _servicio.guardarHorario(n.id, _horario.whereType<Horario>().toList()),
-      'Horario guardado.',
+      tr('Horario guardado.'),
     );
   }
 
@@ -238,25 +239,25 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
   Widget build(BuildContext context) {
     final estado = n.estadoAprobacion;
     return Scaffold(
-      appBar: AppBar(title: const Text('Solicitud')),
+      appBar: AppBar(title: Text(tr('Solicitud'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
         children: [
           Text(n.nombre, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 4),
           Text(n.esInformal
-              ? 'No formal · Punto VeraGo · Giro: ${n.giroNombre ?? '—'} (no da sellos)'
-              : 'Formal · Local propio · ${n.categoriaNombre} (da sellos)'),
-          Text('Estado: $estado', style: const TextStyle(fontWeight: FontWeight.w600)),
+              ? tr('No formal · Punto VeraGo · Giro: {giro} (no da sellos)', {'giro': tr(n.giroNombre ?? '—')})
+              : tr('Formal · Local propio · {categoriaNombre} (da sellos)', {'categoriaNombre': tr(n.categoriaNombre)})),
+          Text(tr('Estado: {estado}', {'estado': tr(estado)}), style: const TextStyle(fontWeight: FontWeight.w600)),
           const Divider(height: 28),
           // El admin puede poner, cambiar o quitar la foto (ej. si no corresponde).
           EditorFoto(lugar: n, alGuardar: (url) => _servicio.guardarFoto(n.id, url)),
           const SizedBox(height: 16),
-          _Dato('Encargado', n.duenoNombre ?? '—'),
-          _Dato('Teléfono', n.telefono ?? '—'),
-          _Dato('Descripción', n.descripcion ?? '—'),
+          _Dato(tr('Encargado'), n.duenoNombre ?? '—'),
+          _Dato(tr('Teléfono'), n.telefono ?? '—'),
+          _Dato(tr('Descripción'), n.descripcion ?? '—'),
           const SizedBox(height: 12),
-          Text('Ubicación', style: Theme.of(context).textTheme.titleLarge),
+          Text(tr('Ubicación'), style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
@@ -266,38 +267,38 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          _Dato('Dirección escrita', n.direccion ?? '—'),
+          _Dato(tr('Dirección escrita'), n.direccion ?? '—'),
           if (n.esFormal)
             FutureBuilder<String?>(
               future: _direccionMapa,
               builder: (_, s) => _Dato(
-                'Según el mapa',
+                tr('Según el mapa'),
                 s.connectionState != ConnectionState.done
-                    ? 'Buscando…'
-                    : (s.data ?? 'No disponible (sin conexión con OpenStreetMap)'),
+                    ? tr('Buscando…')
+                    : (s.data ?? tr('No disponible (sin conexión con OpenStreetMap)')),
               ),
             ),
           if (n.esFormal)
-            const Text('Revisa que ambas direcciones coincidan antes de aprobar.',
+            Text(tr('Revisa que ambas direcciones coincidan antes de aprobar.'),
                 style: TextStyle(fontSize: 12, color: VgColores.terracota)),
           if (n.puntoSolicitado case final nuevo?) ...[
             const Divider(height: 28),
-            Text('Cambio de ubicación solicitado', style: Theme.of(context).textTheme.titleLarge),
+            Text(tr('Cambio de ubicación solicitado'), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 4),
-            const Text('Mientras no lo aceptes, el negocio sigue en su ubicación actual (mapa de arriba).',
+            Text(tr('Mientras no lo aceptes, el negocio sigue en su ubicación actual (mapa de arriba).'),
                 style: TextStyle(fontSize: 12)),
             const SizedBox(height: 8),
             SelectorUbicacion(valor: nuevo, alCambiar: (_) {}),
             const SizedBox(height: 8),
-            _Dato(n.esInformal ? 'Nuevo Punto VeraGo' : 'Nueva dirección escrita', n.cambioDireccion ?? '—'),
+            _Dato(n.esInformal ? tr('Nuevo Punto VeraGo') : tr('Nueva dirección escrita'), n.cambioDireccion ?? '—'),
             if (n.esFormal)
               FutureBuilder<String?>(
                 future: _direccionNueva,
                 builder: (_, s) => _Dato(
-                  'Según el mapa',
+                  tr('Según el mapa'),
                   s.connectionState != ConnectionState.done
-                      ? 'Buscando…'
-                      : (s.data ?? 'No disponible (sin conexión con OpenStreetMap)'),
+                      ? tr('Buscando…')
+                      : (s.data ?? tr('No disponible (sin conexión con OpenStreetMap)')),
                 ),
               ),
             const SizedBox(height: 8),
@@ -306,22 +307,22 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _trabajando ? null : () => _resolverCambio(aceptar: false),
-                    child: const Text('Rechazar cambio'),
+                    child: Text(tr('Rechazar cambio')),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: FilledButton(
                     onPressed: _trabajando ? null : () => _resolverCambio(aceptar: true),
-                    child: const Text('Aceptar cambio'),
+                    child: Text(tr('Aceptar cambio')),
                   ),
                 ),
               ],
             ),
             if (n.esInformal)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 6),
-                child: Text('Al aceptar, el negocio toma el horario del punto nuevo.', style: TextStyle(fontSize: 12)),
+                child: Text(tr('Al aceptar, el negocio toma el horario del punto nuevo.'), style: TextStyle(fontSize: 12)),
               ),
           ],
           if (n.esFormal) ...[
@@ -332,36 +333,36 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
             ),
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(onPressed: _trabajando ? null : _guardarCosto, child: const Text('Guardar costo')),
+              child: TextButton(onPressed: _trabajando ? null : _guardarCosto, child: Text(tr('Guardar costo'))),
             ),
           ],
           const Divider(height: 28),
-          Text('Horario', style: Theme.of(context).textTheme.titleLarge),
+          Text(tr('Horario'), style: Theme.of(context).textTheme.titleLarge),
           EditorHorario(horario: _horario, alCambiar: () => setState(() {})),
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton(onPressed: _trabajando ? null : _guardarHorario, child: const Text('Guardar horario')),
+            child: TextButton(onPressed: _trabajando ? null : _guardarHorario, child: Text(tr('Guardar horario'))),
           ),
           const Divider(height: 28),
           if (estado != 'aprobado')
             FilledButton.icon(
-              onPressed: _trabajando ? null : () => _cambiarEstado('aprobado', 'Negocio aprobado.'),
+              onPressed: _trabajando ? null : () => _cambiarEstado('aprobado', tr('Negocio aprobado.')),
               icon: const Icon(Icons.check),
-              label: Text(estado == 'pendiente' ? 'Aprobar' : 'Reactivar (aprobar)'),
+              label: Text(estado == 'pendiente' ? tr('Aprobar') : tr('Reactivar (aprobar)')),
             ),
           if (estado == 'pendiente') ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
-              onPressed: _trabajando ? null : () => _cambiarEstado('rechazado', 'Solicitud rechazada.'),
+              onPressed: _trabajando ? null : () => _cambiarEstado('rechazado', tr('Solicitud rechazada.')),
               icon: const Icon(Icons.close),
-              label: const Text('Rechazar'),
+              label: Text(tr('Rechazar')),
             ),
           ],
           if (estado == 'aprobado')
             OutlinedButton.icon(
-              onPressed: _trabajando ? null : () => _cambiarEstado('suspendido', 'Negocio suspendido.'),
+              onPressed: _trabajando ? null : () => _cambiarEstado('suspendido', tr('Negocio suspendido.')),
               icon: const Icon(Icons.pause),
-              label: const Text('Suspender'),
+              label: Text(tr('Suspender')),
             ),
           const SizedBox(height: 8),
           TextButton.icon(
@@ -378,12 +379,11 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
                   },
             style: TextButton.styleFrom(foregroundColor: const Color(0xFF9B2C2C)),
             icon: const Icon(Icons.delete_outline),
-            label: const Text('Eliminar negocio'),
+            label: Text(tr('Eliminar negocio')),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Aprobar = aparece en la app (y da sellos solo si es formal). Recuerda avisar al comerciante '
-            '(por teléfono o correo): la app no envía notificaciones.',
+          Text(
+            tr('Aprobar = aparece en la app (y da sellos solo si es formal). Recuerda avisar al comerciante (por teléfono o correo): la app no envía notificaciones.'),
             style: TextStyle(fontSize: 12),
           ),
         ],

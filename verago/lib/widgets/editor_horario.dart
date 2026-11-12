@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 
 /// Editor de horario semanal: una fila por día con un interruptor
@@ -22,7 +23,7 @@ class EditorHorario extends StatelessWidget {
   /// Revisa que en cada día abierto la hora de cierre sea después de la de apertura.
   static String? validar(List<Horario?> horario) =>
       horario.whereType<Horario>().any((h) => h.cierra <= h.abre)
-          ? 'En cada día, la hora de cierre debe ser después de la de apertura.'
+          ? tr('En cada día, la hora de cierre debe ser después de la de apertura.')
           : null;
 
   Future<void> _elegirHora(BuildContext context, int dia, {required bool apertura}) async {
@@ -49,7 +50,7 @@ class EditorHorario extends StatelessWidget {
         for (var d = 0; d < 7; d++)
           Row(
             children: [
-              SizedBox(width: 92, child: Text(dias[d])),
+              SizedBox(width: 92, child: Text(tr(dias[d]))),
               Switch(
                 value: horario[d] != null,
                 onChanged: (abierto) {
@@ -58,7 +59,7 @@ class EditorHorario extends StatelessWidget {
                 },
               ),
               if (horario[d] == null)
-                const Text('Cerrado')
+                Text(tr('Cerrado'))
               else ...[
                 TextButton(
                   onPressed: () => _elegirHora(context, d, apertura: true),

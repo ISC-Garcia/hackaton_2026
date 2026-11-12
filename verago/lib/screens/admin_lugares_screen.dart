@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/admin_service.dart';
 import '../widgets/categoria_estilo.dart';
@@ -40,11 +41,11 @@ class _AdminLugaresScreenState extends State<AdminLugaresScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Lugares y Puntos')),
+      appBar: AppBar(title: Text(tr('Lugares y Puntos'))),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrir(),
         icon: const Icon(Icons.add_location_alt_outlined),
-        label: const Text('Nuevo lugar'),
+        label: Text(tr('Nuevo lugar')),
       ),
       body: FutureBuilder<List<Lugar>>(
         future: _futuro,
@@ -55,9 +56,9 @@ class _AdminLugaresScreenState extends State<AdminLugaresScreen> {
           if (snapshot.hasError) {
             return EstadoVacio(
               icono: Icons.wifi_off,
-              titulo: 'Algo salió mal',
+              titulo: tr('Algo salió mal'),
               mensaje: snapshot.error.toString(),
-              textoBoton: 'Reintentar',
+              textoBoton: tr('Reintentar'),
               alPresionar: _recargar,
             );
           }
@@ -67,9 +68,9 @@ class _AdminLugaresScreenState extends State<AdminLugaresScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(value: false, label: Text('Todos')),
-                    ButtonSegment(value: true, label: Text('Puntos VeraGo')),
+                  segments: [
+                    ButtonSegment(value: false, label: Text(tr('Todos'))),
+                    ButtonSegment(value: true, label: Text(tr('Puntos VeraGo'))),
                   ],
                   selected: {_soloPuntos},
                   onSelectionChanged: (s) => setState(() => _soloPuntos = s.first),
@@ -90,7 +91,7 @@ class _AdminLugaresScreenState extends State<AdminLugaresScreen> {
                             spacing: 6,
                             runSpacing: 4,
                             children: [
-                              Text(l.categoriaNombre),
+                              Text(tr(l.categoriaNombre)),
                               if (!l.publicado) const Etiqueta('Oculto', color: Color(0xFF6B6B6B)),
                             ],
                           ),

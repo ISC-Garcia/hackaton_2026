@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../i18n/idioma.dart';
 import '../services/distancia.dart';
 import '../services/municipio_veracruz.dart';
 import '../theme/app_theme.dart';
@@ -30,7 +31,7 @@ class SelectorUbicacion extends StatelessWidget {
     if (!MunicipioVeracruz.contiene(punto)) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text(fueraDelMunicipio)));
+        ..showSnackBar(SnackBar(content: Text(tr(fueraDelMunicipio))));
       return;
     }
     alCambiar(punto);

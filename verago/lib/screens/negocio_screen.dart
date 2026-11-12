@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:latlong2/latlong.dart';
 
+import '../i18n/idioma.dart';
 import '../config.dart';
 import '../legal/documentos.dart';
 import '../models/lugar.dart';
@@ -11,6 +12,7 @@ import '../services/geocodificacion_service.dart';
 import '../services/negocios_service.dart';
 import '../services/validaciones.dart';
 import '../theme/app_theme.dart';
+import '../widgets/direccion_del_mapa.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/selector_ubicacion.dart';
 import '../widgets/vg_logo.dart';
@@ -139,16 +141,18 @@ class _NegocioScreenState extends State<NegocioScreen> {
       final ocupados = await _servicio.girosOcupados(id);
       if (mounted) setState(() => _ocupados = ocupados);
     } on ErrorVeraGo catch (e) {
-      _aviso('Aviso', e.mensaje);
+      _aviso(tr('Aviso'), e.mensaje);
     }
   }
 
   /// Al tocar el mapa: guarda el punto y pide su dirección a OpenStreetMap.
+  /// La dirección NO se escribe: sale del punto (ver DireccionDelMapa).
   Future<void> _alTocarMapa(LatLng punto) async {
     setState(() {
       _ubicacion = punto;
       _faltaUbicacion = false;
       _buscandoDireccion = true;
+      _direccion.clear(); // la anterior ya no corresponde al punto nuevo
     });
     final direccion = await GeocodificacionService().direccionDe(punto);
     if (!mounted || _ubicacion != punto) return; // tocó otro punto mientras tanto
@@ -156,11 +160,6 @@ class _NegocioScreenState extends State<NegocioScreen> {
       _buscandoDireccion = false;
       if (direccion != null) _direccion.text = direccion;
     });
-    if (direccion == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('No pudimos obtener la dirección del mapa. Escríbela tú.'),
-      ));
-    }
   }
 
   Future<void> _registrar() async {
@@ -168,7 +167,7 @@ class _NegocioScreenState extends State<NegocioScreen> {
     setState(() => _faltaUbicacion = _formal && _ubicacion == null);
     if (!formularioOk || _faltaUbicacion) {
       // Formulario largo: avisamos aunque el error quede fuera de la pantalla.
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Faltan datos importantes: revisa lo marcado en rojo.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr('Faltan datos importantes: revisa lo marcado en rojo.'))));
       return;
     }
     // Ventana emergente: aceptar términos antes de enviar (Confirmar / Cancelar).
@@ -199,7 +198,7 @@ class _NegocioScreenState extends State<NegocioScreen> {
         MaterialPageRoute(builder: (_) => const NegocioRegistradoScreen()),
       );
     } on ErrorVeraGo catch (e) {
-      await _aviso('No pudimos registrar tu negocio', e.mensaje);
+      await _aviso(tr('No pudimos registrar tu negocio'), e.mensaje);
       // Si el giro se ocupó mientras llenaba el formulario, refrescamos.
       if (!_formal && _puntoId != null) _elegirPunto(_puntoId);
     } finally {
@@ -214,21 +213,20 @@ class _NegocioScreenState extends State<NegocioScreen> {
       context: context,
       barrierDismissible: false, // hay que elegir Confirmar o Cancelar
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar registro'),
+        title: Text(tr('Confirmar registro')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Vas a registrar "${_nombre.text.trim()}" en VeraGo.'),
+              Text(tr('Vas a registrar "{v}" en VeraGo.', {'v': _nombre.text.trim()})),
               const SizedBox(height: 10),
-              const Text(
-                'Al confirmar, declaras que los datos son verdaderos y aceptas los Términos para '
-                'negocios, las Reglas operativas y el Aviso de privacidad de VeraGo.',
+              Text(
+                tr('Al confirmar, declaras que los datos son verdaderos y aceptas los Términos para negocios, las Reglas operativas y el Aviso de privacidad de VeraGo.'),
               ),
               const SizedBox(height: 10),
-              const Text(
-                'Tu solicitud quedará pendiente hasta que el equipo de VeraGo la revise.',
+              Text(
+                tr('Tu solicitud quedará pendiente hasta que el equipo de VeraGo la revise.'),
                 style: TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 4),
@@ -236,14 +234,14 @@ class _NegocioScreenState extends State<NegocioScreen> {
                 TextButton(
                   style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
                   onPressed: () => DocumentoScreen.abrir(ctx, d),
-                  child: Text('Leer ${d.titulo}'),
+                  child: Text(tr('Leer {titulo}', {'titulo': d.titulo})),
                 ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Confirmar')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(tr('Cancelar'))),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(tr('Confirmar'))),
         ],
       ),
     );
@@ -259,9 +257,8 @@ class _NegocioScreenState extends State<NegocioScreen> {
       if (!mounted) return;
       if (negocio == null) {
         await _aviso(
-          'Sin negocio registrado',
-          'Esta cuenta no tiene un negocio en VeraGo. Regístralo con el formulario '
-              '"Registrar mi negocio" usando otro correo, o escríbenos.',
+          tr('Sin negocio registrado'),
+          tr('Esta cuenta no tiene un negocio en VeraGo. Regístralo con el formulario "Registrar mi negocio" usando otro correo, o escríbenos.'),
         );
         return;
       }
@@ -272,7 +269,7 @@ class _NegocioScreenState extends State<NegocioScreen> {
             : EstadoNegocioScreen(negocio: negocio),
       ));
     } on ErrorVeraGo catch (e) {
-      await _aviso('No pudimos entrar', e.mensaje);
+      await _aviso(tr('No pudimos entrar'), e.mensaje);
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -281,11 +278,10 @@ class _NegocioScreenState extends State<NegocioScreen> {
   void _olvideContrasena() {
     final correo = Config.correoSoporte;
     _aviso(
-      'Recuperar contraseña',
+      tr('Recuperar contraseña'),
       correo.isEmpty
-          ? 'Contacta al equipo de VeraGo y te ayudamos a recuperar el acceso a tu comercio.'
-          : 'Escríbenos a $correo desde el correo de tu cuenta y te ayudamos a recuperar '
-              'el acceso a tu comercio.',
+          ? tr('Contacta al equipo de VeraGo y te ayudamos a recuperar el acceso a tu comercio.')
+          : tr('Escríbenos a {correo} desde el correo de tu cuenta y te ayudamos a recuperar el acceso a tu comercio.', {'correo': correo}),
     );
   }
 
@@ -297,7 +293,7 @@ class _NegocioScreenState extends State<NegocioScreen> {
         title: Text(titulo),
         content: Text(texto),
         actions: [
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Entendido')),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(tr('Entendido'))),
         ],
       ),
     );
@@ -313,9 +309,9 @@ class _NegocioScreenState extends State<NegocioScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Soy un negocio'),
+        title: Text(tr('Soy un negocio')),
         leading: IconButton(
-          tooltip: 'Volver a VeraGo',
+          tooltip: tr('Volver a VeraGo'),
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -337,10 +333,10 @@ class _NegocioScreenState extends State<NegocioScreen> {
         final encabezado = [
           const Center(child: VgLogo(altura: 110)),
           const SizedBox(height: 12),
-          Text('¡Forma parte de VeraGo!', style: Theme.of(context).textTheme.headlineMedium),
+          Text(tr('¡Forma parte de VeraGo!'), style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 6),
-          const Text(
-            'Registra tu establecimiento y conecta tu negocio con los turistas que visitan Veracruz.',
+          Text(
+            tr('Registra tu establecimiento y conecta tu negocio con los turistas que visitan Veracruz.'),
             style: TextStyle(fontSize: 16, height: 1.4),
           ),
         ];
@@ -354,9 +350,9 @@ class _NegocioScreenState extends State<NegocioScreen> {
               if (snapshot.hasError)
                 EstadoVacio(
                   icono: Icons.wifi_off,
-                  titulo: 'No pudimos cargar el formulario',
+                  titulo: tr('No pudimos cargar el formulario'),
                   mensaje: snapshot.error.toString(),
-                  textoBoton: 'Reintentar',
+                  textoBoton: tr('Reintentar'),
                   alPresionar: () => setState(() {
                     _datos = _cargarDatos()..ignore();
                   }),
@@ -378,16 +374,15 @@ class _NegocioScreenState extends State<NegocioScreen> {
                 color: VgColores.terracota.withValues(alpha: 0.08),
                 child: ListTile(
                   leading: const Icon(Icons.info_outline, color: VgColores.terracota),
-                  title: Text('Tu solicitud de "$anterior" no fue aprobada'),
-                  subtitle: const Text('Puedes registrar tu negocio otra vez. Si quieres saber el motivo, '
-                      'escríbenos.'),
+                  title: Text(tr('Tu solicitud de "{anterior}" no fue aprobada', {'anterior': anterior})),
+                  subtitle: Text(tr('Puedes registrar tu negocio otra vez. Si quieres saber el motivo, escríbenos.')),
                 ),
               ),
-            const _Seccion('Información del establecimiento'),
+            _Seccion(tr('Información del establecimiento')),
             SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: true, icon: Icon(Icons.store), label: Text('Local propio')),
-                ButtonSegment(value: false, icon: Icon(Icons.storefront_outlined), label: Text('Punto VeraGo')),
+              segments: [
+                ButtonSegment(value: true, icon: Icon(Icons.store), label: Text(tr('Local propio'))),
+                ButtonSegment(value: false, icon: Icon(Icons.storefront_outlined), label: Text(tr('Punto VeraGo'))),
               ],
               selected: {_formal},
               onSelectionChanged: (s) => setState(() => _formal = s.first),
@@ -395,123 +390,116 @@ class _NegocioScreenState extends State<NegocioScreen> {
             const SizedBox(height: 6),
             Text(
               _formal
-                  ? 'Tienes tu propio local en el centro.'
-                  : 'Quieres una mesa en un Punto VeraGo. Solo hay un negocio por giro en cada punto.',
+                  ? tr('Tienes tu propio local en el centro.')
+                  : tr('Quieres una mesa en un Punto VeraGo. Solo hay un negocio por giro en cada punto.'),
               style: TextStyle(fontSize: 13, color: Colors.black.withValues(alpha: 0.65)),
             ),
             const SizedBox(height: 16),
             // Nombre comercial: SÍ permite números (ej. "Café 2 Hermanos").
-            _campo(_nombre, 'Nombre comercial', Validaciones.nombreNegocio('el nombre comercial'),
+            _campo(_nombre, tr('Nombre comercial'), Validaciones.nombreNegocio(tr('el nombre comercial')),
                 formateadores: Validaciones.nombreNegocioFormato()),
             if (_formal)
               DropdownButtonFormField<int>(
                 initialValue: _categoriaId,
-                decoration: _decoracion('Categoría del establecimiento'),
+                decoration: _decoracion(tr('Categoría del establecimiento')),
                 items: [
                   for (final c in _categoriasComercio.entries)
-                    DropdownMenuItem(value: c.key, child: Text(c.value)),
+                    DropdownMenuItem(value: c.key, child: Text(tr(c.value))),
                 ],
                 onChanged: (v) => setState(() => _categoriaId = v),
-                validator: (v) => v == null ? 'Elige una categoría' : null,
+                validator: (v) => v == null ? tr('Elige una categoría') : null,
               )
             else ...[
               DropdownButtonFormField<String>(
                 initialValue: _puntoId,
-                decoration: _decoracion('Punto VeraGo'),
+                decoration: _decoracion(tr('Punto VeraGo')),
                 items: [
                   for (final p in puntos) DropdownMenuItem(value: p.id, child: Text(p.nombre)),
                 ],
                 onChanged: _elegirPunto,
-                validator: (v) => v == null ? 'Elige un punto' : null,
+                validator: (v) => v == null ? tr('Elige un punto') : null,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
                 key: ValueKey('giro-$_puntoId'), // se reinicia al cambiar de punto
                 initialValue: _giroId,
-                decoration: _decoracion('Giro del negocio'),
+                decoration: _decoracion(tr('Giro del negocio')),
                 items: [
                   for (final g in giros)
                     DropdownMenuItem(
                       value: g.id,
                       enabled: !_ocupados.contains(g.id),
-                      child: Text(_ocupados.contains(g.id) ? '${g.nombre} (ocupado)' : g.nombre),
+                      child: Text(_ocupados.contains(g.id) ? tr('{giro} (ocupado)', {'giro': tr(g.nombre)}) : tr(g.nombre)),
                     ),
                 ],
                 onChanged: (v) => setState(() => _giroId = v),
-                validator: (v) => v == null ? 'Elige un giro disponible' : null,
+                validator: (v) => v == null ? tr('Elige un giro disponible') : null,
               ),
             ],
             const SizedBox(height: 12),
-            _campo(_descripcion, 'Descripción breve', Validaciones.textoConLetras('una descripción'),
+            _campo(_descripcion, tr('Descripción breve'), Validaciones.textoConLetras(tr('una descripción')),
                 maxLength: 160, lineas: 2),
             if (_formal) ...[
               // Primero el mapa: la dirección se llena sola a partir del punto,
               // así siempre coinciden.
-              const Text('1. Toca el mapa para marcar dónde está tu local:',
+              Text(tr('1. Toca el mapa para marcar dónde está tu local:'),
                   style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               SelectorUbicacion(valor: _ubicacion, alCambiar: _alTocarMapa),
               if (_faltaUbicacion)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(top: 6),
-                  child: Text('Marca la ubicación de tu local en el mapa',
+                  child: Text(tr('Marca la ubicación de tu local en el mapa'),
                       style: TextStyle(color: Color(0xFF9B2C2C))),
                 ),
               const SizedBox(height: 12),
-              const Text('2. Revisa la dirección (se llena sola con el mapa):',
+              Text(tr('2. Revisa la dirección (sale sola del punto del mapa):'),
                   style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: TextFormField(
-                  controller: _direccion,
-                  inputFormatters: Validaciones.direccionFormato,
-                  validator: Validaciones.direccion(),
-                  decoration: _decoracion(
-                    'Dirección',
-                    ayuda: _buscandoDireccion
-                        ? 'Buscando la dirección del punto…'
-                        : 'Puedes ajustarla: número, referencias…',
-                    sufijo: _buscandoDireccion
-                        ? const Padding(padding: EdgeInsets.all(14), child: _Cargando(oscuro: true))
-                        : null,
-                  ),
+                // Solo texto: la ubicación se elige únicamente en el mapa.
+                child: DireccionDelMapa(
+                  direccion: _direccion.text,
+                  hayPunto: _ubicacion != null,
+                  buscando: _buscandoDireccion,
+                  alReintentar: _ubicacion == null ? null : () => _alTocarMapa(_ubicacion!),
                 ),
               ),
             ],
-            _campo(_telefono, 'Teléfono de contacto (10 números)', Validaciones.telefono,
+            _campo(_telefono, tr('Teléfono de contacto (10 números)'), Validaciones.telefono,
                 teclado: TextInputType.phone, maxLength: 10, formateadores: Validaciones.soloDiezDigitos),
-            const _Seccion('Información del encargado'),
+            _Seccion(tr('Información del encargado')),
             if (_correoSesion case final correo?)
               // Ya hay sesión: el negocio se liga a esta cuenta.
               Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
                   leading: const Icon(Icons.verified_user_outlined, color: VgColores.azulGolfo),
-                  title: const Text('Se registrará con tu cuenta'),
-                  subtitle: Text('$correo\nNo necesitas escribir tus datos ni tu contraseña.'),
+                  title: Text(tr('Se registrará con tu cuenta')),
+                  subtitle: Text(tr('{correo}\nNo necesitas escribir tus datos ni tu contraseña.', {'correo': correo})),
                   isThreeLine: true,
                   trailing: TextButton(
                     onPressed: _enviando ? null : _usarOtraCuenta,
-                    child: const Text('Usar otra'),
+                    child: Text(tr('Usar otra')),
                   ),
                 ),
               )
             else ...[
               // Nombre de PERSONA: sin números; nombre y apellido.
-              _campo(_encargado, 'Nombre completo del propietario o encargado',
+              _campo(_encargado, tr('Nombre completo del propietario o encargado'),
                   Validaciones.nombrePersona(completo: true), formateadores: Validaciones.nombrePersonaFormato),
-              _campo(_correo, 'Correo electrónico', Validaciones.correo,
+              _campo(_correo, tr('Correo electrónico'), Validaciones.correo,
                 teclado: TextInputType.emailAddress, formateadores: Validaciones.correoFormato),
-              _campoContrasena(_contrasena, 'Contraseña', Validaciones.contrasenaSegura,
-                  ayuda: 'Mínimo 8 caracteres, con letras y números'),
-              _campoContrasena(_confirmar, 'Confirmar contraseña',
-                  (v) => v != _contrasena.text ? 'Las contraseñas no coinciden' : null),
+              _campoContrasena(_contrasena, tr('Contraseña'), Validaciones.contrasenaSegura,
+                  ayuda: tr('Mínimo 8 caracteres, con letras y números')),
+              _campoContrasena(_confirmar, tr('Confirmar contraseña'),
+                  (v) => v != _contrasena.text ? tr('Las contraseñas no coinciden') : null),
             ],
             const SizedBox(height: 8),
             FilledButton(
               onPressed: _enviando ? null : _registrar,
-              child: _enviando ? const _Cargando() : const Text('Registrar mi negocio'),
+              child: _enviando ? const _Cargando() : Text(tr('Registrar mi negocio')),
             ),
             if (_correoSesion == null) ..._pieLogin(),
           ],
@@ -523,9 +511,9 @@ class _NegocioScreenState extends State<NegocioScreen> {
   /// "¿Tu negocio ya está registrado? Iniciar sesión"
   List<Widget> _pieLogin() => [
         const SizedBox(height: 20),
-        const Center(child: Text('¿Tu negocio ya está registrado?')),
+        Center(child: Text(tr('¿Tu negocio ya está registrado?'))),
         Center(
-          child: TextButton(onPressed: _enviando ? null : _cambiarModo, child: const Text('Iniciar sesión')),
+          child: TextButton(onPressed: _enviando ? null : _cambiarModo, child: Text(tr('Iniciar sesión'))),
         ),
       ];
 
@@ -536,27 +524,27 @@ class _NegocioScreenState extends State<NegocioScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
       children: [
-        Text('Entra a tu comercio', style: Theme.of(context).textTheme.headlineMedium),
+        Text(tr('Entra a tu comercio'), style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 6),
-        const Text('Consulta el estado de tu solicitud o administra tu negocio.',
+        Text(tr('Consulta el estado de tu solicitud o administra tu negocio.'),
             style: TextStyle(fontSize: 16, height: 1.4)),
         const SizedBox(height: 20),
-        _campo(_correo, 'Correo electrónico', Validaciones.correo,
+        _campo(_correo, tr('Correo electrónico'), Validaciones.correo,
                 teclado: TextInputType.emailAddress, formateadores: Validaciones.correoFormato),
-        _campoContrasena(_contrasena, 'Contraseña',
-            (v) => (v ?? '').isEmpty ? 'Escribe tu contraseña' : null),
+        _campoContrasena(_contrasena, tr('Contraseña'),
+            (v) => (v ?? '').isEmpty ? tr('Escribe tu contraseña') : null),
         Align(
           alignment: Alignment.centerRight,
-          child: TextButton(onPressed: _olvideContrasena, child: const Text('¿Olvidaste tu contraseña?')),
+          child: TextButton(onPressed: _olvideContrasena, child: Text(tr('¿Olvidaste tu contraseña?'))),
         ),
         FilledButton(
           onPressed: _enviando ? null : _entrar,
-          child: _enviando ? const _Cargando() : const Text('Entrar a mi comercio'),
+          child: _enviando ? const _Cargando() : Text(tr('Entrar a mi comercio')),
         ),
         const SizedBox(height: 20),
-        const Center(child: Text('¿Aún no registras tu negocio?')),
+        Center(child: Text(tr('¿Aún no registras tu negocio?'))),
         Center(
-          child: TextButton(onPressed: _enviando ? null : _cambiarModo, child: const Text('Registrar mi negocio')),
+          child: TextButton(onPressed: _enviando ? null : _cambiarModo, child: Text(tr('Registrar mi negocio'))),
         ),
       ],
     );
@@ -613,7 +601,7 @@ class _NegocioScreenState extends State<NegocioScreen> {
             etiqueta,
             ayuda: ayuda,
             sufijo: IconButton(
-              tooltip: _ocultar ? 'Mostrar contraseña' : 'Ocultar contraseña',
+              tooltip: _ocultar ? tr('Mostrar contraseña') : tr('Ocultar contraseña'),
               icon: Icon(_ocultar ? Icons.visibility_outlined : Icons.visibility_off_outlined),
               onPressed: () => setState(() => _ocultar = !_ocultar),
             ),
@@ -634,10 +622,7 @@ class _Seccion extends StatelessWidget {
 }
 
 class _Cargando extends StatelessWidget {
-  const _Cargando({this.oscuro = false});
-
-  /// true = sobre fondo claro (dentro de un campo).
-  final bool oscuro;
+  const _Cargando();
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -645,7 +630,7 @@ class _Cargando extends StatelessWidget {
         height: 20,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          color: oscuro ? VgColores.azulGolfo : VgColores.arena,
+          color: VgColores.arena,
         ),
       );
 }

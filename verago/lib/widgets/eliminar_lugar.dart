@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/eliminar_service.dart';
 import '../services/error_verago.dart';
@@ -33,9 +34,12 @@ class EliminarLugar {
     if (r.estado == 'TIENE_NEGOCIOS') {
       await _aviso(
         context,
-        'No se puede eliminar todavía',
-        '"${lugar.nombre}" tiene ${r.negocios} ${r.negocios == 1 ? 'negocio' : 'negocios'} dentro. '
-            'Cámbialos de Punto VeraGo o elimínalos primero, para que ninguno se quede sin punto.',
+        tr('No se puede eliminar todavía'),
+        r.negocios == 1
+            ? tr('"{nombre}" tiene 1 negocio dentro. Cámbialo de Punto VeraGo o elimínalo primero, para que no se quede sin punto.',
+                {'nombre': lugar.nombre})
+            : tr('"{nombre}" tiene {n} negocios dentro. Cámbialos de Punto VeraGo o elimínalos primero, para que ninguno se quede sin punto.',
+                {'nombre': lugar.nombre, 'n': r.negocios}),
       );
       return false;
     }
@@ -44,22 +48,21 @@ class EliminarLugar {
       final ocultarlo = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('No se puede eliminar'),
+          title: Text(tr('No se puede eliminar')),
           content: Text(
-            '"${lugar.nombre}" ya tiene ${r.sellos} ${r.sellos == 1 ? 'sello' : 'sellos'} de turistas. '
-            'Si se eliminara, perderían esos sellos y podrían bajar de insignia.\n\n'
-            'Puedes OCULTARLO: deja de aparecer en la app y los turistas conservan sus sellos.',
+            '${r.sellos == 1 ? tr('"{nombre}" ya tiene 1 sello de turistas.', {'nombre': lugar.nombre}) : tr('"{nombre}" ya tiene {n} sellos de turistas.', {'nombre': lugar.nombre, 'n': r.sellos})} '
+            '${tr('Si se eliminara, perderían esos sellos y podrían bajar de insignia.\n\nPuedes OCULTARLO: deja de aparecer en la app y los turistas conservan sus sellos.')}',
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
-            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Ocultarlo')),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(tr('Cancelar'))),
+            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(tr('Ocultarlo'))),
           ],
         ),
       );
       if (ocultarlo != true) return false;
       try {
         await ocultar();
-        avisos.showSnackBar(const SnackBar(content: Text('Se ocultó. Ya no aparece en la app.')));
+        avisos.showSnackBar(SnackBar(content: Text(tr('Se ocultó. Ya no aparece en la app.'))));
         return true;
       } on ErrorVeraGo catch (e) {
         avisos.showSnackBar(SnackBar(content: Text(e.mensaje)));
@@ -72,18 +75,19 @@ class EliminarLugar {
       context: context,
       builder: (ctx) => AlertDialog(
         icon: const Icon(Icons.delete_forever_outlined, color: Color(0xFF9B2C2C), size: 40),
-        title: Text('¿Eliminar "${lugar.nombre}" para siempre?'),
+        title: Text(tr('¿Eliminar "{nombre}" para siempre?', {'nombre': lugar.nombre})),
         content: Text(
-          'Se borran también su foto, su horario y sus códigos QR.'
-          '${r.eventos > 0 ? '\n\n${r.eventos} ${r.eventos == 1 ? 'evento quedará' : 'eventos quedarán'} sin lugar en la Agenda.' : ''}'
-          '\n\nEsto no se puede deshacer.',
+          '${tr('Se borran también su foto, su horario y sus códigos QR.')}'
+          '${r.eventos == 1 ? '\n\n${tr('1 evento quedará sin lugar en la Agenda.')}' : ''}'
+          '${r.eventos > 1 ? '\n\n${tr('{n} eventos quedarán sin lugar en la Agenda.', {'n': r.eventos})}' : ''}'
+          '\n\n${tr('Esto no se puede deshacer.')}',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(tr('Cancelar'))),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFF9B2C2C)),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Eliminar'),
+            child: Text(tr('Eliminar')),
           ),
         ],
       ),
@@ -91,7 +95,7 @@ class EliminarLugar {
     if (seguro != true) return false;
     try {
       await s.eliminar(lugar.id, fotoUrl: lugar.fotoUrl);
-      avisos.showSnackBar(SnackBar(content: Text('"${lugar.nombre}" se eliminó.')));
+      avisos.showSnackBar(SnackBar(content: Text(tr('"{nombre}" se eliminó.', {'nombre': lugar.nombre}))));
       return true;
     } on ErrorVeraGo catch (e) {
       avisos.showSnackBar(SnackBar(content: Text(e.mensaje)));
@@ -104,7 +108,7 @@ class EliminarLugar {
         builder: (ctx) => AlertDialog(
           title: Text(titulo),
           content: Text(texto),
-          actions: [FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Entendido'))],
+          actions: [FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(tr('Entendido')))],
         ),
       );
 }

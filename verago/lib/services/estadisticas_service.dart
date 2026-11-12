@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../i18n/idioma.dart';
 import 'error_verago.dart';
 
 /// Sellos de un día (para la gráfica).
@@ -60,20 +61,19 @@ class EstadisticasService {
       r = await _db.rpc(funcion) as Map<String, dynamic>;
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST202') {
-        throw const ErrorVeraGo('Falta actualizar la base de datos (correr el SQL 016 en Supabase). '
-            'Avisa a los desarrolladores.');
+        throw ErrorVeraGo(tr('Falta actualizar la base de datos (correr el SQL 016 en Supabase). Avisa a los desarrolladores.'));
       }
-      throw const ErrorVeraGo('No pudimos cargar las estadísticas. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos cargar las estadísticas. Intenta de nuevo.'));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
     switch (r['estado']) {
       case 'OK':
         return Estadisticas.desdeJson(r);
       case 'SIN_NEGOCIO':
-        throw const ErrorVeraGo('Esta cuenta no tiene un negocio.');
+        throw ErrorVeraGo(tr('Esta cuenta no tiene un negocio.'));
       default:
-        throw const ErrorVeraGo('Solo un administrador puede ver estas estadísticas.');
+        throw ErrorVeraGo(tr('Solo un administrador puede ver estas estadísticas.'));
     }
   }
 }

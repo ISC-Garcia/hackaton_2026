@@ -1,6 +1,7 @@
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../i18n/idioma.dart';
 import 'error_verago.dart';
 
 /// SERVICIO DE FOTOS de los lugares (SQL 018).
@@ -30,16 +31,16 @@ class FotosService {
         imageQuality: 75,
       );
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos abrir la galería o la cámara. Revisa los permisos del celular.');
+      throw ErrorVeraGo(tr('No pudimos abrir la galería o la cámara. Revisa los permisos del celular.'));
     }
     if (archivo == null) return null; // canceló
 
     final bytes = await archivo.readAsBytes();
     if (bytes.length > 2 * 1024 * 1024) {
-      throw const ErrorVeraGo('La foto pesa más de 2 MB. Elige otra o tómala con menos calidad.');
+      throw ErrorVeraGo(tr('La foto pesa más de 2 MB. Elige otra o tómala con menos calidad.'));
     }
     final tipo = tipoDeImagen(archivo.name, archivo.mimeType);
-    if (tipo == null) throw const ErrorVeraGo('Solo se aceptan fotos JPG, PNG o WEBP.');
+    if (tipo == null) throw ErrorVeraGo(tr('Solo se aceptan fotos JPG, PNG o WEBP.'));
 
     final ruta = '$lugarId/foto_${DateTime.now().millisecondsSinceEpoch}.${tipo.extension}';
     try {
@@ -50,14 +51,14 @@ class FotosService {
           );
     } on StorageException catch (e) {
       if (e.statusCode == '403' || e.statusCode == '401' || e.message.contains('row-level security')) {
-        throw const ErrorVeraGo('No tienes permiso para cambiar la foto de este lugar.');
+        throw ErrorVeraGo(tr('No tienes permiso para cambiar la foto de este lugar.'));
       }
       if (e.message.contains('Bucket not found')) {
-        throw const ErrorVeraGo('Falta actualizar la base de datos (correr el SQL 018). Avisa a los desarrolladores.');
+        throw ErrorVeraGo(tr('Falta actualizar la base de datos (correr el SQL 018). Avisa a los desarrolladores.'));
       }
-      throw const ErrorVeraGo('No pudimos subir la foto. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos subir la foto. Intenta de nuevo.'));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
     return _db.storage.from(bucket).getPublicUrl(ruta);
   }

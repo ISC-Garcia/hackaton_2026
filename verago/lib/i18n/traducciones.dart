@@ -10,7 +10,12 @@
 /// legales) no va aquí: se traduce con IA (`TraductorService`).
 library;
 
+import 'traducciones_gestion.dart';
+
 const Map<String, List<String>> traducciones = {
+  // Pantallas de comerciante y administración (archivo aparte).
+  ...traduccionesGestion,
+
   // ----------------------------------------------------------------
   // General
   // ----------------------------------------------------------------

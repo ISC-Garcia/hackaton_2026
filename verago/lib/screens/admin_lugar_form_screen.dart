@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/admin_service.dart';
 import '../services/error_verago.dart';
 import '../services/geocodificacion_service.dart';
 import '../services/municipio_veracruz.dart';
 import '../services/validaciones.dart';
+import '../widgets/direccion_del_mapa.dart';
 import '../widgets/editor_costo_entrada.dart';
 import '../widgets/editor_horario.dart';
 import '../widgets/eliminar_lugar.dart';
@@ -48,7 +50,6 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
   late int? _costo = widget.lugar?.costoEntradaMxn;
   bool _faltaUbicacion = false;
   bool _buscandoDireccion = false;
-  bool _sinDireccion = false; // el mapa no dio dirección (sin internet)
   bool _guardando = false;
 
   static const _duraciones = [15, 20, 30, 45, 60, 90, 120];
@@ -74,7 +75,6 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
       _faltaUbicacion = false;
       // La dirección anterior ya no corresponde al punto nuevo.
       _direccion.clear();
-      _sinDireccion = false;
     });
     await _buscarDireccion();
   }
@@ -88,7 +88,6 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
     if (!mounted || _ubicacion != punto) return; // tocó otro punto mientras tanto
     setState(() {
       _buscandoDireccion = false;
-      _sinDireccion = direccion == null;
       if (direccion != null) _direccion.text = direccion;
     });
   }
@@ -99,7 +98,7 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
     setState(() => _faltaUbicacion = _ubicacion == null || !MunicipioVeracruz.contiene(_ubicacion!));
     if (!ok || _faltaUbicacion) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Faltan datos importantes: revisa lo marcado en rojo.')),
+        SnackBar(content: Text(tr('Faltan datos importantes: revisa lo marcado en rojo.'))),
       );
       return;
     }
@@ -141,11 +140,11 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.lugar == null ? 'Nuevo lugar' : 'Editar lugar'),
+        title: Text(widget.lugar == null ? tr('Nuevo lugar') : tr('Editar lugar')),
         actions: [
           if (widget.lugar case final l?)
             IconButton(
-              tooltip: 'Eliminar',
+              tooltip: tr('Eliminar'),
               icon: const Icon(Icons.delete_outline),
               onPressed: () async {
                 final listo = await EliminarLugar.ejecutar(context, l, ocultar: () => _servicio.ocultarLugar(l.id));
@@ -161,7 +160,7 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return EstadoVacio(icono: Icons.wifi_off, titulo: 'Algo salió mal', mensaje: '${snapshot.error}');
+            return EstadoVacio(icono: Icons.wifi_off, titulo: tr('Algo salió mal'), mensaje: '${snapshot.error}');
           }
           // Los comercios se registran con "Soy un negocio"; aquí solo
           // categorías de lugares públicos (sin Puntos, que van con el interruptor).
@@ -187,34 +186,34 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
             EditorFoto(lugar: l, alGuardar: (url) => _servicio.guardarFoto(l.id, url)),
             const SizedBox(height: 16),
           ] else
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(bottom: 8),
-              child: Text('Guarda el lugar primero; después podrás ponerle foto.', style: TextStyle(fontSize: 12)),
+              child: Text(tr('Guarda el lugar primero; después podrás ponerle foto.'), style: TextStyle(fontSize: 12)),
             ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Es un Punto VeraGo'),
-            subtitle: const Text('Espacio donde VeraGo renta mesas a emprendedores (un negocio por giro).'),
+            title: Text(tr('Es un Punto VeraGo')),
+            subtitle: Text(tr('Espacio donde VeraGo renta mesas a emprendedores (un negocio por giro).')),
             value: _esPunto,
             onChanged: (v) => setState(() => _esPunto = v),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _nombre,
-            decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: tr('Nombre'), border: OutlineInputBorder()),
             inputFormatters: Validaciones.nombreNegocioFormato(maximo: 80),
-            validator: Validaciones.nombreNegocio('el nombre', maximo: 80),
+            validator: Validaciones.nombreNegocio(tr('el nombre'), maximo: 80),
           ),
           const SizedBox(height: 12),
           if (!_esPunto) ...[
             DropdownButtonFormField<int>(
               initialValue: _categoriaId,
-              decoration: const InputDecoration(labelText: 'Categoría', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: tr('Categoría'), border: OutlineInputBorder()),
               items: [
-                for (final c in categorias.entries) DropdownMenuItem(value: c.key, child: Text(c.value)),
+                for (final c in categorias.entries) DropdownMenuItem(value: c.key, child: Text(tr(c.value))),
               ],
               onChanged: (v) => setState(() => _categoriaId = v),
-              validator: (v) => v == null ? 'Elige una categoría' : null,
+              validator: (v) => v == null ? tr('Elige una categoría') : null,
             ),
             const SizedBox(height: 12),
           ],
@@ -222,58 +221,28 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
             controller: _descripcion,
             maxLines: 3,
             maxLength: 300,
-            decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
-            validator: Validaciones.textoConLetras('la descripción'),
+            decoration: InputDecoration(labelText: tr('Descripción'), border: OutlineInputBorder()),
+            validator: Validaciones.textoConLetras(tr('la descripción')),
           ),
-          const Text('Ubicación (toca el mapa):', style: TextStyle(fontWeight: FontWeight.w600)),
+          Text(tr('Ubicación (toca el mapa):'), style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           SelectorUbicacion(valor: _ubicacion, alCambiar: _alTocarMapa),
           if (_faltaUbicacion)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 6),
-              child: Text('Marca la ubicación en el mapa, dentro del municipio de Veracruz',
+              child: Text(tr('Marca la ubicación en el mapa, dentro del municipio de Veracruz'),
                   style: TextStyle(color: Color(0xFF9B2C2C))),
             ),
           const SizedBox(height: 12),
-          // Bloqueada (readOnly): solo se muestra lo que da el mapa.
-          TextFormField(
-            controller: _direccion,
-            readOnly: true,
-            enableInteractiveSelection: false,
-            validator: (_) {
-              if (_ubicacion == null) return 'Primero toca el mapa';
-              if (_buscandoDireccion) return 'Espera a que se cargue la dirección';
-              return Validaciones.direccion()(_direccion.text) == null
-                  ? null
-                  : 'No hay dirección: toca el mapa o "reintentar"';
-            },
-            decoration: InputDecoration(
-              labelText: 'Dirección (según el mapa)',
-              helperText: _buscandoDireccion
-                  ? 'Buscando la dirección del punto…'
-                  : _sinDireccion
-                      ? 'No pudimos obtenerla (¿sin internet?). Toca "reintentar".'
-                      : 'Se llena sola al tocar el mapa; no se escribe.',
-              filled: true,
-              fillColor: Colors.black.withValues(alpha: 0.04),
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.lock_outline, size: 18),
-              suffixIcon: _buscandoDireccion
-                  ? const Padding(
-                      padding: EdgeInsets.all(14),
-                      child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-                    )
-                  : (_ubicacion != null
-                      ? IconButton(
-                          tooltip: 'Reintentar',
-                          icon: const Icon(Icons.refresh),
-                          onPressed: _buscarDireccion,
-                        )
-                      : null),
-            ),
+          // Solo texto (no es un campo): la dirección sale del punto del mapa.
+          DireccionDelMapa(
+            direccion: _direccion.text,
+            hayPunto: _ubicacion != null,
+            buscando: _buscandoDireccion,
+            alReintentar: _buscarDireccion,
           ),
           const SizedBox(height: 16),
-          Text('Interés para las rutas: $_interes de 5', style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(tr('Interés para las rutas: {_interes} de 5', {'_interes': _interes}), style: const TextStyle(fontWeight: FontWeight.w600)),
           Slider(
             value: _interes.toDouble(),
             min: 1,
@@ -284,7 +253,7 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
           ),
           DropdownButtonFormField<int>(
             initialValue: _duracion,
-            decoration: const InputDecoration(labelText: 'Visita sugerida', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: tr('Visita sugerida'), border: OutlineInputBorder()),
             items: [for (final m in _duraciones) DropdownMenuItem(value: m, child: Text('$m min'))],
             onChanged: (v) => setState(() => _duracion = v ?? 30),
           ),
@@ -294,27 +263,27 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
           ],
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Se llega caminando desde el centro'),
-            subtitle: const Text('Si no (ej. San Juan de Ulúa), las rutas a pie lo omiten.'),
+            title: Text(tr('Se llega caminando desde el centro')),
+            subtitle: Text(tr('Si no (ej. San Juan de Ulúa), las rutas a pie lo omiten.')),
             value: _aPie,
             onChanged: (v) => setState(() => _aPie = v),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Publicado'),
-            subtitle: const Text('Si lo apagas, el lugar se oculta de la app (no se borra).'),
+            title: Text(tr('Publicado')),
+            subtitle: Text(tr('Si lo apagas, el lugar se oculta de la app (no se borra).')),
             value: _publicado,
             onChanged: (v) => setState(() => _publicado = v),
           ),
           const SizedBox(height: 8),
-          Text('Horario', style: Theme.of(context).textTheme.titleLarge),
-          const Text('Déjalo todo en "Cerrado" si no hay horario confirmado (no inventamos horarios).',
+          Text(tr('Horario'), style: Theme.of(context).textTheme.titleLarge),
+          Text(tr('Déjalo todo en "Cerrado" si no hay horario confirmado (no inventamos horarios).'),
               style: TextStyle(fontSize: 12)),
           EditorHorario(horario: _horario, alCambiar: () => setState(() {})),
           const SizedBox(height: 24),
           FilledButton(
             onPressed: _guardando ? null : _guardar,
-            child: Text(_guardando ? 'Guardando…' : 'Guardar'),
+            child: Text(_guardando ? tr('Guardando…') : tr('Guardar')),
           ),
         ],
       ),

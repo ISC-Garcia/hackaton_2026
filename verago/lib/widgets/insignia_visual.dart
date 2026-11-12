@@ -1,3 +1,4 @@
+import '../i18n/idioma.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -49,7 +50,7 @@ class InsigniaVisual extends StatelessWidget {
       // Mismo tamaño total que una insignia ganada (tamano × 1.25), para que
       // la fila de los 5 niveles quede alineada.
       return Semantics(
-        label: 'Insignia $nombre: bloqueada',
+        label: tr('Insignia {nombre}: bloqueada', {'nombre': nombre}),
         child: SizedBox.square(
           dimension: tamano * 1.25,
           child: Center(
@@ -99,7 +100,7 @@ class InsigniaVisual extends StatelessWidget {
     );
 
     return Semantics(
-      label: 'Insignia $nombre',
+      label: tr('Insignia {nombre}', {'nombre': nombre}),
       child: SizedBox(
         width: tamano * 1.25,
         height: tamano * 1.25,

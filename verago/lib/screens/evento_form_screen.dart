@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../i18n/idioma.dart';
 import '../models/evento.dart';
 import '../models/lugar.dart';
 import '../services/error_verago.dart';
@@ -100,7 +101,7 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
 
   Future<void> _guardar() async {
     if (!_formulario.currentState!.validate()) {
-      _mensaje('Faltan datos importantes: revisa lo marcado en rojo.');
+      _mensaje(tr('Faltan datos importantes: revisa lo marcado en rojo.'));
       return;
     }
     final errorFechas = Validaciones.fechasEvento(_inicia, _termina);
@@ -154,7 +155,7 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_esNuevo ? 'Nuevo evento' : 'Editar evento')),
+      appBar: AppBar(title: Text(_esNuevo ? tr('Nuevo evento') : tr('Editar evento'))),
       body: FutureBuilder<List<Lugar>>(
         future: _lugares,
         builder: (context, snapshot) {
@@ -164,7 +165,7 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
           if (snapshot.hasError) {
             return EstadoVacio(
               icono: Icons.wifi_off,
-              titulo: 'Algo salió mal',
+              titulo: tr('Algo salió mal'),
               mensaje: snapshot.error.toString(),
             );
           }
@@ -174,7 +175,6 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
     );
   }
 
-  static const _meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
   /// "Se repite": cada N días, M veces, con vista previa de las fechas.
   List<Widget> _repeticion() {
@@ -199,25 +199,28 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
     return [
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
-        title: const Text('Se repite'),
-        subtitle: const Text('Crea varias fechas con la misma hora de inicio y fin.'),
+        title: Text(tr('Se repite')),
+        subtitle: Text(tr('Crea varias fechas con la misma hora de inicio y fin.')),
         value: _repite,
         onChanged: (v) => setState(() => _repite = v),
       ),
       if (_repite) ...[
         Row(
           children: [
-            numero(_cadaDias, 'Cada', 'días'),
+            numero(_cadaDias, tr('Cada'), tr('días')),
             const SizedBox(width: 12),
-            numero(_veces, 'Cuántas veces', 'veces'),
+            numero(_veces, tr('Cuántas veces'), tr('veces')),
           ],
         ),
         const SizedBox(height: 8),
         Text(
           error ??
-              'Se crearán ${fechas.length} eventos, de ${hora(_inicia)} a ${hora(_termina)}: '
-                  '${fechas.map((f) => '${f.day} ${_meses[f.month - 1]}').join(', ')}. '
-                  'Cada fecha se puede editar o cancelar por separado.',
+              tr('Se crearán {n} eventos, de {inicio} a {fin}: {fechas}. Cada fecha se puede editar o cancelar por separado.', {
+                'n': fechas.length,
+                'inicio': hora(_inicia),
+                'fin': hora(_termina),
+                'fechas': fechas.map((f) => '${f.day} ${Idioma.mes(f.month).substring(0, 3)}').join(', '),
+              }),
           style: TextStyle(fontSize: 13, color: error != null ? const Color(0xFF9B2C2C) : Colors.black.withValues(alpha: 0.7)),
         ),
       ],
@@ -234,34 +237,34 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
         children: [
           TextFormField(
             controller: _titulo,
-            decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: tr('Título'), border: OutlineInputBorder()),
             inputFormatters: Validaciones.nombreNegocioFormato(maximo: 80),
-            validator: Validaciones.nombreNegocio('el título', maximo: 80),
+            validator: Validaciones.nombreNegocio(tr('el título'), maximo: 80),
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _descripcion,
             maxLines: 3,
             maxLength: 400,
-            decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
-            validator: Validaciones.textoConLetras('la descripción'),
+            decoration: InputDecoration(labelText: tr('Descripción'), border: OutlineInputBorder()),
+            validator: Validaciones.textoConLetras(tr('la descripción')),
           ),
           const SizedBox(height: 4),
           DropdownButtonFormField<String>(
             initialValue: _lugarId,
             isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Lugar', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: tr('Lugar'), border: OutlineInputBorder()),
             items: [
               for (final l in lugares) DropdownMenuItem(value: l.id, child: Text(l.nombre)),
             ],
             onChanged: (v) => setState(() => _lugarId = v),
-            validator: (v) => v == null ? 'Elige el lugar del evento' : null,
+            validator: (v) => v == null ? tr('Elige el lugar del evento') : null,
           ),
           const SizedBox(height: 16),
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.play_arrow_outlined),
-            title: const Text('Inicia'),
+            title: Text(tr('Inicia')),
             subtitle: Text(_formato(_inicia)),
             trailing: const Icon(Icons.edit_calendar_outlined),
             onTap: () async {
@@ -278,7 +281,7 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.stop_outlined),
-            title: const Text('Termina'),
+            title: Text(tr('Termina')),
             subtitle: Text(_formato(_termina)),
             trailing: const Icon(Icons.edit_calendar_outlined),
             onTap: () async {
@@ -290,7 +293,7 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
           const SizedBox(height: 8),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Gratuito'),
+            title: Text(tr('Gratuito')),
             value: _gratuito,
             onChanged: (v) => setState(() => _gratuito = v),
           ),
@@ -299,22 +302,22 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
               controller: _costo,
               keyboardType: TextInputType.number,
               inputFormatters: Validaciones.soloNumeros(6),
-              decoration: const InputDecoration(
-                labelText: 'Costo aproximado (pesos)',
-                helperText: 'Si lo dejas vacío, la agenda dirá "Con costo".',
+              decoration: InputDecoration(
+                labelText: tr('Costo aproximado (pesos)'),
+                helperText: tr('Si lo dejas vacío, la agenda dirá "Con costo".'),
                 prefixText: '\$ ',
                 border: OutlineInputBorder(),
               ),
               validator: Validaciones.precio(),
             ),
           const SizedBox(height: 16),
-          const Text('Estado', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text(tr('Estado'), style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'publicado', label: Text('Publicado')),
-              ButtonSegment(value: 'pendiente', label: Text('Borrador')),
-              ButtonSegment(value: 'cancelado', label: Text('Cancelado')),
+            segments: [
+              ButtonSegment(value: 'publicado', label: Text(tr('Publicado'))),
+              ButtonSegment(value: 'pendiente', label: Text(tr('Borrador'))),
+              ButtonSegment(value: 'cancelado', label: Text(tr('Cancelado'))),
             ],
             selected: {_estado},
             onSelectionChanged: (s) => setState(() => _estado = s.first),
@@ -322,9 +325,9 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
           const SizedBox(height: 6),
           Text(
             switch (_estado) {
-              'publicado' => 'Todos lo ven en la agenda.',
-              'pendiente' => 'Solo lo ven los administradores.',
-              _ => 'Se muestra tachado para avisar que se canceló.',
+              'publicado' => tr('Todos lo ven en la agenda.'),
+              'pendiente' => tr('Solo lo ven los administradores.'),
+              _ => tr('Se muestra tachado para avisar que se canceló.'),
             },
             style: TextStyle(fontSize: 13, color: Colors.black.withValues(alpha: 0.65)),
           ),
@@ -332,8 +335,8 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
           FilledButton(
             onPressed: _guardando ? null : _guardar,
             child: Text(_guardando
-                ? 'Guardando…'
-                : (_esNuevo ? (_repite ? 'Crear eventos' : 'Crear evento') : 'Guardar cambios')),
+                ? tr('Guardando…')
+                : (_esNuevo ? (_repite ? tr('Crear eventos') : tr('Crear evento')) : tr('Guardar cambios'))),
           ),
         ],
       ),

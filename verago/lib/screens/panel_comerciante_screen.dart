@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../legal/documentos.dart';
 import '../models/lugar.dart';
 import '../services/auth_service.dart';
@@ -99,7 +100,7 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi negocio')),
+      appBar: AppBar(title: Text(tr('Mi negocio'))),
       body: FutureBuilder<Lugar?>(
         future: _futuro,
         builder: (context, snapshot) {
@@ -109,9 +110,9 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
           if (snapshot.hasError) {
             return EstadoVacio(
               icono: Icons.wifi_off,
-              titulo: 'Algo salió mal',
+              titulo: tr('Algo salió mal'),
               mensaje: snapshot.error.toString(),
-              textoBoton: 'Reintentar',
+              textoBoton: tr('Reintentar'),
               alPresionar: _recargar,
             );
           }
@@ -119,9 +120,9 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
           if (negocio == null) {
             return EstadoVacio(
               icono: Icons.storefront,
-              titulo: 'Sin negocio registrado',
-              mensaje: 'Esta cuenta no tiene un negocio en VeraGo.',
-              textoBoton: 'Registrar mi negocio',
+              titulo: tr('Sin negocio registrado'),
+              mensaje: tr('Esta cuenta no tiene un negocio en VeraGo.'),
+              textoBoton: tr('Registrar mi negocio'),
               alPresionar: () => Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (_) => const NegocioScreen()),
               ),
@@ -160,11 +161,11 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
                         style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
                     Text(
-                      n.esInformal ? '${n.giroNombre ?? n.categoriaNombre} · ${n.direccion ?? ''}' : 'Local propio · ${n.categoriaNombre}',
+                      n.esInformal ? '${tr(n.giroNombre ?? n.categoriaNombre)} · ${n.direccion ?? ''}' : tr('Local propio · {categoriaNombre}', {'categoriaNombre': tr(n.categoriaNombre)}),
                       style: const TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 6),
-                    const Text('✓ Aprobado', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    Text(tr('✓ Aprobado'), style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -176,41 +177,41 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
         if (n.esFormal)
           _Accion(
             icono: Icons.qr_code_2,
-            titulo: 'Mostrar mi QR',
-            texto: 'Los turistas lo escanean para ganar el sello de tu negocio.',
+            titulo: tr('Mostrar mi QR'),
+            texto: tr('Los turistas lo escanean para ganar el sello de tu negocio.'),
             alTocar: () => Navigator.of(context)
                 .push(MaterialPageRoute(builder: (_) => const QrComercioScreen())),
           )
         else
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(bottom: 10),
             child: Text(
-              'Los negocios de un Punto VeraGo no dan sellos del pasaporte: solo los '
-              'negocios formales (local propio). Los turistas te encuentran en el mapa '
-              'y en las rutas, dentro de tu punto.',
+              tr('Los negocios de un Punto VeraGo no dan sellos del pasaporte: solo los negocios formales (local propio). Los turistas te encuentran en el mapa y en las rutas, dentro de tu punto.'),
               style: TextStyle(fontSize: 12),
             ),
           ),
         _Accion(
           icono: Icons.storefront,
-          titulo: 'Mi vitrina',
+          titulo: tr('Mi vitrina'),
           texto: n.tieneVitrina
-              ? '${n.productos.length} productos${n.promocion != null ? ' · con promoción' : ''}. Toca para editar.'
-              : 'Agrega tus productos, servicios y una promoción para los turistas.',
+              ? (n.promocion != null
+                  ? tr('{n} productos · con promoción. Toca para editar.', {'n': n.productos.length})
+                  : tr('{n} productos. Toca para editar.', {'n': n.productos.length}))
+              : tr('Agrega tus productos, servicios y una promoción para los turistas.'),
           alTocar: () => _editarVitrina(n),
         ),
         _Accion(
           icono: Icons.visibility_outlined,
-          titulo: 'Ver mi ficha',
-          texto: 'Así ven los turistas tu negocio en VeraGo.',
+          titulo: tr('Ver mi ficha'),
+          texto: tr('Así ven los turistas tu negocio en VeraGo.'),
           alTocar: () => _verFicha(n),
         ),
         _Accion(
           icono: Icons.edit_outlined,
-          titulo: 'Editar mis datos',
+          titulo: tr('Editar mis datos'),
           texto: n.esFormal
-              ? 'Foto, descripción, teléfono, horario y costo de entrada.'
-              : 'Foto, descripción y teléfono. Tu horario lo asigna VeraGo en tu punto.',
+              ? tr('Foto, descripción, teléfono, horario y costo de entrada.')
+              : tr('Foto, descripción y teléfono. Tu horario lo asigna VeraGo en tu punto.'),
           alTocar: () => _editar(n),
         ),
         if (n.tieneCambioPendiente)
@@ -219,30 +220,30 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
             color: VgColores.terracota.withValues(alpha: 0.08),
             child: ListTile(
               leading: const Icon(Icons.schedule, color: VgColores.terracota),
-              title: const Text('Cambio de ubicación en revisión'),
-              subtitle: Text('Pediste: ${n.cambioDireccion ?? '—'}. Mientras VeraGo lo revisa, '
-                  'sigues en tu ubicación actual.'),
-              trailing: TextButton(onPressed: _cancelarCambio, child: const Text('Cancelar')),
+              title: Text(tr('Cambio de ubicación en revisión')),
+              subtitle: Text(tr('Pediste: {direccion}. Mientras VeraGo lo revisa, sigues en tu ubicación actual.',
+                  {'direccion': n.cambioDireccion ?? '—'})),
+              trailing: TextButton(onPressed: _cancelarCambio, child: Text(tr('Cancelar'))),
             ),
           )
         else
           _Accion(
             icono: Icons.edit_location_alt_outlined,
-            titulo: n.esFormal ? 'Cambiar ubicación' : 'Cambiar de Punto VeraGo',
-            texto: 'VeraGo debe aceptar el cambio; mientras tanto sigues donde estás.',
+            titulo: n.esFormal ? tr('Cambiar ubicación') : tr('Cambiar de Punto VeraGo'),
+            texto: tr('VeraGo debe aceptar el cambio; mientras tanto sigues donde estás.'),
             alTocar: () => _cambiarUbicacion(n),
           ),
         _Accion(
           icono: Icons.query_stats,
-          titulo: 'Mis estadísticas',
-          texto: 'Cuántos sellos ha dado tu negocio por día (sin datos personales).',
+          titulo: tr('Mis estadísticas'),
+          texto: tr('Cuántos sellos ha dado tu negocio por día (sin datos personales).'),
           alTocar: () => Navigator.of(context)
               .push(MaterialPageRoute(builder: (_) => const EstadisticasScreen(deMiNegocio: true))),
         ),
         _Accion(
           icono: Icons.gavel_outlined,
-          titulo: 'Términos y reglas para negocios',
-          texto: 'Lo que aceptaste al registrarte y cómo trabaja VeraGo.',
+          titulo: tr('Términos y reglas para negocios'),
+          texto: tr('Lo que aceptaste al registrarte y cómo trabaja VeraGo.'),
           alTocar: () => DocumentoScreen.abrir(context, Documentos.terminosNegocios),
         ),
         const SizedBox(height: 16),
@@ -252,7 +253,7 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
             if (mounted) Navigator.of(context).pop();
           },
           icon: const Icon(Icons.logout),
-          label: const Text('Cerrar sesión'),
+          label: Text(tr('Cerrar sesión')),
         ),
         // Eliminar MI negocio (mi cuenta sigue). Si ya tiene sellos, se oculta.
         TextButton.icon(
@@ -262,7 +263,7 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
           },
           style: TextButton.styleFrom(foregroundColor: const Color(0xFF9B2C2C)),
           icon: const Icon(Icons.delete_outline),
-          label: const Text('Eliminar mi negocio'),
+          label: Text(tr('Eliminar mi negocio')),
         ),
       ],
     );

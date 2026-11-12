@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../i18n/idioma.dart';
 import '../models/evento.dart';
 import 'error_verago.dart';
 
@@ -82,9 +83,9 @@ class EventosService {
           .order('inicia');
       return filas.map(Evento.fromJson).toList();
     } on PostgrestException {
-      throw const ErrorVeraGo('No pudimos cargar la agenda. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos cargar la agenda. Intenta de nuevo.'));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
   }
 
@@ -110,17 +111,17 @@ class EventosService {
     } on PostgrestException catch (e) {
       // 42501 = permiso denegado (no es admin, o falta correr el SQL 010).
       if (e.code == '42501') {
-        throw const ErrorVeraGo('Solo un administrador puede modificar la agenda.');
+        throw ErrorVeraGo(tr('Solo un administrador puede modificar la agenda.'));
       }
       // 23505 = ya existe uno igual (SQL 020: mismo nombre, hora y lugar).
-      if (e.code == '23505') throw const ErrorVeraGo(eventoDuplicado);
+      if (e.code == '23505') throw ErrorVeraGo(tr(eventoDuplicado));
       // 23514 = no cumple una regla CHECK (ej. termina antes de iniciar).
       if (e.code == '23514') {
-        throw const ErrorVeraGo('Revisa los datos: el evento debe terminar después de iniciar.');
+        throw ErrorVeraGo(tr('Revisa los datos: el evento debe terminar después de iniciar.'));
       }
-      throw const ErrorVeraGo('No pudimos guardar el evento. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos guardar el evento. Intenta de nuevo.'));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
   }
 }

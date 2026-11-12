@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import 'error_verago.dart';
 
@@ -84,7 +85,7 @@ class AdminService {
       final filas = await _db.from('categorias').select('id, nombre').order('id');
       return {for (final f in filas) f['id'] as int: f['nombre'] as String};
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos cargar las categorías.');
+      throw ErrorVeraGo(tr('No pudimos cargar las categorías.'));
     }
   }
 
@@ -125,22 +126,21 @@ class AdminService {
       // PGRST202 = la función no existe; 42703 = la columna no existe:
       // falta correr un SQL nuevo en Supabase.
       if (e.code == 'PGRST202' || e.code == '42703' || e.code == 'PGRST204') {
-        throw const ErrorVeraGo('Falta actualizar la base de datos (correr el SQL más reciente en '
-            'Supabase). Avisa a los desarrolladores.');
+        throw ErrorVeraGo(tr('Falta actualizar la base de datos (correr el SQL más reciente en Supabase). Avisa a los desarrolladores.'));
       }
-      throw const ErrorVeraGo('No pudimos completar la operación. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos completar la operación. Intenta de nuevo.'));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
     switch (r['estado']) {
       case 'OK':
         return;
       case 'GIRO_OCUPADO':
-        throw const ErrorVeraGo('Ese giro ya se ocupó en el punto nuevo. Rechaza el cambio.');
+        throw ErrorVeraGo(tr('Ese giro ya se ocupó en el punto nuevo. Rechaza el cambio.'));
       case 'NO_AUTORIZADO':
-        throw const ErrorVeraGo('Solo un administrador puede hacer este cambio.');
+        throw ErrorVeraGo(tr('Solo un administrador puede hacer este cambio.'));
       default:
-        throw const ErrorVeraGo('Este negocio ya no tiene un cambio pendiente.');
+        throw ErrorVeraGo(tr('Este negocio ya no tiene un cambio pendiente.'));
     }
   }
 
@@ -178,7 +178,7 @@ class AdminService {
     try {
       return (await consulta()).map(Lugar.fromJson).toList();
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos cargar la información. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos cargar la información. Intenta de nuevo.'));
     }
   }
 
@@ -187,21 +187,20 @@ class AdminService {
       await accion();
     } on PostgrestException catch (e) {
       if (e.code == '42501') {
-        throw const ErrorVeraGo('Solo un administrador puede hacer este cambio.');
+        throw ErrorVeraGo(tr('Solo un administrador puede hacer este cambio.'));
       }
       // 42703 / PGRST204 = "esa columna no existe": falta correr un SQL nuevo.
       if (e.code == '42703' || e.code == 'PGRST204' || e.code == 'PGRST202') {
-        throw const ErrorVeraGo('Falta actualizar la base de datos (correr el SQL más reciente en '
-            'Supabase). Avisa a los desarrolladores.');
+        throw ErrorVeraGo(tr('Falta actualizar la base de datos (correr el SQL más reciente en Supabase). Avisa a los desarrolladores.'));
       }
       if (e.code == '23505') {
-        throw const ErrorVeraGo('Ese giro ya está ocupado en el punto o el nombre ya existe.');
+        throw ErrorVeraGo(tr('Ese giro ya está ocupado en el punto o el nombre ya existe.'));
       }
       // Regla del SQL 021: solo dentro del municipio de Veracruz.
-      if (e.message.contains('municipio')) throw const ErrorVeraGo('La ubicación debe estar dentro del municipio de Veracruz.');
-      throw const ErrorVeraGo('No pudimos guardar el cambio. Intenta de nuevo.');
+      if (e.message.contains('municipio')) throw ErrorVeraGo(tr('La ubicación debe estar dentro del municipio de Veracruz.'));
+      throw ErrorVeraGo(tr('No pudimos guardar el cambio. Intenta de nuevo.'));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
   }
 }

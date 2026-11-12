@@ -56,7 +56,7 @@ class PasaporteService {
       throw ErrorVeraGo(tr('No pudimos cargar tu perfil. Intenta de nuevo.'));
     }
     if (fila != null) return Perfil.fromJson(fila);
-    final correo = _db.auth.currentUser?.email ?? 'Visitante';
+    final correo = _db.auth.currentUser?.email ?? tr('Visitante');
     return Perfil(nombre: correo.split('@').first, rol: 'usuario');
   }
 

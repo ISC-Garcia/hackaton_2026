@@ -41,7 +41,7 @@ class GrupoEventos {
   static String _duracion(int minutos) {
     if (minutos % 60 == 0) return '${minutos ~/ 60} h';
     if (minutos < 60) return '$minutos min';
-    return '${minutos ~/ 60} h ${minutos % 60} min';
+    return tr('{v} h {v2} min', {'v': minutos ~/ 60, 'v2': minutos % 60});
   }
 
   /// Clave para juntar: mismo día, mismo nombre (sin mayúsculas ni espacios

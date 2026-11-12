@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../theme/app_theme.dart';
 import 'admin_lugares_screen.dart';
 import 'agenda_screen.dart';
@@ -20,33 +21,33 @@ class AdminScreen extends StatelessWidget {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => pantalla));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Administración')),
+      appBar: AppBar(title: Text(tr('Administración'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _Opcion(
             icono: Icons.storefront_outlined,
-            titulo: 'Solicitudes de negocios',
-            texto: 'Aprobar, rechazar o suspender negocios y asignar horarios.',
+            titulo: tr('Solicitudes de negocios'),
+            texto: tr('Aprobar, rechazar o suspender negocios y asignar horarios.'),
             alTocar: () => abrir(const AdminNegociosScreen()),
           ),
           _Opcion(
             icono: Icons.place_outlined,
-            titulo: 'Lugares y Puntos VeraGo',
-            texto: 'Crear y editar lugares públicos y Puntos VeraGo con su horario.',
+            titulo: tr('Lugares y Puntos VeraGo'),
+            texto: tr('Crear y editar lugares públicos y Puntos VeraGo con su horario.'),
             alTocar: () => abrir(const AdminLugaresScreen()),
           ),
           _Opcion(
             icono: Icons.event_outlined,
-            titulo: 'Agenda',
-            texto: 'Crear, editar, cancelar o eliminar eventos (botón "Nuevo evento").',
+            titulo: tr('Agenda'),
+            texto: tr('Crear, editar, cancelar o eliminar eventos (botón "Nuevo evento").'),
             // Antes solo cerraba el panel y regresaba al Pasaporte.
             alTocar: () => abrir(const AgendaScreen()),
           ),
           _Opcion(
             icono: Icons.bar_chart,
-            titulo: 'Estadísticas',
-            texto: 'Datos reales de uso de la app (solo totales).',
+            titulo: tr('Estadísticas'),
+            texto: tr('Datos reales de uso de la app (solo totales).'),
             alTocar: () => abrir(const EstadisticasScreen()),
           ),
         ],

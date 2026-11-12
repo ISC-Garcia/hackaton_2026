@@ -156,7 +156,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
           ? FloatingActionButton.extended(
               onPressed: () => _abrirFormulario(),
               icon: const Icon(Icons.add),
-              label: const Text('Nuevo evento'),
+              label: Text(tr('Nuevo evento')),
             )
           : null,
       body: FutureBuilder<List<Evento>>(
@@ -276,17 +276,16 @@ class _TarjetaEvento extends StatelessWidget {
     final seguro = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('¿Eliminar evento?'),
-        content: Text('"${evento.titulo}" se borrará para siempre. '
-            'Si solo no se llevará a cabo, mejor márcalo como cancelado.'),
+        title: Text(tr('¿Eliminar evento?')),
+        content: Text(tr('"{titulo}" se borrará para siempre. Si solo no se llevará a cabo, mejor márcalo como cancelado.', {'titulo': evento.titulo})),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('No')),
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Eliminar')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(tr('No'))),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(tr('Eliminar'))),
         ],
       ),
     );
     if (seguro == true && context.mounted) {
-      await _accionAdmin(context, () => EventosService().eliminar(evento.id), 'Evento eliminado.');
+      await _accionAdmin(context, () => EventosService().eliminar(evento.id), tr('Evento eliminado.'));
     }
   }
 
@@ -324,7 +323,7 @@ class _TarjetaEvento extends StatelessWidget {
             // Opciones solo para el admin.
             if (esAdmin) ...[
               const Divider(height: 28),
-              const Text('Administrar', style: TextStyle(fontWeight: FontWeight.w700)),
+              Text(tr('Administrar'), style: TextStyle(fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -336,34 +335,34 @@ class _TarjetaEvento extends StatelessWidget {
                       alEditar(evento);
                     },
                     icon: const Icon(Icons.edit_outlined),
-                    label: const Text('Editar'),
+                    label: Text(tr('Editar')),
                   ),
                   if (evento.estado != 'publicado')
                     OutlinedButton.icon(
                       onPressed: () => _accionAdmin(context,
-                          () => EventosService().cambiarEstado(evento.id, 'publicado'), 'Evento publicado.'),
+                          () => EventosService().cambiarEstado(evento.id, 'publicado'), tr('Evento publicado.')),
                       icon: const Icon(Icons.public),
-                      label: const Text('Publicar'),
+                      label: Text(tr('Publicar')),
                     ),
                   if (!evento.borrador)
                     OutlinedButton.icon(
                       onPressed: () => _accionAdmin(context,
-                          () => EventosService().cambiarEstado(evento.id, 'pendiente'), 'Evento pasado a borrador.'),
+                          () => EventosService().cambiarEstado(evento.id, 'pendiente'), tr('Evento pasado a borrador.')),
                       icon: const Icon(Icons.visibility_off_outlined),
-                      label: const Text('Borrador'),
+                      label: Text(tr('Borrador')),
                     ),
                   if (!evento.cancelado)
                     OutlinedButton.icon(
                       onPressed: () => _accionAdmin(context,
-                          () => EventosService().cambiarEstado(evento.id, 'cancelado'), 'Evento cancelado.'),
+                          () => EventosService().cambiarEstado(evento.id, 'cancelado'), tr('Evento cancelado.')),
                       icon: const Icon(Icons.cancel_outlined),
-                      label: const Text('Cancelar'),
+                      label: Text(tr('Cancelar')),
                     ),
                   OutlinedButton.icon(
                     onPressed: () => _eliminar(context),
                     style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF9B2C2C)),
                     icon: const Icon(Icons.delete_outline),
-                    label: const Text('Eliminar'),
+                    label: Text(tr('Eliminar')),
                   ),
                 ],
               ),
@@ -394,7 +393,7 @@ class _TarjetaEvento extends StatelessWidget {
                 leading: const Icon(Icons.schedule),
                 title: Text('${_hora(e.inicia)} – ${_hora(e.termina)}',
                     style: TextStyle(decoration: e.cancelado ? TextDecoration.lineThrough : null)),
-                subtitle: e.cancelado ? Text(tr('Cancelado')) : (e.borrador ? const Text('Borrador') : null),
+                subtitle: e.cancelado ? Text(tr('Cancelado')) : (e.borrador ? Text(tr('Borrador')) : null),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.of(hoja).pop();

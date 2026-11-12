@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../services/estadisticas_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/estado_vacio.dart';
@@ -45,8 +46,8 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.deMiNegocio ? 'Mis estadísticas' : 'Estadísticas'),
-        actions: [IconButton(tooltip: 'Actualizar', icon: const Icon(Icons.refresh), onPressed: _recargar)],
+        title: Text(widget.deMiNegocio ? tr('Mis estadísticas') : tr('Estadísticas')),
+        actions: [IconButton(tooltip: tr('Actualizar'), icon: const Icon(Icons.refresh), onPressed: _recargar)],
       ),
       body: _reales(),
     );
@@ -62,9 +63,9 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
           if (snapshot.hasError) {
             return EstadoVacio(
               icono: Icons.query_stats,
-              titulo: 'Algo salió mal',
+              titulo: tr('Algo salió mal'),
               mensaje: snapshot.error.toString(),
-              textoBoton: 'Reintentar',
+              textoBoton: tr('Reintentar'),
               alPresionar: _recargar,
             );
           }
@@ -84,50 +85,49 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
   }
 
   List<Widget> _deLaApp(Estadisticas e) => [
-        const _Aviso('Datos reales de VeraGo. Miden el uso de la app, no la cantidad de personas en el centro.'),
+        _Aviso(tr('Datos reales de VeraGo. Miden el uso de la app, no la cantidad de personas en el centro.')),
         const SizedBox(height: 12),
         Row(children: [
-          _Dato('${e.dato('usuarios')}', 'cuentas'),
-          _Dato('${e.dato('turistas_con_sellos')}', 'turistas con sellos'),
-          _Dato('${e.dato('sellos_total')}', 'sellos en total'),
+          _Dato('${e.dato('usuarios')}', tr('cuentas')),
+          _Dato('${e.dato('turistas_con_sellos')}', tr('turistas con sellos')),
+          _Dato('${e.dato('sellos_total')}', tr('sellos en total')),
         ]),
         Row(children: [
-          _Dato('${e.dato('sellos_7_dias')}', 'sellos en 7 días'),
-          _Dato('${e.dato('negocios_aprobados')}', 'negocios aprobados'),
-          _Dato('${e.dato('negocios_pendientes')}', 'solicitudes pendientes'),
+          _Dato('${e.dato('sellos_7_dias')}', tr('sellos en 7 días')),
+          _Dato('${e.dato('negocios_aprobados')}', tr('negocios aprobados')),
+          _Dato('${e.dato('negocios_pendientes')}', tr('solicitudes pendientes')),
         ]),
-        _Grafica(titulo: 'Sellos por día (últimos 14 días)', datos: _porDia(e)),
+        _Grafica(titulo: tr('Sellos por día (últimos 14 días)'), datos: _porDia(e)),
         if (e.topNegocios.isNotEmpty)
-          _Grafica(titulo: 'Negocios con más sellos', datos: e.topNegocios)
+          _Grafica(titulo: tr('Negocios con más sellos'), datos: e.topNegocios)
         else
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 24),
-            child: Text('Aún no hay sellos registrados.'),
+            child: Text(tr('Aún no hay sellos registrados.')),
           ),
       ];
 
   List<Widget> _deMiNegocio(Estadisticas e) => [
         if (e.dato('da_sellos') == 0 && e.datos.containsKey('da_sellos'))
-          const _Aviso('Tu negocio no da sellos (solo los negocios formales aprobados).'),
+          _Aviso(tr('Tu negocio no da sellos (solo los negocios formales aprobados).')),
         Row(children: [
-          _Dato('${e.dato('sellos_hoy')}', 'sellos hoy'),
-          _Dato('${e.dato('sellos_7_dias')}', 'en 7 días'),
-          _Dato('${e.dato('sellos_total')}', 'en total'),
+          _Dato('${e.dato('sellos_hoy')}', tr('sellos hoy')),
+          _Dato('${e.dato('sellos_7_dias')}', tr('en 7 días')),
+          _Dato('${e.dato('sellos_total')}', tr('en total')),
         ]),
         Row(children: [
-          _Dato('${e.dato('visitantes')}', 'turistas distintos'),
+          _Dato('${e.dato('visitantes')}', tr('turistas distintos')),
         ]),
-        _Grafica(titulo: 'Sellos por día (últimos 14 días)', datos: _porDia(e)),
+        _Grafica(titulo: tr('Sellos por día (últimos 14 días)'), datos: _porDia(e)),
         const SizedBox(height: 12),
-        Text('Cada sello es un turista que escaneó tu QR. No mostramos quiénes son.',
+        Text(tr('Cada sello es un turista que escaneó tu QR. No mostramos quiénes son.'),
             style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6))),
       ];
 
-  static const _dias = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 
   /// "lun 10" → sellos, en orden.
   Map<String, int> _porDia(Estadisticas e) => {
-        for (final d in e.porDia) '${_dias[d.fecha.weekday % 7]} ${d.fecha.day}': d.total,
+        for (final d in e.porDia) '${Idioma.dia(d.fecha.weekday % 7).substring(0, 3)} ${d.fecha.day}': d.total,
       };
 }
 

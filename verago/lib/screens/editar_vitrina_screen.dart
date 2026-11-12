@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/error_verago.dart';
 import '../services/negocios_service.dart';
@@ -56,7 +57,7 @@ class _EditarVitrinaScreenState extends State<EditarVitrinaScreen> {
 
   Future<void> _guardar() async {
     if (!_formulario.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Faltan datos importantes: revisa lo marcado en rojo.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr('Faltan datos importantes: revisa lo marcado en rojo.'))));
       return;
     }
     setState(() => _guardando = true);
@@ -79,32 +80,31 @@ class _EditarVitrinaScreenState extends State<EditarVitrinaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi vitrina')),
+      appBar: AppBar(title: Text(tr('Mi vitrina'))),
       body: Form(
         key: _formulario,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
           children: [
-            const Text('Lo que escribas aquí lo ven los turistas en la ficha de tu negocio. '
-                'Usa precios reales y aproximados por persona.'),
+            Text(tr('Lo que escribas aquí lo ven los turistas en la ficha de tu negocio. Usa precios reales y aproximados por persona.')),
             const SizedBox(height: 16),
-            Text('Promoción (opcional)', style: Theme.of(context).textTheme.titleMedium),
+            Text(tr('Promoción (opcional)'), style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             TextFormField(
               controller: _promocion,
               maxLength: 140,
               maxLines: 2,
-              decoration: const InputDecoration(
-                hintText: 'Ej. 2x1 en café de 4 a 6 pm',
+              decoration: InputDecoration(
+                hintText: tr('Ej. 2x1 en café de 4 a 6 pm'),
                 border: OutlineInputBorder(),
               ),
-              validator: Validaciones.textoConLetras('la promoción', minimo: 3, opcional: true),
+              validator: Validaciones.textoConLetras(tr('la promoción'), minimo: 3, opcional: true),
             ),
             const SizedBox(height: 8),
-            Text('Productos o servicios', style: Theme.of(context).textTheme.titleMedium),
+            Text(tr('Productos o servicios'), style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             if (_filas.isEmpty)
-              const Text('Aún no tienes productos. Agrega los más importantes.'),
+              Text(tr('Aún no tienes productos. Agrega los más importantes.')),
             for (var i = 0; i < _filas.length; i++)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -117,8 +117,8 @@ class _EditarVitrinaScreenState extends State<EditarVitrinaScreen> {
                         controller: _filas[i].nombre,
                         maxLength: 60,
                         inputFormatters: Validaciones.nombreNegocioFormato(),
-                        decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder(), counterText: ''),
-                        validator: Validaciones.nombreNegocio('el nombre'),
+                        decoration: InputDecoration(labelText: tr('Nombre'), border: OutlineInputBorder(), counterText: ''),
+                        validator: Validaciones.nombreNegocio(tr('el nombre')),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -129,15 +129,15 @@ class _EditarVitrinaScreenState extends State<EditarVitrinaScreen> {
                         keyboardType: TextInputType.number,
                         inputFormatters: Validaciones.soloNumeros(6),
                         validator: Validaciones.precio(),
-                        decoration: const InputDecoration(
-                          labelText: 'Precio',
+                        decoration: InputDecoration(
+                          labelText: tr('Precio'),
                           prefixText: '\$ ',
                           border: OutlineInputBorder(),
                         ),
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Quitar',
+                      tooltip: tr('Quitar'),
                       icon: const Icon(Icons.delete_outline),
                       onPressed: () => _quitar(i),
                     ),
@@ -150,14 +150,14 @@ class _EditarVitrinaScreenState extends State<EditarVitrinaScreen> {
                 onPressed: _filas.length >= EditarVitrinaScreen.maximo ? null : _agregar,
                 icon: const Icon(Icons.add),
                 label: Text(_filas.length >= EditarVitrinaScreen.maximo
-                    ? 'Máximo ${EditarVitrinaScreen.maximo} productos'
-                    : 'Agregar producto o servicio'),
+                    ? tr('Máximo {maximo} productos', {'maximo': EditarVitrinaScreen.maximo})
+                    : tr('Agregar producto o servicio')),
               ),
             ),
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _guardando ? null : _guardar,
-              child: Text(_guardando ? 'Guardando…' : 'Guardar vitrina'),
+              child: Text(_guardando ? tr('Guardando…') : tr('Guardar vitrina')),
             ),
           ],
         ),

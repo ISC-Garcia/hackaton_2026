@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../i18n/idioma.dart';
 import 'error_verago.dart';
 import 'fotos_service.dart';
 
@@ -41,7 +42,7 @@ class EliminarService {
     if (fotoUrl != null) await FotosService().borrarArchivo(fotoUrl);
     final r = await _llamar(lugarId, confirmar: true);
     if (r['estado'] != 'OK') {
-      throw const ErrorVeraGo('No se pudo eliminar: algo cambió mientras tanto. Vuelve a intentarlo.');
+      throw ErrorVeraGo(tr('No se pudo eliminar: algo cambió mientras tanto. Vuelve a intentarlo.'));
     }
   }
 
@@ -51,9 +52,9 @@ class EliminarService {
     try {
       r = await _db.rpc('ocultar_mi_negocio') as Map<String, dynamic>;
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
-    if (r['estado'] != 'OK') throw const ErrorVeraGo('No pudimos ocultar tu negocio.');
+    if (r['estado'] != 'OK') throw ErrorVeraGo(tr('No pudimos ocultar tu negocio.'));
   }
 
   Future<Map<String, dynamic>> _llamar(String lugarId, {required bool confirmar}) async {
@@ -63,17 +64,17 @@ class EliminarService {
           as Map<String, dynamic>;
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST202') {
-        throw const ErrorVeraGo('Falta actualizar la base de datos (correr el SQL 019). Avisa a los desarrolladores.');
+        throw ErrorVeraGo(tr('Falta actualizar la base de datos (correr el SQL 019). Avisa a los desarrolladores.'));
       }
-      throw const ErrorVeraGo('No pudimos eliminarlo. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos eliminarlo. Intenta de nuevo.'));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
     switch (r['estado']) {
       case 'NO_AUTORIZADO':
-        throw const ErrorVeraGo('No tienes permiso para eliminar este lugar.');
+        throw ErrorVeraGo(tr('No tienes permiso para eliminar este lugar.'));
       case 'NO_EXISTE':
-        throw const ErrorVeraGo('Este lugar ya no existe.');
+        throw ErrorVeraGo(tr('Este lugar ya no existe.'));
       default:
         return r;
     }

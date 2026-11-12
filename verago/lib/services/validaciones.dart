@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
 
+import '../i18n/idioma.dart';
+
 /// Validaciones de formularios. Cada función devuelve null si el valor es
 /// correcto, o el mensaje de error en español.
 ///
@@ -10,15 +12,15 @@ class Validaciones {
   static String? correo(String? v) {
     final t = (v ?? '').trim();
     final valido = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t);
-    return valido ? null : 'Escribe un correo válido (ej. nombre@correo.com)';
+    return valido ? null : tr('Escribe un correo válido (ej. nombre@correo.com)');
   }
 
   /// Contraseña segura: al menos 8 caracteres, con letras y números.
   static String? contrasenaSegura(String? v) {
     final t = v ?? '';
-    if (t.length < 8) return 'Usa al menos 8 caracteres';
-    if (!RegExp(r'[A-Za-zÁÉÍÓÚáéíóúÑñ]').hasMatch(t)) return 'Incluye al menos una letra';
-    if (!RegExp(r'\d').hasMatch(t)) return 'Incluye al menos un número';
+    if (t.length < 8) return tr('Usa al menos 8 caracteres');
+    if (!RegExp(r'[A-Za-zÁÉÍÓÚáéíóúÑñ]').hasMatch(t)) return tr('Incluye al menos una letra');
+    if (!RegExp(r'\d').hasMatch(t)) return tr('Incluye al menos un número');
     return null;
   }
 
@@ -27,8 +29,8 @@ class Validaciones {
   /// [soloDiezDigitos]).
   static String? telefono(String? v) {
     final t = (v ?? '').trim();
-    if (!RegExp(r'^\d+$').hasMatch(t)) return 'Escribe solo números';
-    return t.length == 10 ? null : 'El teléfono debe tener 10 números (llevas ${t.length})';
+    if (!RegExp(r'^\d+$').hasMatch(t)) return tr('Escribe solo números');
+    return t.length == 10 ? null : tr('El teléfono debe tener 10 números (llevas {length})', {'length': t.length});
   }
 
   /// Formateadores para el campo de teléfono: solo dígitos y máximo 10.
@@ -40,18 +42,18 @@ class Validaciones {
 
   /// Fechas de un evento: debe terminar después de iniciar y durar máximo 30 días.
   static String? fechasEvento(DateTime inicia, DateTime termina) {
-    if (!termina.isAfter(inicia)) return 'El evento debe terminar después de iniciar.';
-    if (termina.difference(inicia).inDays > 30) return 'Un evento no puede durar más de 30 días.';
+    if (!termina.isAfter(inicia)) return tr('El evento debe terminar después de iniciar.');
+    if (termina.difference(inicia).inDays > 30) return tr('Un evento no puede durar más de 30 días.');
     return null;
   }
 
   /// Evento que se repite: cada 1–60 días, de 2 a 30 veces, y que una fecha
   /// no se encime con la siguiente.
   static String? repeticion({required int? cadaDias, required int? veces, required Duration duracion}) {
-    if (cadaDias == null || cadaDias < 1 || cadaDias > 60) return 'Repite cada 1 a 60 días.';
-    if (veces == null || veces < 2 || veces > 30) return 'Elige de 2 a 30 veces.';
+    if (cadaDias == null || cadaDias < 1 || cadaDias > 60) return tr('Repite cada 1 a 60 días.');
+    if (veces == null || veces < 2 || veces > 30) return tr('Elige de 2 a 30 veces.');
     if (duracion > Duration(days: cadaDias)) {
-      return 'El evento dura más que el tiempo entre repeticiones: se enciman las fechas.';
+      return tr('El evento dura más que el tiempo entre repeticiones: se enciman las fechas.');
     }
     return null;
   }
@@ -60,12 +62,12 @@ class Validaciones {
   static String? costo(String? v) {
     final t = (v ?? '').trim();
     if (t.isEmpty) return null;
-    return RegExp(r'^\d{1,6}$').hasMatch(t) ? null : 'Escribe solo números (pesos)';
+    return RegExp(r'^\d{1,6}$').hasMatch(t) ? null : tr('Escribe solo números (pesos)');
   }
 
   /// Texto obligatorio con un mínimo de letras.
   static String? Function(String?) obligatorio(String campo, {int minimo = 2}) =>
-      (v) => (v ?? '').trim().length < minimo ? 'Escribe $campo' : null;
+      (v) => (v ?? '').trim().length < minimo ? tr('Escribe {campo}', {'campo': campo}) : null;
 
   // ==================================================================
   // RESTRICCIONES POR TIPO DE CAMPO
@@ -90,12 +92,12 @@ class Validaciones {
   /// `completo` = pide nombre y apellido (al menos 2 palabras).
   static String? Function(String?) nombrePersona({bool completo = false}) => (v) {
         final t = (v ?? '').trim();
-        if (RegExp(r'\d').hasMatch(t)) return 'El nombre no lleva números';
+        if (RegExp(r'\d').hasMatch(t)) return tr('El nombre no lleva números');
         final letras = RegExp('[$_letras]').allMatches(t).length;
-        if (letras < 2) return completo ? 'Escribe tu nombre completo' : 'Escribe tu nombre';
-        if (!RegExp('^[$_letras]').hasMatch(t)) return 'El nombre debe empezar con una letra';
+        if (letras < 2) return completo ? tr('Escribe tu nombre completo') : tr('Escribe tu nombre');
+        if (!RegExp('^[$_letras]').hasMatch(t)) return tr('El nombre debe empezar con una letra');
         if (completo && t.split(RegExp(r'\s+')).where((p) => p.length >= 2).length < 2) {
-          return 'Escribe nombre y apellido';
+          return tr('Escribe nombre y apellido');
         }
         return null;
       };
@@ -110,9 +112,9 @@ class Validaciones {
   /// Debe tener al menos 2 letras (no solo números o signos).
   static String? Function(String?) nombreNegocio(String campo, {int maximo = 60}) => (v) {
         final t = (v ?? '').trim();
-        if (t.length < 2) return 'Escribe $campo';
-        if (t.length > maximo) return 'Máximo $maximo caracteres';
-        if (RegExp('[$_letras]').allMatches(t).length < 2) return '$campo debe llevar letras';
+        if (t.length < 2) return tr('Escribe {campo}', {'campo': campo});
+        if (t.length > maximo) return tr('Máximo {maximo} caracteres', {'maximo': maximo});
+        if (RegExp('[$_letras]').allMatches(t).length < 2) return tr('{campo} debe llevar letras', {'campo': campo});
         return null;
       };
 
@@ -127,8 +129,8 @@ class Validaciones {
   static String? Function(String?) direccion({bool opcional = false}) => (v) {
         final t = (v ?? '').trim();
         if (t.isEmpty && opcional) return null;
-        if (t.length < 5) return 'Escribe la dirección';
-        if (!_tieneLetra.hasMatch(t)) return 'La dirección debe llevar el nombre de la calle';
+        if (t.length < 5) return tr('Escribe la dirección');
+        if (!_tieneLetra.hasMatch(t)) return tr('La dirección debe llevar el nombre de la calle');
         return null;
       };
 
@@ -137,8 +139,8 @@ class Validaciones {
   static String? Function(String?) textoConLetras(String campo, {int minimo = 10, bool opcional = false}) => (v) {
         final t = (v ?? '').trim();
         if (t.isEmpty && opcional) return null;
-        if (t.length < minimo) return 'Escribe $campo (al menos $minimo caracteres)';
-        if (RegExp('[$_letras]').allMatches(t).length < 3) return '$campo debe llevar palabras';
+        if (t.length < minimo) return tr('Escribe {campo} (al menos {minimo} caracteres)', {'campo': campo, 'minimo': minimo});
+        if (RegExp('[$_letras]').allMatches(t).length < 3) return tr('{campo} debe llevar palabras', {'campo': campo});
         return null;
       };
 
@@ -151,10 +153,10 @@ class Validaciones {
   /// Precio en pesos de 0 a `maximo` (igual que la base de datos: 100 000).
   static String? Function(String?) precio({bool opcional = true, int maximo = 100000}) => (v) {
         final t = (v ?? '').trim();
-        if (t.isEmpty) return opcional ? null : 'Escribe el precio';
+        if (t.isEmpty) return opcional ? null : tr('Escribe el precio');
         final n = int.tryParse(t);
-        if (n == null) return 'Escribe solo números (pesos)';
-        if (n > maximo) return 'Máximo \$$maximo';
+        if (n == null) return tr('Escribe solo números (pesos)');
+        if (n > maximo) return tr('Máximo \${maximo}', {'maximo': maximo});
         return null;
       };
 
@@ -175,7 +177,7 @@ class Validaciones {
 
   static String? codigoQr(String? v) {
     final t = normalizarCodigo(v ?? '');
-    return RegExp(r'^VG-[0-9a-f]{32}$').hasMatch(t) ? null : 'El código empieza con VG- y tiene 32 letras y números';
+    return RegExp(r'^VG-[0-9a-f]{32}$').hasMatch(t) ? null : tr('El código empieza con VG- y tiene 32 letras y números');
   }
 
   /// "vg-ABC…" → "VG-abc…" (así lo guarda la base de datos).

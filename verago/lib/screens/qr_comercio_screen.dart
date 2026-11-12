@@ -1,3 +1,4 @@
+import '../i18n/idioma.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -114,7 +115,7 @@ class _QrComercioScreenState extends State<QrComercioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('QR de mi comercio')),
+      appBar: AppBar(title: Text(tr('QR de mi comercio'))),
       body: _cuerpo(),
     );
   }
@@ -124,10 +125,9 @@ class _QrComercioScreenState extends State<QrComercioScreen> {
     if (_comercios.isEmpty) {
       return EstadoVacio(
         icono: Icons.storefront,
-        titulo: 'Sin comercio asignado',
+        titulo: tr('Sin comercio asignado'),
         mensaje: _error ??
-            'Tu negocio aún no da sellos. Solo los negocios formales aprobados por VeraGo '
-                'muestran QR (los de un Punto VeraGo no dan sellos).',
+            tr('Tu negocio aún no da sellos. Solo los negocios formales aprobados por VeraGo muestran QR (los de un Punto VeraGo no dan sellos).'),
       );
     }
     return ListView(
@@ -136,7 +136,7 @@ class _QrComercioScreenState extends State<QrComercioScreen> {
         if (_comercios.length > 1)
           DropdownButtonFormField<String>(
             initialValue: _comercioId,
-            decoration: const InputDecoration(labelText: 'Comercio', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: tr('Comercio'), border: OutlineInputBorder()),
             items: [
               for (final c in _comercios) DropdownMenuItem(value: c.id, child: Text(c.nombre)),
             ],
@@ -149,8 +149,8 @@ class _QrComercioScreenState extends State<QrComercioScreen> {
           Text(_comercios.first.nombre,
               textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 16),
-        const Text(
-          'Muestra este código al visitante para que gane su sello.',
+        Text(
+          tr('Muestra este código al visitante para que gane su sello.'),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
@@ -169,7 +169,7 @@ class _QrComercioScreenState extends State<QrComercioScreen> {
         const SizedBox(height: 12),
         if (_codigo != null) ...[
           Text(
-            'Cambia en $_segundosRestantes s',
+            tr('Cambia en {_segundosRestantes} s', {'_segundosRestantes': _segundosRestantes}),
             textAlign: TextAlign.center,
             style: const TextStyle(fontWeight: FontWeight.w700, color: VgColores.azulGolfo),
           ),

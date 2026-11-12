@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../services/validaciones.dart';
 
 /// EDITOR DEL COSTO DE ENTRADA (SQL 014).
@@ -62,12 +63,12 @@ class _EditorCostoEntradaState extends State<EditorCostoEntrada> {
   @override
   Widget build(BuildContext context) {
     final opciones = widget.paraNegocio
-        ? const {_Modo.sinDato: 'No cobro entrada', _Modo.conCosto: 'Cobro entrada'}
-        : const {_Modo.sinDato: 'Sin confirmar', _Modo.gratis: 'Gratis', _Modo.conCosto: 'Con costo'};
+        ? {_Modo.sinDato: tr('No cobro entrada'), _Modo.conCosto: tr('Cobro entrada')}
+        : {_Modo.sinDato: tr('Sin confirmar'), _Modo.gratis: tr('Gratis'), _Modo.conCosto: tr('Con costo')};
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Costo de entrada', style: TextStyle(fontWeight: FontWeight.w600)),
+        Text(tr('Costo de entrada'), style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         SegmentedButton<_Modo>(
           segments: [for (final o in opciones.entries) ButtonSegment(value: o.key, label: Text(o.value))],
@@ -83,23 +84,23 @@ class _EditorCostoEntradaState extends State<EditorCostoEntrada> {
             controller: _monto,
             keyboardType: TextInputType.number,
             inputFormatters: Validaciones.soloNumeros(6), // no deja escribir letras
-            decoration: const InputDecoration(
-              labelText: 'Costo aproximado por persona (pesos)',
+            decoration: InputDecoration(
+              labelText: tr('Costo aproximado por persona (pesos)'),
               prefixText: '\$ ',
               border: OutlineInputBorder(),
             ),
             onChanged: (_) => _avisar(),
             validator: (v) {
               final t = (v ?? '').trim();
-              if (t.isEmpty || t == '0') return 'Escribe el costo (o elige otra opción)';
+              if (t.isEmpty || t == '0') return tr('Escribe el costo (o elige otra opción)');
               return Validaciones.precio()(t);
             },
           ),
         ],
         if (!widget.paraNegocio && _modo == _Modo.sinDato)
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 6),
-            child: Text('La app dirá "Costo no disponible: confírmalo en el lugar". No pongas precios sin confirmar.',
+            child: Text(tr('La app dirá "Costo no disponible: confírmalo en el lugar". No pongas precios sin confirmar.'),
                 style: TextStyle(fontSize: 12)),
           ),
       ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../theme/app_theme.dart';
 
 /// CONFIRMACIÓN: se muestra después de registrar el negocio.
@@ -27,27 +28,26 @@ class NegocioRegistradoScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  '¡Tu negocio se ha registrado correctamente!',
+                  tr('¡Tu negocio se ha registrado correctamente!'),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Tu solicitud está pendiente. Por favor espera mientras un administrador de '
-                  'VeraGo la revisa. Te contactaremos por teléfono o correo cuando sea aprobada.',
+                Text(
+                  tr('Tu solicitud está pendiente. Por favor espera mientras un administrador de VeraGo la revisa. Te contactaremos por teléfono o correo cuando sea aprobada.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, height: 1.4),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'También puedes revisar el estado entrando con tu cuenta en "Soy un negocio".',
+                  tr('También puedes revisar el estado entrando con tu cuenta en "Soy un negocio".'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.black.withValues(alpha: 0.6)),
                 ),
                 const SizedBox(height: 28),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Volver a VeraGo'),
+                  child: Text(tr('Volver a VeraGo')),
                 ),
               ],
             ),

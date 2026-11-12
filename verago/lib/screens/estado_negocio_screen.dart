@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
@@ -26,25 +27,22 @@ class EstadoNegocioScreen extends StatelessWidget {
         return (
           icono: Icons.cancel_outlined,
           color: const Color(0xFF9B2C2C),
-          titulo: 'Tu solicitud no fue aprobada',
-          mensaje: 'El equipo de VeraGo revisó "${negocio.nombre}" y no pudo aprobarlo. '
-              'Escríbenos para conocer el motivo o volver a intentarlo.',
+          titulo: tr('Tu solicitud no fue aprobada'),
+          mensaje: tr('El equipo de VeraGo revisó "{nombre}" y no pudo aprobarlo. Escríbenos para conocer el motivo o volver a intentarlo.', {'nombre': negocio.nombre}),
         );
       case 'suspendido':
         return (
           icono: Icons.pause_circle_outline,
           color: VgColores.terracota,
-          titulo: 'Tu negocio está suspendido',
-          mensaje: '"${negocio.nombre}" no aparece por ahora en VeraGo. '
-              'Contacta al equipo de VeraGo para reactivarlo.',
+          titulo: tr('Tu negocio está suspendido'),
+          mensaje: tr('"{nombre}" no aparece por ahora en VeraGo. Contacta al equipo de VeraGo para reactivarlo.', {'nombre': negocio.nombre}),
         );
       default:
         return (
           icono: Icons.hourglass_top,
           color: VgColores.azulGolfo,
-          titulo: 'Solicitud en revisión',
-          mensaje: '"${negocio.nombre}" está pendiente. Por favor espera mientras un administrador '
-              'de VeraGo revisa tu solicitud.',
+          titulo: tr('Solicitud en revisión'),
+          mensaje: tr('"{nombre}" está pendiente. Por favor espera mientras un administrador de VeraGo revisa tu solicitud.', {'nombre': negocio.nombre}),
         );
     }
   }
@@ -76,26 +74,26 @@ class EstadoNegocioScreen extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const PanelComercianteScreen()),
               ),
               icon: const Icon(Icons.refresh),
-              label: const Text('Revisar de nuevo'),
+              label: Text(tr('Revisar de nuevo')),
             ),
             const SizedBox(height: 8),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Volver a VeraGo'),
+              child: Text(tr('Volver a VeraGo')),
             ),
             TextButton(
               onPressed: () async {
                 await AuthService().salir();
                 if (context.mounted) Navigator.of(context).pop();
               },
-              child: const Text('Cerrar sesión'),
+              child: Text(tr('Cerrar sesión')),
             ),
           ],
         ),
       ),
     );
     if (dentroDelPanel) return cuerpo;
-    return Scaffold(appBar: AppBar(title: const Text('Mi negocio')), body: cuerpo);
+    return Scaffold(appBar: AppBar(title: Text(tr('Mi negocio'))), body: cuerpo);
   }
 }
 
@@ -110,15 +108,15 @@ class _QuePasaAhora extends StatelessWidget {
           color: VgColores.azulGolfo.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('¿Qué pasa ahora?', style: TextStyle(fontWeight: FontWeight.w700)),
+            Text(tr('¿Qué pasa ahora?'), style: TextStyle(fontWeight: FontWeight.w700)),
             SizedBox(height: 8),
-            Text('• Revisamos tus datos y que la dirección coincida con el mapa.'),
-            Text('• Si es un Punto VeraGo, confirmamos tu giro y el acuerdo del espacio.'),
-            Text('• No necesitas hacer nada más. Te contactaremos por teléfono o correo.'),
-            Text('• Mientras tanto, tu negocio no aparece en la app.'),
+            Text(tr('• Revisamos tus datos y que la dirección coincida con el mapa.')),
+            Text(tr('• Si es un Punto VeraGo, confirmamos tu giro y el acuerdo del espacio.')),
+            Text(tr('• No necesitas hacer nada más. Te contactaremos por teléfono o correo.')),
+            Text(tr('• Mientras tanto, tu negocio no aparece en la app.')),
           ],
         ),
       );

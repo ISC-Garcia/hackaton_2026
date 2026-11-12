@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../i18n/idioma.dart';
 import '../models/lugar.dart';
 import 'auth_service.dart';
 import 'error_verago.dart';
@@ -63,7 +64,7 @@ class NegociosService {
       final filas = await _db.from('giros').select('id, nombre').order('id');
       return [for (final f in filas) Giro(f['id'] as int, f['nombre'] as String)];
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos cargar los giros. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos cargar los giros. Intenta de nuevo.'));
     }
   }
 
@@ -73,7 +74,7 @@ class NegociosService {
       final r = await _db.rpc('giros_ocupados', params: {'p_punto': puntoId}) as List;
       return r.map((e) => (e is Map ? e.values.first : e) as int).toSet();
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos revisar los giros disponibles.');
+      throw ErrorVeraGo(tr('No pudimos revisar los giros disponibles.'));
     }
   }
 
@@ -95,13 +96,12 @@ class NegociosService {
         (correo == null || _auth.usuario?.email?.toLowerCase() == correo.trim().toLowerCase());
     if (!yaConCuenta) {
       if (nombreEncargado == null || correo == null || contrasena == null) {
-        throw const ErrorVeraGo('Escribe tus datos de encargado para crear tu cuenta.');
+        throw ErrorVeraGo(tr('Escribe tus datos de encargado para crear tu cuenta.'));
       }
       final conSesion = await _auth.registrar(nombreEncargado, correo, contrasena);
       if (!conSesion) {
-        throw const ErrorVeraGo(
-          'Creamos tu cuenta, pero falta confirmar tu correo. Ábrelo, confirma y vuelve '
-          'a tocar "Registrar mi negocio".',
+        throw ErrorVeraGo(
+          tr('Creamos tu cuenta, pero falta confirmar tu correo. Ábrelo, confirma y vuelve a tocar "Registrar mi negocio".'),
         );
       }
     }
@@ -122,24 +122,23 @@ class NegociosService {
       }) as Map<String, dynamic>;
     } on PostgrestException catch (e) {
       // Regla del SQL 021: solo dentro del municipio de Veracruz.
-      if (e.message.contains('municipio')) throw const ErrorVeraGo('La ubicación debe estar dentro del municipio de Veracruz.');
-      throw const ErrorVeraGo('No pudimos registrar tu negocio. Intenta de nuevo.');
+      if (e.message.contains('municipio')) throw ErrorVeraGo(tr('La ubicación debe estar dentro del municipio de Veracruz.'));
+      throw ErrorVeraGo(tr('No pudimos registrar tu negocio. Intenta de nuevo.'));
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos registrar tu negocio. Revisa tu conexión.');
+      throw ErrorVeraGo(tr('No pudimos registrar tu negocio. Revisa tu conexión.'));
     }
 
     switch (r['estado']) {
       case 'OK':
         return;
       case 'NOMBRE_DUPLICADO':
-        throw const ErrorVeraGo('Ya existe un negocio registrado con ese nombre comercial.');
+        throw ErrorVeraGo(tr('Ya existe un negocio registrado con ese nombre comercial.'));
       case 'GIRO_OCUPADO':
-        throw const ErrorVeraGo('Ese giro ya está ocupado en este punto. Elige otro punto o giro.');
+        throw ErrorVeraGo(tr('Ese giro ya está ocupado en este punto. Elige otro punto o giro.'));
       case 'YA_TIENE_NEGOCIO':
-        throw const ErrorVeraGo('Esta cuenta ya tiene un negocio registrado. Ábrelo desde '
-            'Pasaporte → "Soy un negocio" o inicia sesión para verlo.');
+        throw ErrorVeraGo(tr('Esta cuenta ya tiene un negocio registrado. Ábrelo desde Pasaporte → "Soy un negocio" o inicia sesión para verlo.'));
       default:
-        throw const ErrorVeraGo('Revisa los datos del negocio e intenta de nuevo.');
+        throw ErrorVeraGo(tr('Revisa los datos del negocio e intenta de nuevo.'));
     }
   }
 
@@ -159,7 +158,7 @@ class NegociosService {
           .maybeSingle();
       return fila == null ? null : Lugar.fromJson(fila);
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos cargar tu negocio. Intenta de nuevo.');
+      throw ErrorVeraGo(tr('No pudimos cargar tu negocio. Intenta de nuevo.'));
     }
   }
 
@@ -177,7 +176,7 @@ class NegociosService {
       'p_direccion': direccionActual,
     });
     if (r['estado'] != 'OK') {
-      throw const ErrorVeraGo('No pudimos guardar los cambios de tu negocio.');
+      throw ErrorVeraGo(tr('No pudimos guardar los cambios de tu negocio.'));
     }
   }
 
@@ -199,13 +198,13 @@ class NegociosService {
       case 'OK':
         return;
       case 'GIRO_OCUPADO':
-        throw const ErrorVeraGo('Tu giro ya está ocupado en ese Punto VeraGo. Elige otro punto.');
+        throw ErrorVeraGo(tr('Tu giro ya está ocupado en ese Punto VeraGo. Elige otro punto.'));
       case 'MISMO_PUNTO':
-        throw const ErrorVeraGo('Ya estás en ese Punto VeraGo.');
+        throw ErrorVeraGo(tr('Ya estás en ese Punto VeraGo.'));
       case 'DATOS_INVALIDOS':
-        throw const ErrorVeraGo('Marca la nueva ubicación en el mapa y escribe la dirección.');
+        throw ErrorVeraGo(tr('Marca la nueva ubicación en el mapa.'));
       default:
-        throw const ErrorVeraGo('No pudimos enviar tu solicitud. Intenta de nuevo.');
+        throw ErrorVeraGo(tr('No pudimos enviar tu solicitud. Intenta de nuevo.'));
     }
   }
 
@@ -213,7 +212,7 @@ class NegociosService {
   /// Se publica directo, sin aprobación (decisión del equipo; SQL 014).
   Future<void> guardarCostoEntrada(int? costo) async {
     final r = await _rpc('guardar_mi_costo_entrada', {'p_costo': costo});
-    if (r['estado'] != 'OK') throw const ErrorVeraGo('No pudimos guardar el costo de entrada.');
+    if (r['estado'] != 'OK') throw ErrorVeraGo(tr('No pudimos guardar el costo de entrada.'));
   }
 
   /// VITRINA: guarda la lista de productos o servicios y la promoción.
@@ -225,23 +224,22 @@ class NegociosService {
     });
     if (r['estado'] == 'OK') return;
     if (r['estado'] == 'DATOS_INVALIDOS') {
-      throw const ErrorVeraGo('Revisa tu vitrina: nombres de 2 a 60 letras, precios en pesos y '
-          'promoción de 3 a 140 letras.');
+      throw ErrorVeraGo(tr('Revisa tu vitrina: nombres de 2 a 60 letras, precios en pesos y promoción de 3 a 140 letras.'));
     }
-    throw const ErrorVeraGo('No pudimos guardar tu vitrina. Intenta de nuevo.');
+    throw ErrorVeraGo(tr('No pudimos guardar tu vitrina. Intenta de nuevo.'));
   }
 
   /// FOTO de mi negocio (SQL 018): guarda la URL que subió `FotosService`,
   /// o null para quitarla. La función solo acepta fotos de MI carpeta.
   Future<void> guardarMiFoto(String? url) async {
     final r = await _rpc('guardar_mi_foto', {'p_url': url});
-    if (r['estado'] != 'OK') throw const ErrorVeraGo('No pudimos guardar la foto de tu negocio.');
+    if (r['estado'] != 'OK') throw ErrorVeraGo(tr('No pudimos guardar la foto de tu negocio.'));
   }
 
   /// Retira la solicitud de cambio de ubicación pendiente.
   Future<void> cancelarCambioUbicacion() async {
     final r = await _rpc('cancelar_cambio_ubicacion', {});
-    if (r['estado'] != 'OK') throw const ErrorVeraGo('No pudimos cancelar la solicitud.');
+    if (r['estado'] != 'OK') throw ErrorVeraGo(tr('No pudimos cancelar la solicitud.'));
   }
 
   /// Reemplaza el horario del negocio FORMAL (función protegida).
@@ -253,7 +251,7 @@ class NegociosService {
       ],
     });
     if (r['estado'] != 'OK') {
-      throw const ErrorVeraGo('Revisa el horario: la hora de cierre debe ser después de la de apertura.');
+      throw ErrorVeraGo(tr('Revisa el horario: la hora de cierre debe ser después de la de apertura.'));
     }
   }
 
@@ -264,13 +262,12 @@ class NegociosService {
       // PGRST202 = la función no existe; 42703 = la columna no existe:
       // falta correr un SQL nuevo en Supabase.
       if (e.code == 'PGRST202' || e.code == '42703' || e.code == 'PGRST204') {
-        throw const ErrorVeraGo('Falta actualizar la base de datos (correr el SQL más reciente en '
-            'Supabase). Avisa a los desarrolladores.');
+        throw ErrorVeraGo(tr('Falta actualizar la base de datos (correr el SQL más reciente en Supabase). Avisa a los desarrolladores.'));
       }
-      if (e.message.contains('municipio')) throw const ErrorVeraGo('La ubicación debe estar dentro del municipio de Veracruz.');
-      throw const ErrorVeraGo('No pudimos completar la operación. Intenta de nuevo.');
+      if (e.message.contains('municipio')) throw ErrorVeraGo(tr('La ubicación debe estar dentro del municipio de Veracruz.'));
+      throw ErrorVeraGo(tr('No pudimos completar la operación. Intenta de nuevo.'));
     } catch (_) {
-      throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');
+      throw ErrorVeraGo(tr('Revisa tu conexión a internet e intenta de nuevo.'));
     }
   }
 }
