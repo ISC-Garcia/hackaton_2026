@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import 'admin_lugares_screen.dart';
+import 'agenda_screen.dart';
 import 'admin_negocios_screen.dart';
 import 'estadisticas_screen.dart';
 
@@ -38,13 +39,14 @@ class AdminScreen extends StatelessWidget {
           _Opcion(
             icono: Icons.event_outlined,
             titulo: 'Agenda',
-            texto: 'Los eventos se crean y editan directo en la pestaña Agenda.',
-            alTocar: () => Navigator.of(context).pop(),
+            texto: 'Crear, editar, cancelar o eliminar eventos (botón "Nuevo evento").',
+            // Antes solo cerraba el panel y regresaba al Pasaporte.
+            alTocar: () => abrir(const AgendaScreen()),
           ),
           _Opcion(
             icono: Icons.bar_chart,
             titulo: 'Estadísticas',
-            texto: 'Datos simulados de uso de la app.',
+            texto: 'Datos reales de uso de la app (solo totales).',
             alTocar: () => abrir(const EstadisticasScreen()),
           ),
         ],

@@ -15,8 +15,9 @@ import '../widgets/selector_ubicacion.dart';
 
 /// FORMULARIO DE LUGAR o PUNTO VERAGO (admin): crear o editar.
 ///
-/// Igual que en el registro de negocios, la dirección se llena sola al
-/// tocar el mapa, para que coincidan.
+/// La DIRECCIÓN está bloqueada: no se escribe, se llena sola al tocar el
+/// mapa (Nominatim), así siempre coincide con el punto. Ubicación, dirección,
+/// nombre, categoría y descripción son obligatorios: sin ellos no se guarda.
 class AdminLugarFormScreen extends StatefulWidget {
   const AdminLugarFormScreen({super.key, this.lugar});
 
@@ -45,6 +46,8 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
   late bool _publicado = widget.lugar?.publicado ?? true;
   late int? _costo = widget.lugar?.costoEntradaMxn;
   bool _faltaUbicacion = false;
+  bool _buscandoDireccion = false;
+  bool _sinDireccion = false; // el mapa no dio dirección (sin internet)
   bool _guardando = false;
 
   static const _duraciones = [15, 20, 30, 45, 60, 90, 120];
@@ -68,17 +71,36 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
     setState(() {
       _ubicacion = punto;
       _faltaUbicacion = false;
+      // La dirección anterior ya no corresponde al punto nuevo.
+      _direccion.clear();
+      _sinDireccion = false;
     });
+    await _buscarDireccion();
+  }
+
+  /// Pide la dirección del punto marcado (también sirve para reintentar).
+  Future<void> _buscarDireccion() async {
+    final punto = _ubicacion;
+    if (punto == null) return;
+    setState(() => _buscandoDireccion = true);
     final direccion = await GeocodificacionService().direccionDe(punto);
-    if (mounted && direccion != null && _ubicacion == punto) {
-      setState(() => _direccion.text = direccion);
-    }
+    if (!mounted || _ubicacion != punto) return; // tocó otro punto mientras tanto
+    setState(() {
+      _buscandoDireccion = false;
+      _sinDireccion = direccion == null;
+      if (direccion != null) _direccion.text = direccion;
+    });
   }
 
   Future<void> _guardar() async {
     final ok = _formulario.currentState!.validate();
     setState(() => _faltaUbicacion = _ubicacion == null);
-    if (!ok || _faltaUbicacion) return;
+    if (!ok || _faltaUbicacion) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Faltan datos importantes: revisa lo marcado en rojo.')),
+      );
+      return;
+    }
     final errorHorario = EditorHorario.validar(_horario);
     if (errorHorario != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorHorario)));
@@ -199,7 +221,7 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
             maxLines: 3,
             maxLength: 300,
             decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
-            validator: Validaciones.textoConLetras('la descripción', opcional: true),
+            validator: Validaciones.textoConLetras('la descripción'),
           ),
           const Text('Ubicación (toca el mapa):', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
@@ -210,14 +232,41 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
               child: Text('Marca la ubicación en el mapa', style: TextStyle(color: Color(0xFF9B2C2C))),
             ),
           const SizedBox(height: 12),
+          // Bloqueada (readOnly): solo se muestra lo que da el mapa.
           TextFormField(
             controller: _direccion,
-            inputFormatters: Validaciones.direccionFormato,
-            validator: Validaciones.direccion(opcional: true),
-            decoration: const InputDecoration(
-              labelText: 'Dirección',
-              helperText: 'Se llena sola al tocar el mapa; puedes ajustarla.',
-              border: OutlineInputBorder(),
+            readOnly: true,
+            enableInteractiveSelection: false,
+            validator: (_) {
+              if (_ubicacion == null) return 'Primero toca el mapa';
+              if (_buscandoDireccion) return 'Espera a que se cargue la dirección';
+              return Validaciones.direccion()(_direccion.text) == null
+                  ? null
+                  : 'No hay dirección: toca el mapa o "reintentar"';
+            },
+            decoration: InputDecoration(
+              labelText: 'Dirección (según el mapa)',
+              helperText: _buscandoDireccion
+                  ? 'Buscando la dirección del punto…'
+                  : _sinDireccion
+                      ? 'No pudimos obtenerla (¿sin internet?). Toca "reintentar".'
+                      : 'Se llena sola al tocar el mapa; no se escribe.',
+              filled: true,
+              fillColor: Colors.black.withValues(alpha: 0.04),
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.lock_outline, size: 18),
+              suffixIcon: _buscandoDireccion
+                  ? const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                    )
+                  : (_ubicacion != null
+                      ? IconButton(
+                          tooltip: 'Reintentar',
+                          icon: const Icon(Icons.refresh),
+                          onPressed: _buscarDireccion,
+                        )
+                      : null),
             ),
           ),
           const SizedBox(height: 16),

@@ -79,7 +79,10 @@ class _CambiarUbicacionScreenState extends State<CambiarUbicacionScreen> {
   }
 
   Future<void> _enviar() async {
-    if (!_formulario.currentState!.validate()) return;
+    if (!_formulario.currentState!.validate()) {
+      _mensaje('Faltan datos importantes: revisa lo marcado en rojo.');
+      return;
+    }
     if (n.esFormal && _ubicacion == null) {
       _mensaje('Toca el mapa en la nueva ubicación de tu local.');
       return;

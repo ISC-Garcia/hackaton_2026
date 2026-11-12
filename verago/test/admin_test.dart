@@ -80,4 +80,12 @@ void main() {
     expect(find.text('Lugares y Puntos VeraGo'), findsOneWidget);
     expect(find.text('Estadísticas'), findsOneWidget);
   });
+
+  testWidgets('"Agenda" en el panel abre la Agenda (antes regresaba al Pasaporte)', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: AdminScreen()));
+    await tester.tap(find.text('Agenda'));
+    await tester.pumpAndSettle();
+    expect(find.text('Administración'), findsNothing); // ya no está el panel
+    expect(find.widgetWithText(AppBar, 'Agenda'), findsOneWidget);
+  });
 }

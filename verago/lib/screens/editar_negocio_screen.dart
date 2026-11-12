@@ -46,7 +46,10 @@ class _EditarNegocioScreenState extends State<EditarNegocioScreen> {
   }
 
   Future<void> _guardar() async {
-    if (!_formulario.currentState!.validate()) return;
+    if (!_formulario.currentState!.validate()) {
+      _mensaje('Faltan datos importantes: revisa lo marcado en rojo.');
+      return;
+    }
     final errorHorario = EditorHorario.validar(_horario);
     if (errorHorario != null) {
       _mensaje(errorHorario);

@@ -166,7 +166,11 @@ class _NegocioScreenState extends State<NegocioScreen> {
   Future<void> _registrar() async {
     final formularioOk = _formulario.currentState!.validate();
     setState(() => _faltaUbicacion = _formal && _ubicacion == null);
-    if (!formularioOk || _faltaUbicacion) return;
+    if (!formularioOk || _faltaUbicacion) {
+      // Formulario largo: avisamos aunque el error quede fuera de la pantalla.
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Faltan datos importantes: revisa lo marcado en rojo.')));
+      return;
+    }
     // Ventana emergente: aceptar términos antes de enviar (Confirmar / Cancelar).
     if (!await _confirmarTerminos()) return;
 

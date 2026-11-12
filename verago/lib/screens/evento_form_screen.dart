@@ -99,7 +99,10 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
   }
 
   Future<void> _guardar() async {
-    if (!_formulario.currentState!.validate()) return;
+    if (!_formulario.currentState!.validate()) {
+      _mensaje('Faltan datos importantes: revisa lo marcado en rojo.');
+      return;
+    }
     final errorFechas = Validaciones.fechasEvento(_inicia, _termina);
     if (errorFechas != null) {
       _mensaje(errorFechas);
@@ -241,7 +244,7 @@ class _EventoFormScreenState extends State<EventoFormScreen> {
             maxLines: 3,
             maxLength: 400,
             decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
-            validator: Validaciones.textoConLetras('la descripción', opcional: true),
+            validator: Validaciones.textoConLetras('la descripción'),
           ),
           const SizedBox(height: 4),
           DropdownButtonFormField<String>(
