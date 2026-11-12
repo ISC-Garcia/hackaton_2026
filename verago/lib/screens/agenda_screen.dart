@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/evento.dart';
+import '../models/grupo_eventos.dart';
 import '../services/auth_service.dart';
 import '../services/error_verago.dart';
 import '../services/eventos_service.dart';
@@ -13,6 +14,11 @@ import '../widgets/etiqueta.dart';
 import 'evento_form_screen.dart';
 
 /// AGENDA: eventos culturales del centro.
+///
+/// - "Próximos" se puede ordenar de más pronto a más lejano (o al revés) y
+///   lleva un encabezado por día.
+/// - El MISMO evento varias veces el mismo día se junta en una tarjeta, con
+///   las horas a la derecha (o "Cada 2 h" si van parejas). Ver GrupoEventos.
 ///
 /// Cómo funciona: pide a `EventosService` los eventos que aún no terminan
 /// y los separa en "Hoy" (en curso o que empiezan hoy) y "Próximos".
@@ -32,6 +38,47 @@ class _AgendaScreenState extends State<AgendaScreen> {
   final _servicio = EventosService();
   late Future<List<Evento>> _futuro;
   bool _verHoy = true;
+
+  /// Orden de "Próximos": false = más pronto primero (por defecto).
+  bool _masLejanoPrimero = false;
+
+  static const _diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  static const _mesesLargos = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  ];
+
+  /// "sábado 14 de noviembre"
+  String _nombreDia(DateTime d) => '${_diasSemana[d.weekday % 7]} ${d.day} de ${_mesesLargos[d.month - 1]}';
+
+  /// Tarjetas de la lista, con un encabezado cada vez que cambia el día
+  /// (solo en "Próximos": en "Hoy" todo es del mismo día).
+  List<Widget> _filas(List<Evento> visibles, DateTime ahora) {
+    final grupos = GrupoEventos.agrupar(visibles, masLejanoPrimero: !_verHoy && _masLejanoPrimero);
+    final filas = <Widget>[];
+    DateTime? diaAnterior;
+    for (final g in grupos) {
+      if (!_verHoy && g.dia != diaAnterior) {
+        filas.add(Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 2),
+          child: Text(
+            _nombreDia(g.dia),
+            style: const TextStyle(fontWeight: FontWeight.w700, color: VgColores.azulGolfo),
+          ),
+        ));
+        diaAnterior = g.dia;
+      }
+      filas.add(_TarjetaEvento(
+        evento: g.primero,
+        grupo: g,
+        ahora: ahora,
+        esAdmin: _esAdmin,
+        alEditar: _abrirFormulario,
+        alCambiar: _recargar,
+      ));
+    }
+    return filas;
+  }
   bool _esAdmin = false;
   StreamSubscription<dynamic>? _suscripcion;
 
@@ -132,6 +179,19 @@ class _AgendaScreenState extends State<AgendaScreen> {
                   onSelectionChanged: (s) => setState(() => _verHoy = s.first),
                 ),
               ),
+              // Ordenar "Próximos".
+              if (!_verHoy && proximos.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: TextButton.icon(
+                      onPressed: () => setState(() => _masLejanoPrimero = !_masLejanoPrimero),
+                      icon: const Icon(Icons.swap_vert),
+                      label: Text(_masLejanoPrimero ? 'Más lejano primero' : 'Más pronto primero'),
+                    ),
+                  ),
+                ),
               Expanded(
                 child: visibles.isEmpty
                     ? EstadoVacio(
@@ -148,16 +208,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
                           _recargar();
                           await _futuro;
                         },
-                        child: ListView.builder(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          itemCount: visibles.length,
-                          itemBuilder: (_, i) => _TarjetaEvento(
-                            evento: visibles[i],
-                            ahora: ahora,
-                            esAdmin: _esAdmin,
-                            alEditar: _abrirFormulario,
-                            alCambiar: _recargar,
-                          ),
+                        child: ListView(
+                          padding: const EdgeInsets.only(bottom: 88), // espacio para "Nuevo evento"
+                          children: _filas(visibles, ahora),
                         ),
                       ),
               ),
@@ -172,6 +225,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
 class _TarjetaEvento extends StatelessWidget {
   const _TarjetaEvento({
     required this.evento,
+    this.grupo,
     required this.ahora,
     required this.esAdmin,
     required this.alEditar,
@@ -179,6 +233,9 @@ class _TarjetaEvento extends StatelessWidget {
   });
 
   final Evento evento;
+
+  /// Si el mismo evento se repite ese día: todas sus horas (null = uno solo).
+  final GrupoEventos? grupo;
   final DateTime ahora;
   final bool esAdmin;
   final void Function(Evento) alEditar;
@@ -297,14 +354,58 @@ class _TarjetaEvento extends StatelessWidget {
     );
   }
 
+  /// Evento repetido: primero se elige la hora y luego se abre su detalle
+  /// (cada hora se puede editar o cancelar por separado).
+  void _elegirHora(BuildContext context, GrupoEventos g) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (hoja) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Text(evento.titulo, style: Theme.of(hoja).textTheme.titleLarge),
+            ),
+            for (final e in g.eventos)
+              ListTile(
+                leading: const Icon(Icons.schedule),
+                title: Text('${_hora(e.inicia)} – ${_hora(e.termina)}',
+                    style: TextStyle(decoration: e.cancelado ? TextDecoration.lineThrough : null)),
+                subtitle: e.cancelado ? const Text('Cancelado') : (e.borrador ? const Text('Borrador') : null),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.of(hoja).pop();
+                  _TarjetaEvento(
+                    evento: e,
+                    ahora: ahora,
+                    esAdmin: esAdmin,
+                    alEditar: alEditar,
+                    alCambiar: alCambiar,
+                  )._verDetalle(context);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final tachado = evento.cancelado ? TextDecoration.lineThrough : null;
+    final g = grupo;
+    final varios = g != null && g.esVarios;
+    // Tachado solo si TODAS las horas están canceladas.
+    final todosCancelados = varios ? g.eventos.every((e) => e.cancelado) : evento.cancelado;
+    final tachado = todosCancelados ? TextDecoration.lineThrough : null;
+    final horario = (g ?? GrupoEventos([evento])).textoHorario;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _verDetalle(context),
+        onTap: () => varios ? _elegirHora(context, g) : _verDetalle(context),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
@@ -344,12 +445,10 @@ class _TarjetaEvento extends StatelessWidget {
                       evento.titulo,
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, decoration: tachado),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${_hora(evento.inicia)} – ${_hora(evento.termina)}'
-                      '${evento.lugarNombre != null ? ' · ${evento.lugarNombre}' : ''}',
-                      style: TextStyle(color: Colors.black.withValues(alpha: 0.65)),
-                    ),
+                    if (evento.lugarNombre != null) ...[
+                      const SizedBox(height: 2),
+                      Text(evento.lugarNombre!, style: TextStyle(color: Colors.black.withValues(alpha: 0.65))),
+                    ],
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 6,
@@ -357,9 +456,11 @@ class _TarjetaEvento extends StatelessWidget {
                       children: [
                         if (evento.borrador)
                           const Etiqueta('Borrador (solo admin)', color: Color(0xFF6B6B6B), icono: Icons.visibility_off_outlined),
-                        if (evento.cancelado)
+                        if (todosCancelados)
                           const Etiqueta('Cancelado', color: Color(0xFF9B2C2C), icono: Icons.cancel_outlined)
-                        else if (evento.enCurso(ahora))
+                        else if (varios && g.eventos.any((e) => e.cancelado))
+                          const Etiqueta('Alguna hora cancelada', color: Color(0xFF9B2C2C), icono: Icons.cancel_outlined)
+                        else if ((varios ? g.eventos : [evento]).any((e) => e.enCurso(ahora)))
                           const Etiqueta('En curso', color: VgColores.verdePalma, icono: Icons.play_circle_outline),
                         // Siempre se indica el costo: "Gratuito", "≈ $150 MXN" o "Con costo".
                         Etiqueta(
@@ -370,6 +471,29 @@ class _TarjetaEvento extends StatelessWidget {
                         if (evento.esDemo) const Etiqueta.demo(),
                       ],
                     ),
+                  ],
+                ),
+              ),
+              // Horario a la derecha: una hora, varias horas o "Cada 2 h".
+              const SizedBox(width: 10),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 104),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (varios) const Icon(Icons.repeat, size: 16, color: VgColores.terracota),
+                    Text(
+                      horario.principal,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(fontWeight: FontWeight.w700, decoration: tachado, height: 1.3),
+                    ),
+                    if (horario.detalle != null)
+                      Text(horario.detalle!,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6))),
+                    if (varios)
+                      Text('${g.eventos.length} horarios',
+                          style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6))),
                   ],
                 ),
               ),
