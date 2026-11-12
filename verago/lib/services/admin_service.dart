@@ -197,6 +197,8 @@ class AdminService {
       if (e.code == '23505') {
         throw const ErrorVeraGo('Ese giro ya está ocupado en el punto o el nombre ya existe.');
       }
+      // Regla del SQL 021: solo dentro del municipio de Veracruz.
+      if (e.message.contains('municipio')) throw const ErrorVeraGo('La ubicación debe estar dentro del municipio de Veracruz.');
       throw const ErrorVeraGo('No pudimos guardar el cambio. Intenta de nuevo.');
     } catch (_) {
       throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');

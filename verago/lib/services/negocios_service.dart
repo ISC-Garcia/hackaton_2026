@@ -120,6 +120,10 @@ class NegociosService {
         'p_punto_id': s.puntoId,
         'p_giro_id': s.giroId,
       }) as Map<String, dynamic>;
+    } on PostgrestException catch (e) {
+      // Regla del SQL 021: solo dentro del municipio de Veracruz.
+      if (e.message.contains('municipio')) throw const ErrorVeraGo('La ubicación debe estar dentro del municipio de Veracruz.');
+      throw const ErrorVeraGo('No pudimos registrar tu negocio. Intenta de nuevo.');
     } catch (_) {
       throw const ErrorVeraGo('No pudimos registrar tu negocio. Revisa tu conexión.');
     }
@@ -263,6 +267,7 @@ class NegociosService {
         throw const ErrorVeraGo('Falta actualizar la base de datos (correr el SQL más reciente en '
             'Supabase). Avisa a los desarrolladores.');
       }
+      if (e.message.contains('municipio')) throw const ErrorVeraGo('La ubicación debe estar dentro del municipio de Veracruz.');
       throw const ErrorVeraGo('No pudimos completar la operación. Intenta de nuevo.');
     } catch (_) {
       throw const ErrorVeraGo('Revisa tu conexión a internet e intenta de nuevo.');

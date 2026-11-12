@@ -5,6 +5,7 @@ import '../models/lugar.dart';
 import '../services/admin_service.dart';
 import '../services/error_verago.dart';
 import '../services/geocodificacion_service.dart';
+import '../services/municipio_veracruz.dart';
 import '../services/validaciones.dart';
 import '../widgets/editor_costo_entrada.dart';
 import '../widgets/editor_horario.dart';
@@ -94,7 +95,8 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
 
   Future<void> _guardar() async {
     final ok = _formulario.currentState!.validate();
-    setState(() => _faltaUbicacion = _ubicacion == null);
+    // Falta ubicación, o es un lugar viejo que quedó fuera del municipio.
+    setState(() => _faltaUbicacion = _ubicacion == null || !MunicipioVeracruz.contiene(_ubicacion!));
     if (!ok || _faltaUbicacion) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Faltan datos importantes: revisa lo marcado en rojo.')),
@@ -229,7 +231,8 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
           if (_faltaUbicacion)
             const Padding(
               padding: EdgeInsets.only(top: 6),
-              child: Text('Marca la ubicación en el mapa', style: TextStyle(color: Color(0xFF9B2C2C))),
+              child: Text('Marca la ubicación en el mapa, dentro del municipio de Veracruz',
+                  style: TextStyle(color: Color(0xFF9B2C2C))),
             ),
           const SizedBox(height: 12),
           // Bloqueada (readOnly): solo se muestra lo que da el mapa.
