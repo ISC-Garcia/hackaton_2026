@@ -7,6 +7,7 @@ Documentación del equipo (documentos compartidos de Claude):
 
 - **Documentación integral** (qué es VeraGo, módulos, arquitectura, base de datos, seguridad):
   https://claude.ai/artifact/Hp9CAXgVd5qvhU9xVvV5Dq
+- **Resumen en pocas palabras** (para cualquier persona): https://claude.ai/artifact/ECgvZKpXdHJGsNi6CznhPa
 - **Guía de estudio del código + 165 preguntas para la demo**:
   https://claude.ai/artifact/GxJK58vGE6jzZZe4ckyUuE
 
@@ -14,7 +15,7 @@ Documentación del equipo (documentos compartidos de Claude):
 
 | Pieza | Para qué |
 | --- | --- |
-| Flutter + Dart | La app (Android, iPhone y web) |
+| Flutter + Dart | La app **móvil** (Android y iPhone). La versión web solo se usa para probar en la computadora |
 | Supabase Auth | Cuentas con correo y contraseña |
 | Supabase Database (PostgreSQL) | Tablas, reglas RLS, permisos GRANT y funciones protegidas |
 | `supabase_flutter` | Conexión de la app con Supabase |
@@ -196,6 +197,37 @@ archivo (o crear eventos nuevos desde la app).
 
 ## Cómo ejecutar la app
 
+### Si la app no está desplegada: correrla desde el repositorio
+
+La app aún no está publicada en Play Store ni App Store. Para probarla en una computadora:
+
+1. Instalar **Flutter** (flutter.dev → Get started) y **Git**.
+2. Descargar el repositorio:
+
+```bash
+git clone https://github.com/ISC-Garcia/hackaton_2026.git
+cd hackaton_2026/verago
+```
+
+   (O en GitHub: **Code → Download ZIP**, descomprimir y abrir la carpeta `verago`.)
+3. Crear el archivo `env.json` en la carpeta `verago` (ver el paso 1 de abajo). **No viene en el
+   repositorio** porque lleva las claves: pídeselo al equipo.
+4. Correr la app en Chrome:
+
+```bash
+flutter pub get
+flutter run -d chrome --dart-define-from-file=env.json
+```
+
+Chrome solo sirve para probar: VeraGo es una app **móvil**. En Chrome la cámara para escanear QR
+puede no funcionar; en ese caso usar "¿No funciona la cámara? Escribe el código".
+
+Para instalarla en un celular Android sin publicarla: `flutter build apk --release --dart-define-from-file=env.json`
+y pasar el archivo `build/app/outputs/flutter-apk/app-release.apk` (lleva las claves dentro: no subirlo a
+lugares públicos).
+
+### Configuración y otras formas de correrla
+
 1. Copiar `env.example.json` como `env.json` y llenar:
    - `SUPABASE_URL`: Supabase → Project Settings → API → Project URL.
    - `SUPABASE_KEY`: la **publishable key** (pública).
@@ -374,3 +406,10 @@ como *Equipo* las tomamos nosotros cuando la IA nos preguntó.
 | 65 | 2026-11-12 | Última auditoría: revisar que la navegación de todos los roles sea correcta, corregir errores y actualizar guía y documentación | Claude Code + Claude Docs | Se recorrieron los caminos de invitado, turista, comerciante y admin. **Errores corregidos:** 1) "Ver lugar" tras escanear cerraba la ficha al instante y trababa el escáner (ahora `pushReplacement` con resultado); 2) el Pasaporte no se recargaba tras registrar un negocio con sesión abierta; 3) lo mismo desde Ajustes → "Soy un negocio"; 4) README desactualizado (decía que no había pantallas de admin y que las estadísticas eran simuladas). README: Estado, "Qué NO hace la app", nueva sección Administración, Guion de la demo. **Guía:** paquetes, árbol de archivos, migraciones 015–021, privacidad (Gemini y búsqueda), sección 19 (versión final y auditoría) y sección 20 (preguntas 141–152). `flutter analyze` limpio, **144 pruebas** pasan, `flutter build web` compila | Pedido del *Equipo* (autorizó editar la guía). No se agregaron funciones nuevas |
 | 66 | 2026-11-12 | Reto "Atraca un crucero" (3,000 visitantes, 5 h en tierra, no hablan español): botón de idioma para cambiar la app al idioma del visitante | Claude Code + Claude Docs | Se preguntó al *Equipo*: 5 idiomas (es, en, fr, de, pt), solo botón (sin QR), sin "modo crucero" (es el nombre del reto) y contenido traducido con Gemini. **Hecho:** `lib/i18n/idioma.dart` (idioma guardado en el celular, `tr()` con variables `{n}`, días y meses por idioma), diccionario `traducciones.dart` (~310 textos × 4 idiomas), `BotonIdioma` (🌐) en Bienvenida, Explorar y Ajustes; todas las pantallas del turista (pestañas, Explorar, ficha, Rutas, ruta, Agenda, Pasaporte, escáner, chat, login, Ajustes, documentos, mapa, 911, reportar) y sus mensajes de error. `TraductorService` (Gemini, JSON con `responseSchema`, memoria) traduce descripciones, vitrina, eventos y documentos legales al abrirlos; el chat contesta en el idioma elegido; Rutas acepta **5 h**. Comerciante y admin se quedan en español. **Error encontrado y corregido:** la lista de idiomas se desbordaba en pantallas bajitas (ahora se desplaza). 10 pruebas nuevas (**154 en total**), incluida una que revisa que ningún texto marcado se quede sin traducción y que las variables coincidan. `flutter analyze` limpio; traducción con Gemini probada en vivo (inglés y alemán). README: sección "Reto Atraca un crucero" y guion de demo; guía de estudio: sección 21 y preguntas 153–160 | Las traducciones de botones las escribió la IA: conviene que alguien que hable cada idioma las revise. La primera traducción con Gemini de una ficha puede tardar unos segundos (mientras, se ve en español) |
 | 67 | 2026-11-12 | 1) Traducir TODAS las páginas, también "Panel de administración", "Panel de mi negocio" y los formularios; 2) en los formularios con mapa, que la "Dirección" sea solo texto (no un campo) y la ubicación solo se elija en el mapa | Claude Code + Claude Docs | **1:** un script marcó con `tr()` los textos de interfaz de las pantallas de comerciante y admin, formularios, widgets y mensajes de los servicios (~460) y otro quitó los `const` que ya no aplicaban; los casos con condiciones (plurales, giro, fechas de eventos repetidos) se hicieron a mano. Nuevo diccionario `lib/i18n/traducciones_gestion.dart` (~390 textos × 4 idiomas, escrito a mano porque Gemini estaba saturado), unido al principal. También se traducen giros, estados de negocio, días del horario y categorías que vienen de la base. **2:** nuevo widget `DireccionDelMapa` (un `FormField` que se ve como texto, con "Buscando…", "Reintentar" y aviso rojo) en registro de negocio, cambio de ubicación y lugares del admin; al mover el punto se borra la dirección anterior. **Error encontrado y corregido:** al simplificar plurales a "negocio(s)" el español quedaba peor; las pruebas lo detectaron y se volvió a singular/plural. 6 pruebas nuevas (**160 en total**); `flutter analyze` limpio | El comerciante ya no puede escribir número o referencias en la dirección (antes podía ajustarla): sale tal cual de OpenStreetMap. Si Nominatim no responde, hay que tocar "Reintentar" |
+| 68 | 2026-11-12 | "¿La ficha técnica sigue igual? La app es únicamente móvil y somos 5 personas" | Claude Code + Artifact + Claude Docs | Estaba desactualizada. **Ficha técnica** (mismo enlace, una hoja): app móvil (Android y iPhone), equipo de 5 personas, 5 idiomas, reto "Atraca un crucero", rutas de 1 a 5 h, ubicación elegida en el mapa, límite del municipio e indicadores actuales (27 pantallas, 19 servicios, 21 SQL, 160 pruebas, 5 idiomas, 3 roles). **README:** la fila de Flutter dice app móvil (la web solo para probar). **Documentación integral:** "Equipo de 5 personas" y se corrigieron dos frases viejas (el admin ya no usa el panel de Supabase y las estadísticas son reales) | Pedido del *Equipo*. Ficha: https://claude.ai/artifact/PSCaCkaBVLp6sNysRV2yxH |
+| 69 | 2026-11-12 | ¿En otro idioma la Agenda debe decir "Paseo por San Juan de Ulúa" igual, o traducir solo "Paseo por" y dejar el nombre? | Claude Code | Sin cambios de código. Se recomendó traducir solo la parte común y dejar los nombres propios ("Tour of San Juan de Ulúa"), que es lo que ya hace `TraductorService` (su instrucción a Gemini: no traducir nombres de lugares, calles ni negocios). Se ofreció mostrar el título original en español debajo como respaldo | La traducción es con IA: puede equivocarse alguna vez con un nombre |
+| 70 | 2026-11-12 | ¿Tienes la documentación del proyecto? | Claude Code | Sin cambios. Se compartieron los enlaces: documentación integral, guía de estudio (165 preguntas), ficha técnica y README | — |
+| 71 | 2026-11-12 | Super resumen de la guía de estudio que entienda cualquier persona | Claude Code + Claude Docs | Documento nuevo "VeraGo en pocas palabras" (https://claude.ai/artifact/ECgvZKpXdHJGsNi6CznhPa): qué es, funciones para turista (tabla de las 4 pestañas, chat, idioma, 911), negocios, administrador, cómo funciona por dentro sin tecnicismos (rutas y cómo se gana un sello) y seguridad/límites | Lenguaje sencillo, sin términos técnicos salvo los nombres de los servicios |
+| 72 | 2026-11-12 | Profundizar en el resumen cómo funcionan las rutas, la IA y las demás funciones importantes | Claude Code + Claude Docs | En "VeraGo en pocas palabras" se cambió la sección corta "Cómo funciona por dentro" por "Cómo funcionan las funciones principales", con apartados a fondo y en lenguaje sencillo: rutas (qué pregunta, algoritmo voraz paso a paso, puntaje, ejemplo con números, cálculo de caminata, camino por calles, extras), IA (qué se envía, reglas, cómo evita inventar lugares, personalización anónima, privacidad, límites), pasaporte (QR de 60 s, 5 revisiones del servidor, sin internet, insignias con ejemplo), idiomas (diccionario vs IA, nombres propios), mapa y ubicación, y la vida de un negocio | El ejemplo de la ruta usa datos inventados y lo dice |
+| 73 | 2026-11-12 | ¿Cuál es el comando para crear un APK? | Claude Code | Sin cambios de código. Se indicó `flutter build apk --release --dart-define-from-file=env.json` y dónde queda el archivo | El APK lleva dentro las claves de env.json: no subirlo a lugares públicos |
+| 74 | 2026-11-12 | Poner en el README cómo correr la app si no está desplegada: descargándola del repositorio y con `flutter run -d chrome --dart-define-from-file=env.json` | Claude Code | Nueva subsección "Si la app no está desplegada: correrla desde el repositorio": instalar Flutter y Git, `git clone` (o Download ZIP), crear `env.json` (no viene en el repo; pedirlo al equipo), `flutter pub get` y `flutter run -d chrome ...`; aviso de que Chrome es solo para probar y cómo generar el APK | — |
