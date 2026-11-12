@@ -95,6 +95,43 @@ class _AjustesScreenState extends State<AjustesScreen> {
     );
   }
 
+  /// Borrar la cuenta: ventana de confirmación clara (no se puede deshacer).
+  Future<void> _borrarCuenta() async {
+    final seguro = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.delete_forever_outlined, color: Color(0xFF9B2C2C), size: 40),
+        title: const Text('¿Borrar tu cuenta para siempre?'),
+        content: const Text(
+          'Se borran tu cuenta, tu nombre y todos tus sellos. Si tienes un negocio: si aún no se '
+          'aprobaba, se borra; si ya estaba en la app, se oculta.\n\nEsto no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF9B2C2C)),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Borrar para siempre'),
+          ),
+        ],
+      ),
+    );
+    if (seguro != true || !mounted) return;
+    final error = await _pasaporte.borrarMiCuenta();
+    if (!mounted) return;
+    if (error != null) {
+      _mensaje(error);
+      return;
+    }
+    // La cuenta ya no existe: cerramos la sesión guardada en el celular.
+    try {
+      await _auth.salir();
+    } catch (_) {}
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tu cuenta se borró.')));
+    Navigator.of(context).pop(true);
+  }
+
   Future<void> _cerrarSesion() async {
     await _auth.salir();
     if (mounted) Navigator.of(context).pop(true);
@@ -206,8 +243,8 @@ class _AjustesScreenState extends State<AjustesScreen> {
                   SizedBox(height: 10),
                   Text('Qué NO guardamos', style: TextStyle(fontWeight: FontWeight.w700)),
                   SizedBox(height: 4),
-                  Text('• Tu ubicación: solo se usa en tu celular para iniciar una ruta, '
-                      'y solo si eliges "Mi ubicación".\n'
+                  Text('• Tu ubicación: se usa en tu celular para el mapa (si das permiso). '
+                      'Solo el inicio de una ruta desde "Mi ubicación" se envía para dibujar el camino.\n'
                       '• No te seguimos en segundo plano.'),
                   SizedBox(height: 10),
                   Text('Tus intereses se guardan solo en este celular.'),
@@ -233,6 +270,17 @@ class _AjustesScreenState extends State<AjustesScreen> {
                 icon: const Icon(Icons.logout),
                 label: const Text('Cerrar sesión'),
               ),
+              const SizedBox(height: 8),
+              if (perfil.esAdmin)
+                const Text('Una cuenta de administrador no se borra desde la app.',
+                    style: TextStyle(fontSize: 12), textAlign: TextAlign.center)
+              else
+                TextButton.icon(
+                  onPressed: _borrarCuenta,
+                  style: TextButton.styleFrom(foregroundColor: const Color(0xFF9B2C2C)),
+                  icon: const Icon(Icons.delete_forever_outlined),
+                  label: const Text('Borrar mi cuenta'),
+                ),
             ],
           ],
         ),

@@ -14,6 +14,7 @@ import 'documento_screen.dart';
 import 'editar_negocio_screen.dart';
 import 'editar_vitrina_screen.dart';
 import 'estado_negocio_screen.dart';
+import 'estadisticas_screen.dart';
 import 'lugar_screen.dart';
 import 'qr_comercio_screen.dart';
 
@@ -224,6 +225,13 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
             texto: 'VeraGo debe aceptar el cambio; mientras tanto sigues donde estás.',
             alTocar: () => _cambiarUbicacion(n),
           ),
+        _Accion(
+          icono: Icons.query_stats,
+          titulo: 'Mis estadísticas',
+          texto: 'Cuántos sellos ha dado tu negocio por día (sin datos personales).',
+          alTocar: () => Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const EstadisticasScreen(deMiNegocio: true))),
+        ),
         _Accion(
           icono: Icons.gavel_outlined,
           titulo: 'Términos y reglas para negocios',

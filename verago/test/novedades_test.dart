@@ -11,6 +11,7 @@ import 'package:verago/screens/pasaporte_screen.dart';
 import 'package:verago/services/eventos_service.dart';
 import 'package:verago/services/geocodificacion_service.dart';
 import 'package:verago/services/validaciones.dart';
+import 'package:verago/widgets/insignia_visual.dart';
 
 Lugar negocio({List<Map<String, dynamic>> productos = const [], String? promo}) => Lugar.fromJson({
       'id': 'n1',
@@ -48,6 +49,18 @@ void main() {
       final completa = Insignia.calcular(logrados: 10, total: 10);
       expect(completa.completa, isTrue);
       expect(completa.actual!.nombre, 'Embajador VeraGo');
+    });
+
+    testWidgets('insignias ganadas y bloqueadas miden lo mismo (fila alineada)', (tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: Row(children: [
+            InsigniaVisual(nivel: 1, tamano: 34, key: Key('ganada')),
+            InsigniaVisual(nivel: 2, tamano: 34, bloqueada: true, key: Key('bloqueada')),
+          ]),
+        ),
+      ));
+      expect(tester.getSize(find.byKey(const Key('ganada'))), tester.getSize(find.byKey(const Key('bloqueada'))));
     });
 
     testWidgets('la tarjeta dice cuántos sellos faltan', (tester) async {

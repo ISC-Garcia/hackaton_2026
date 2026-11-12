@@ -78,13 +78,45 @@ class PasaporteService {
     }
   }
 
+  /// BORRAR MI CUENTA (derecho ARCO de cancelación, SQL 016).
+  /// La función protegida borra la cuenta, el perfil y los sellos.
+  /// Devuelve null si salió bien, o el mensaje para la persona.
+  Future<String?> borrarMiCuenta() async {
+    Map<String, dynamic> r;
+    try {
+      r = await _db.rpc('borrar_mi_cuenta') as Map<String, dynamic>;
+    } on PostgrestException catch (e) {
+      if (e.code == 'PGRST202') {
+        return 'Falta actualizar la base de datos (correr el SQL 016). Avisa a los desarrolladores.';
+      }
+      return 'No pudimos borrar tu cuenta. Intenta de nuevo.';
+    } catch (_) {
+      return 'Revisa tu conexión a internet e intenta de nuevo.';
+    }
+    switch (r['estado']) {
+      case 'OK':
+        return null;
+      case 'ES_ADMIN':
+        return 'Una cuenta de administrador no se borra desde la app. Pídeselo a los desarrolladores.';
+      default:
+        return 'No pudimos borrar tu cuenta. Intenta de nuevo.';
+    }
+  }
+
   /// Mis sellos, del más reciente al más antiguo.
-  /// RLS garantiza que solo lleguen los míos.
+  ///
+  /// OJO: la regla RLS deja al ADMIN ver los sellos de todos (para
+  /// estadísticas). Por eso filtramos por `usuario_id`: el Pasaporte, el
+  /// historial y la insignia solo deben contar lo que YO escaneé. Antes, un
+  /// admin con negocio veía en su historial los escaneos que le hicieron.
   Future<List<Sello>> misSellos() async {
+    final uid = _uid;
+    if (uid == null) return const [];
     try {
       final filas = await _db
           .from('visitas')
           .select('lugar_id, creado_en, lugares(nombre, categorias(clave))')
+          .eq('usuario_id', uid)
           .order('creado_en', ascending: false);
       return filas.map(Sello.fromJson).toList();
     } catch (_) {

@@ -46,16 +46,23 @@ class InsigniaVisual extends StatelessWidget {
     final i = (nivel - 1).clamp(0, 4);
     final nombre = Insignia.niveles[i].nombre;
     if (bloqueada) {
+      // Mismo tamaño total que una insignia ganada (tamano × 1.25), para que
+      // la fila de los 5 niveles quede alineada.
       return Semantics(
         label: 'Insignia $nombre: bloqueada',
-        child: Container(
-          width: tamano,
-          height: tamano,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.black26, width: 2),
+        child: SizedBox.square(
+          dimension: tamano * 1.25,
+          child: Center(
+            child: Container(
+              width: tamano,
+              height: tamano,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.black26, width: 2),
+              ),
+              child: Icon(Icons.lock_outline, color: Colors.black26, size: tamano * 0.4),
+            ),
           ),
-          child: Icon(Icons.lock_outline, color: Colors.black26, size: tamano * 0.4),
         ),
       );
     }

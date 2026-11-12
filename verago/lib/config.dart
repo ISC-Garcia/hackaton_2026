@@ -15,10 +15,10 @@ class Config {
   /// La clave secreta (service_role) NUNCA va aquí.
   static const supabaseKey = String.fromEnvironment('SUPABASE_KEY');
 
-  /// Correo del equipo para "¿Olvidaste tu contraseña?" (opcional).
-  /// Se agrega a env.json como "SOPORTE_CORREO". Si está vacío, la app dice
-  /// "contacta al equipo de VeraGo" sin correo.
-  static const correoSoporte = String.fromEnvironment('SOPORTE_CORREO');
+  /// Correo del equipo: contraseña olvidada, reportes y derechos ARCO.
+  /// No es secreto, así que tiene valor por defecto (todos lo reciben aunque
+  /// su env.json no lo traiga). Se puede cambiar con "SOPORTE_CORREO".
+  static const correoSoporte = String.fromEnvironment('SOPORTE_CORREO', defaultValue: 'ververagoo@gmail.com');
 
   /// ¿Están las dos claves? Si no, la app muestra cómo configurarlas.
   static bool get estaConfigurado =>

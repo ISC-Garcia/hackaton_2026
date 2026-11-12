@@ -31,7 +31,7 @@ class DocumentoLegal {
   final List<SeccionDocumento> secciones;
 
   /// Cambiar al modificar cualquier documento.
-  static const version = 'Versión 4 · 11 de noviembre de 2026';
+  static const version = 'Versión 5 · 12 de noviembre de 2026';
 }
 
 class Documentos {
@@ -190,14 +190,15 @@ class Documentos {
             'u Oponerte a su uso, y también retirar tu consentimiento.',
         'Cómo: escríbenos desde el correo de tu cuenta con tu nombre y lo que pides. Te '
             'responderemos en un máximo de 20 días hábiles.',
-        'Tu nombre lo puedes cambiar tú mismo en Ajustes. Si pides borrar tu cuenta, se borran '
-            'también tu perfil y tus sellos.',
+        'Tú mismo puedes cambiar tu nombre y BORRAR tu cuenta en Ajustes (Borrar mi cuenta): se '
+            'borran tu perfil y tus sellos; un negocio sin aprobar se borra y uno publicado se oculta.',
       ]),
       SeccionDocumento('11. Menores de edad', [
         'Si tienes menos de 18 años, tu madre, padre o tutor debe estar de acuerdo con que uses VeraGo.',
       ]),
       SeccionDocumento('12. Cuánto tiempo guardamos los datos', [
-        'Mientras tu cuenta exista. Al borrarla, se eliminan tus datos de la base de datos.',
+        'Mientras tu cuenta exista. Al borrarla, se eliminan tus datos de la base de datos. Las '
+            'estadísticas solo guardan totales (cuántos sellos por día), nunca quién los ganó.',
       ]),
       SeccionDocumento('13. Cambios a este aviso', [
         'Si cambia este aviso, lo actualizaremos en la app con su nueva versión y fecha.',
