@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../legal/documentos.dart';
 import '../models/lugar.dart';
 import '../services/auth_service.dart';
+import '../services/eliminar_service.dart';
 import '../services/error_verago.dart';
 import '../services/lugares_service.dart';
 import '../services/negocios_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/categoria_estilo.dart';
+import '../widgets/eliminar_lugar.dart';
 import '../widgets/estado_vacio.dart';
 import 'cambiar_ubicacion_screen.dart';
 import 'documento_screen.dart';
@@ -16,6 +18,7 @@ import 'editar_vitrina_screen.dart';
 import 'estado_negocio_screen.dart';
 import 'estadisticas_screen.dart';
 import 'lugar_screen.dart';
+import 'negocio_screen.dart';
 import 'qr_comercio_screen.dart';
 
 /// PANEL DEL COMERCIANTE (negocio aprobado).
@@ -114,10 +117,14 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
           }
           final negocio = snapshot.data;
           if (negocio == null) {
-            return const EstadoVacio(
+            return EstadoVacio(
               icono: Icons.storefront,
               titulo: 'Sin negocio registrado',
               mensaje: 'Esta cuenta no tiene un negocio en VeraGo.',
+              textoBoton: 'Registrar mi negocio',
+              alPresionar: () => Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const NegocioScreen()),
+              ),
             );
           }
           if (negocio.estadoAprobacion != 'aprobado') {
@@ -246,6 +253,16 @@ class _PanelComercianteScreenState extends State<PanelComercianteScreen> {
           },
           icon: const Icon(Icons.logout),
           label: const Text('Cerrar sesión'),
+        ),
+        // Eliminar MI negocio (mi cuenta sigue). Si ya tiene sellos, se oculta.
+        TextButton.icon(
+          onPressed: () async {
+            final listo = await EliminarLugar.ejecutar(context, n, ocultar: EliminarService().ocultarMiNegocio);
+            if (listo && mounted) Navigator.of(context).pop(true);
+          },
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFF9B2C2C)),
+          icon: const Icon(Icons.delete_outline),
+          label: const Text('Eliminar mi negocio'),
         ),
       ],
     );

@@ -5,7 +5,11 @@ import '../config.dart';
 import '../models/lugar.dart';
 import '../services/distancia.dart';
 import '../services/error_verago.dart';
+import '../models/sello.dart';
+import '../services/auth_service.dart';
 import '../services/guia_ia_service.dart';
+import '../services/pasaporte_service.dart';
+import '../services/preferencias_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/tarjeta_lugar.dart';
@@ -19,13 +23,16 @@ import 'lugar_screen.dart';
 /// - La conversación se recuerda solo mientras esta pantalla está abierta
 ///   (decisión del equipo). Al cerrarla se borra; no se guarda en ningún lado.
 class ChatGuiaScreen extends StatefulWidget {
-  const ChatGuiaScreen({super.key, required this.lugares, this.servicio});
+  const ChatGuiaScreen({super.key, required this.lugares, this.servicio, this.cargarPerfil});
 
   /// Lugares ya descargados en Explorar (no se vuelven a pedir).
   final List<Lugar> lugares;
 
   /// Solo para pruebas automáticas (simula Gemini).
   final GuiaIaService? servicio;
+
+  /// Solo para pruebas: entrega sellos e intereses falsos.
+  final Future<({List<Sello> sellos, Set<String> intereses})> Function()? cargarPerfil;
 
   @override
   State<ChatGuiaScreen> createState() => _ChatGuiaScreenState();
@@ -46,6 +53,27 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
   late final String _contexto = GuiaIaService.contextoLugares(widget.lugares, DateTime.now());
   late final Map<String, Lugar> _porId = {for (final l in widget.lugares) l.id: l};
   bool _esperando = false;
+
+  /// Perfil anónimo (intereses + sellos) para personalizar. Se carga una vez
+  /// al abrir; si falla, la guía funciona igual sin personalizar.
+  late final Future<String?> _perfil = _cargarPerfil();
+
+  Future<String?> _cargarPerfil() async {
+    try {
+      // Máximo 4 s: si tarda (red lenta), la guía responde sin personalizar.
+      final datos = await (widget.cargarPerfil ?? _perfilReal)().timeout(const Duration(seconds: 4));
+      return GuiaIaService.perfilVisitante(sellos: datos.sellos, intereses: datos.intereses, lugares: widget.lugares);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<({List<Sello> sellos, Set<String> intereses})> _perfilReal() async {
+    final intereses = await PreferenciasService().leerIntereses();
+    // Sellos solo si hay sesión (un invitado no tiene).
+    final sellos = AuthService().usuario == null ? const <Sello>[] : await PasaporteService().misSellos();
+    return (sellos: sellos, intereses: intereses);
+  }
 
   static const _sugerencias = [
     'Algo con sombra para ir con niños',
@@ -76,6 +104,7 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
         contexto: _contexto,
         historial: [..._conversacion, mio],
         idsValidos: _porId.keys.toSet(),
+        perfil: await _perfil,
       );
       if (!mounted) return;
       final guia = MensajeChat(deUsuario: false, texto: r.respuesta, lugaresIds: r.lugaresIds);
@@ -169,7 +198,8 @@ class _ChatGuiaScreenState extends State<ChatGuiaScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
                     'Respuestas generadas con IA (Google Gemini): pueden equivocarse; confirma horarios y precios. '
-                    'Tus mensajes se envían a Google: no escribas datos personales.',
+                    'Para personalizar se envían tus intereses y los lugares que ya sellaste, sin tu nombre ni '
+                    'correo. No escribas datos personales.',
                     style: TextStyle(fontSize: 11, color: Colors.black.withValues(alpha: 0.55)),
                   ),
                 ),

@@ -7,6 +7,7 @@ import '../services/geocodificacion_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/editor_costo_entrada.dart';
 import '../widgets/editor_horario.dart';
+import '../widgets/eliminar_lugar.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/foto_lugar.dart';
 import '../widgets/mapa_lugares.dart';
@@ -362,6 +363,23 @@ class _AdminNegocioDetalleScreenState extends State<AdminNegocioDetalleScreen> {
               icon: const Icon(Icons.pause),
               label: const Text('Suspender'),
             ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: _trabajando
+                ? null
+                : () async {
+                    final listo = await EliminarLugar.ejecutar(
+                      context,
+                      n,
+                      // Si tiene sellos no se borra: se suspende (deja de verse).
+                      ocultar: () => _servicio.cambiarEstadoNegocio(n.id, 'suspendido', formal: n.esFormal),
+                    );
+                    if (listo && context.mounted) Navigator.of(context).pop(true);
+                  },
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF9B2C2C)),
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Eliminar negocio'),
+          ),
           const SizedBox(height: 8),
           const Text(
             'Aprobar = aparece en la app (y da sellos solo si es formal). Recuerda avisar al comerciante '

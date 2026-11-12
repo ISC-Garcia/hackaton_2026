@@ -102,6 +102,10 @@ class AdminService {
         }).eq('id', id));
   }
 
+  /// Oculta un lugar o Punto VeraGo (si tiene sellos no se elimina).
+  Future<void> ocultarLugar(String id) =>
+      _escribir(() => _db.from('lugares').update({'publicado': false}).eq('id', id));
+
   /// El admin pone, cambia o quita (null) la foto de cualquier lugar.
   Future<void> guardarFoto(String id, String? url) =>
       _escribir(() => _db.from('lugares').update({'foto_url': url}).eq('id', id));

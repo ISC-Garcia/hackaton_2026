@@ -31,7 +31,7 @@ class DocumentoLegal {
   final List<SeccionDocumento> secciones;
 
   /// Cambiar al modificar cualquier documento.
-  static const version = 'Versión 7 · 12 de noviembre de 2026';
+  static const version = 'Versión 8 · 12 de noviembre de 2026';
 }
 
 class Documentos {
@@ -169,9 +169,10 @@ class Documentos {
             'mapa" en Explorar, enviamos solo el texto que buscas.',
         '• Servicio de rutas a pie de OpenStreetMap (routing.openstreetmap.de): recibe las '
             'paradas de tu ruta y su punto de inicio para dibujar el camino.',
-        '• Google Gemini (IA): si usas "Pregúntale a VeraGo", recibe lo que escribes en el chat y la '
-            'lista pública de lugares. No recibe tu ubicación, tu correo ni tus sellos. La conversación '
-            'no se guarda en VeraGo y se borra al cerrar el chat. No escribas datos personales.',
+        '• Google Gemini (IA): si usas "Pregúntale a VeraGo", recibe lo que escribes en el chat, la '
+            'lista pública de lugares y, para personalizar, tus intereses y qué lugares ya sellaste (sin '
+            'fechas). Nunca recibe tu nombre, tu correo ni tu ubicación. La conversación no se guarda en '
+            'VeraGo y se borra al cerrar el chat. No escribas datos personales.',
         'No compartimos tus datos con nadie más, salvo que una autoridad lo pida conforme a la ley.',
       ]),
       SeccionDocumento('7. Lo que se guarda en tu celular', [

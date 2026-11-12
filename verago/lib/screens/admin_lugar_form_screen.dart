@@ -8,6 +8,7 @@ import '../services/geocodificacion_service.dart';
 import '../services/validaciones.dart';
 import '../widgets/editor_costo_entrada.dart';
 import '../widgets/editor_horario.dart';
+import '../widgets/eliminar_lugar.dart';
 import '../widgets/estado_vacio.dart';
 import '../widgets/foto_lugar.dart';
 import '../widgets/selector_ubicacion.dart';
@@ -115,7 +116,20 @@ class _AdminLugarFormScreenState extends State<AdminLugarFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.lugar == null ? 'Nuevo lugar' : 'Editar lugar')),
+      appBar: AppBar(
+        title: Text(widget.lugar == null ? 'Nuevo lugar' : 'Editar lugar'),
+        actions: [
+          if (widget.lugar case final l?)
+            IconButton(
+              tooltip: 'Eliminar',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                final listo = await EliminarLugar.ejecutar(context, l, ocultar: () => _servicio.ocultarLugar(l.id));
+                if (listo && context.mounted) Navigator.of(context).pop(true);
+              },
+            ),
+        ],
+      ),
       body: FutureBuilder<Map<int, String>>(
         future: _categorias,
         builder: (context, snapshot) {

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../config.dart';
 import '../models/lugar.dart';
+import '../models/sello.dart';
 import 'distancia.dart';
 import 'error_verago.dart';
 
@@ -40,8 +41,11 @@ class RespuestaGuia {
 ///    a devolver JSON válido que se lee con `jsonDecode`.
 /// 3. Solo usamos ids que existen en la lista: si la IA inventa uno, se ignora.
 ///
-/// Privacidad: se envían a Google tus mensajes y la lista pública de lugares.
-/// Nunca tu ubicación, tu correo ni tus sellos.
+/// PERSONALIZACIÓN (decisión del equipo): si la persona tiene sesión, también
+/// se envía un PERFIL ANÓNIMO: sus intereses y qué lugares ya selló (solo id
+/// y categoría, sin fechas). Así la guía no repite lo ya visitado y afina.
+///
+/// Privacidad: nunca se envían tu nombre, tu correo ni tu ubicación.
 class GuiaIaService {
   GuiaIaService({http.Client? cliente, String? apiKey, String? modelo})
       : _cliente = cliente ?? http.Client(),
@@ -97,7 +101,31 @@ class GuiaIaService {
     return jsonEncode(lista);
   }
 
-  static String instrucciones(String contexto) => '''
+  /// PERFIL ANÓNIMO del visitante: intereses + lugares ya sellados (solo id y
+  /// categoría) + cuántos sellos por categoría. Sin nombre, correo, fechas ni
+  /// ubicación. Devuelve null si no hay nada que contar.
+  static String? perfilVisitante({
+    required List<Sello> sellos,
+    required Set<String> intereses,
+    required List<Lugar> lugares,
+  }) {
+    if (sellos.isEmpty && intereses.isEmpty) return null;
+    final nombres = {for (final l in lugares) l.categoriaClave: l.categoriaNombre};
+    final porCategoria = <String, int>{};
+    final yaSellados = <String>{};
+    for (final s in sellos) {
+      if (!yaSellados.add(s.lugarId)) continue; // un lugar cuenta una vez
+      final cat = nombres[s.categoriaClave] ?? s.categoriaClave;
+      porCategoria[cat] = (porCategoria[cat] ?? 0) + 1;
+    }
+    return jsonEncode({
+      if (intereses.isNotEmpty) 'intereses': [for (final i in intereses) nombres[i] ?? i],
+      if (yaSellados.isNotEmpty) 'ya_sellados_ids': yaSellados.toList(),
+      if (porCategoria.isNotEmpty) 'sellos_por_categoria': porCategoria,
+    });
+  }
+
+  static String instrucciones(String contexto, {String? perfil}) => '''
 Eres el guía turístico oficial de VeraGo en el Centro Histórico de Veracruz, México.
 Responde en español, de forma natural, amigable y breve (máximo 3 oraciones).
 
@@ -116,7 +144,13 @@ Devuelve SIEMPRE un JSON con:
 
 LISTA DE LUGARES (JSON):
 $contexto
-''';
+${perfil == null ? '' : '''
+PERFIL ANÓNIMO DEL VISITANTE (JSON):
+$perfil
+- Usa sus intereses para elegir mejor.
+- Los lugares de "ya_sellados_ids" ya los visitó: NO los recomiendes otra vez, salvo que los pida.
+- Puedes mencionar su gusto con naturalidad (ej. "veo que te gustan las cafeterías"), sin inventar nada.
+'''}''';
 
   // ------------------------------------------------------------------
   // 2. Llamada a Gemini
@@ -130,6 +164,7 @@ $contexto
     required String contexto,
     required List<MensajeChat> historial,
     required Set<String> idsValidos,
+    String? perfil,
   }) async {
     if (_apiKey.isEmpty) {
       throw const ErrorVeraGo('Falta configurar la guía: agrega GEMINI_API_KEY en env.json.');
@@ -140,7 +175,7 @@ $contexto
     final cuerpo = {
       'systemInstruction': {
         'parts': [
-          {'text': instrucciones(contexto)},
+          {'text': instrucciones(contexto, perfil: perfil)},
         ],
       },
       'contents': [

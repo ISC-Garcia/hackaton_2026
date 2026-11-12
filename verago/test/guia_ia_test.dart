@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:verago/models/lugar.dart';
+import 'package:verago/models/sello.dart';
+import 'package:verago/services/pasaporte_service.dart';
 import 'package:verago/screens/chat_guia_screen.dart';
 import 'package:verago/services/error_verago.dart';
 import 'package:verago/services/guia_ia_service.dart';
@@ -114,7 +116,13 @@ void main() {
             200,
           )),
     );
-    await tester.pumpWidget(MaterialApp(home: ChatGuiaScreen(lugares: lugares, servicio: servicio)));
+    await tester.pumpWidget(MaterialApp(
+      home: ChatGuiaScreen(
+        lugares: lugares,
+        servicio: servicio,
+        cargarPerfil: () async => (sellos: const <Sello>[], intereses: const <String>{}),
+      ),
+    ));
     await tester.tap(find.text('Algo con sombra para ir con niños'));
     await tester.pumpAndSettle();
     expect(find.text('Algo con sombra para ir con niños'), findsOneWidget); // burbuja de la persona
@@ -125,5 +133,55 @@ void main() {
   testWidgets('sin clave, avisa que falta configurar', (tester) async {
     await tester.pumpWidget(MaterialApp(home: ChatGuiaScreen(lugares: lugares)));
     expect(find.text('Falta configurar la guía'), findsOneWidget);
+  });
+
+  test('perfil anónimo: intereses y lugares ya sellados (sin fechas ni nombres de persona)', () {
+    final sellos = [
+      Sello(lugarId: 'a1', lugarNombre: 'Zócalo de Veracruz', categoriaClave: 'plaza', fecha: DateTime(2026, 11, 1)),
+      Sello(lugarId: 'a1', lugarNombre: 'Zócalo de Veracruz', categoriaClave: 'plaza', fecha: DateTime(2026, 11, 2)),
+    ];
+    final perfil = jsonDecode(GuiaIaService.perfilVisitante(
+      sellos: sellos,
+      intereses: {'plaza'},
+      lugares: lugares,
+    )!) as Map;
+    expect(perfil['intereses'], ['Plazas y paseos']);
+    expect(perfil['ya_sellados_ids'], ['a1']); // el mismo lugar cuenta una vez
+    expect(perfil['sellos_por_categoria'], {'Plazas y paseos': 1});
+    expect(jsonEncode(perfil), isNot(contains('2026'))); // sin fechas
+  });
+
+  test('sin sellos ni intereses no hay perfil', () {
+    expect(GuiaIaService.perfilVisitante(sellos: const [], intereses: const {}, lugares: lugares), isNull);
+  });
+
+  test('las instrucciones piden no repetir lo ya sellado', () {
+    final texto = GuiaIaService.instrucciones('[]', perfil: '{"ya_sellados_ids":["a1"]}');
+    expect(texto, contains('PERFIL ANÓNIMO'));
+    expect(texto, contains('NO los recomiendes otra vez'));
+    expect(GuiaIaService.instrucciones('[]'), isNot(contains('PERFIL ANÓNIMO')));
+  });
+
+  test('el chat manda el perfil a Gemini', () async {
+    late Map cuerpo;
+    final servicio = GuiaIaService(
+      apiKey: 'x',
+      cliente: MockClient((req) async {
+        cuerpo = jsonDecode(req.body) as Map;
+        return http.Response(jsonEncode(respuestaGemini({'respuesta': 'Ok', 'lugares_ids': []})), 200);
+      }),
+    );
+    await servicio.preguntar(
+      contexto: '[]',
+      historial: const [MensajeChat(deUsuario: true, texto: 'hola')],
+      idsValidos: const {},
+      perfil: '{"intereses":["Museos"]}',
+    );
+    expect(jsonEncode(cuerpo['systemInstruction']), contains('Museos'));
+  });
+
+  test('escanear sin internet: aviso claro y no se guarda para después', () {
+    expect(PasaporteService.sinConexionAlEscanear, contains('Sin conexión'));
+    expect(PasaporteService.sinConexionAlEscanear, contains('Vuelve a escanear'));
   });
 }

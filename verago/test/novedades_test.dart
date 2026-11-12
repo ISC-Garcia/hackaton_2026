@@ -145,4 +145,9 @@ void main() {
       expect(find.text('Escribe el nombre'), findsOneWidget);
     });
   });
+
+  test('evento duplicado: mensaje claro', () {
+    expect(EventosService.eventoDuplicado, contains('mismo nombre'.replaceAll('mismo ', '')));
+    expect(EventosService.eventoDuplicado, contains('a esa hora y en ese lugar'));
+  });
 }

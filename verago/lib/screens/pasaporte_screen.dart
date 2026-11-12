@@ -246,8 +246,12 @@ class _PasaporteScreenState extends State<PasaporteScreen> {
           if (d.perfil.esComerciante) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
-              onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const PanelComercianteScreen())),
+              onPressed: () async {
+                await Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const PanelComercianteScreen()));
+                // Al volver: si eliminó su negocio, ya no es comerciante.
+                if (mounted) _recargar();
+              },
               icon: const Icon(Icons.storefront_outlined),
               label: const Text('Panel de mi negocio'),
             ),

@@ -136,10 +136,20 @@ class PasaporteService {
         lugarNombre: r['lugar_nombre'] as String?,
         totalSellos: r['total_sellos'] as int?,
       );
+    } on PostgrestException {
+      // Sí hubo conexión, pero la base de datos respondió con un error.
+      throw const ErrorVeraGo('No pudimos validar el código. Intenta de nuevo.');
     } catch (_) {
-      throw const ErrorVeraGo('No pudimos validar el código. Revisa tu conexión.');
+      // SIN CONEXIÓN (decisión del equipo): NO se guarda para después. El QR
+      // vence en 60 s y se valida en el momento; guardarlo para luego
+      // obligaría a aceptar códigos vencidos (y servirían las capturas).
+      throw const ErrorVeraGo(sinConexionAlEscanear);
     }
   }
+
+  /// Mensaje cuando se escanea sin internet (público para probarlo).
+  static const sinConexionAlEscanear = 'Sin conexión: el sello necesita internet para validarse en el momento '
+      '(el QR cambia cada 60 segundos). Vuelve a escanear cuando tengas señal.';
 
   /// Comercios de los que soy dueño y que dan sellos.
   Future<List<({String id, String nombre})>> misComercios() async {

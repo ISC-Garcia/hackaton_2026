@@ -66,6 +66,10 @@ class DatosEvento {
 class EventosService {
   SupabaseClient get _db => Supabase.instance.client;
 
+  /// Mensaje si ya hay un evento igual (público para probarlo).
+  static const eventoDuplicado = 'Ya existe un evento con ese nombre, a esa hora y en ese lugar. '
+      'Edita el que ya está en la Agenda en lugar de crear otro.';
+
   /// Eventos que todavía no terminan, ordenados por fecha de inicio.
   /// Incluye el nombre del lugar donde ocurren.
   /// RLS deja ver los publicados y cancelados; el admin ve también los borradores.
@@ -108,6 +112,8 @@ class EventosService {
       if (e.code == '42501') {
         throw const ErrorVeraGo('Solo un administrador puede modificar la agenda.');
       }
+      // 23505 = ya existe uno igual (SQL 020: mismo nombre, hora y lugar).
+      if (e.code == '23505') throw const ErrorVeraGo(eventoDuplicado);
       // 23514 = no cumple una regla CHECK (ej. termina antes de iniciar).
       if (e.code == '23514') {
         throw const ErrorVeraGo('Revisa los datos: el evento debe terminar después de iniciar.');
